@@ -1,0 +1,352 @@
+/* Account Page Styles */
+#page-account {
+  padding: 20px;
+  background: #f9f9f9;
+}
+
+.account-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+}
+
+.account-name {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.account-phone {
+  color: #777;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.edit-icon {
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Quick Cards Section */
+.quick-cards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.quick-card {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.card-icon {
+  font-size: 20px;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.quick-card p {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Menu List Section */
+.menu-list {
+  background: #fff;
+  margin-bottom: 30px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+
+.menu-icon {
+  font-size: 18px;
+  margin-right: 15px;
+  width: 24px;
+  text-align: center;
+}
+
+.menu-text {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 400;
+  color: #333;
+}
+
+.menu-arrow {
+  color: #ccc;
+  font-size: 20px;
+}
+
+/* Logout Button */
+.logout-btn {
+  width: 100%;
+  padding: 15px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  color: #ff4d4d;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.edit-icon {
+  font-size: 20px;
+  color: #333;
+}
+
+.card-icon {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.menu-icon {
+  font-size: 22px;
+  margin-right: 15px;
+  color: #444; /* Darker gray for menu icons */
+}
+
+.menu-arrow {
+  color: #999;
+  font-size: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ADDRESS MODAL STYLES
+═══════════════════════════════════════════════════════ */
+
+.address-modal {
+  background: var(--bg-card);
+  border-radius: 22px 22px 0 0;
+  width: 100%;
+  max-width: 540px;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+
+@media (min-width: 540px) {
+  .address-modal {
+    border-radius: 22px;
+    margin-bottom: 20px;
+  }
+}
+
+.address-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 10;
+}
+
+.address-modal-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.address-modal-header .modal-close {
+  position: static;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  border: none;
+  font-size: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.address-modal-header .modal-close:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.add-address-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 40px);
+  margin: 20px;
+  padding: 14px;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.add-address-btn:hover {
+  background: var(--green-dark);
+}
+
+.add-address-btn .add-icon {
+  font-size: 18px;
+}
+
+.address-list {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.address-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  position: relative;
+}
+
+.address-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.address-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-bg);
+  padding: 6px 12px;
+  border-radius: 50px;
+}
+
+.address-badge .badge-icon {
+  font-size: 14px;
+  color: var(--green);
+}
+
+.address-badge span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.default-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+  background: var(--green-bg);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.default-badge .check-icon {
+  font-size: 12px;
+}
+
+.address-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-right: 30px;
+}
+
+.address-card-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.three-dots-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  border: none;
+  font-size: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.three-dots-btn:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 150px;
+  z-index: 20;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-input);
+}
+
+.dropdown-item .dropdown-icon {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.dropdown-item.delete {
+  color: #ef4444;
+}
+
+.dropdown-item.delete .dropdown-icon {
+  color: #ef4444;
+}

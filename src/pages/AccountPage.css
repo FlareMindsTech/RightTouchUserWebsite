@@ -1,0 +1,112 @@
+#page-account {
+  padding: 20px;
+  background: #f9f9f9;
+}
+
+.account-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+}
+
+.account-name {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.account-phone {
+  color: #777;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.edit-icon {
+  font-size: 18px;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Quick Cards Section */
+.quick-cards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.quick-card {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  cursor: pointer;
+}
+
+.card-icon {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.quick-card p {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Menu List Section */
+.menu-list {
+  background: #fff;
+  margin-bottom: 30px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+
+.menu-icon {
+  font-size: 22px;
+  margin-right: 15px;
+  width: 24px;
+  text-align: center;
+  color: #444;
+}
+
+.menu-text {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 400;
+  color: #333;
+}
+
+.menu-arrow {
+  color: #999;
+  font-size: 24px;
+}
+
+/* Logout Button */
+.logout-btn {
+  width: 100%;
+  padding: 15px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  color: #ff4d4d;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.hidden {
+  display: none;
+}

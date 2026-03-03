@@ -1,0 +1,63 @@
+/* ═══════════════════════════════════════════════════════
+   BOTTOM NAVBAR (mobile only)
+═══════════════════════════════════════════════════════ */
+.bottom-navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-nav-height);
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 100;
+  padding: 0 8px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.bottom-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  transition: var(--transition);
+  flex: 1;
+}
+
+.bottom-tab:hover {
+  color: var(--green);
+  background: var(--green-bg);
+}
+
+.btab-icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  transition: var(--transition);
+}
+
+.btab-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+}
+
+.btab-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.bottom-tab.active {
+  color: var(--green) !important;
+}
+
+.bottom-tab.active .btab-icon {
+  transform: translateY(-2px);
+}

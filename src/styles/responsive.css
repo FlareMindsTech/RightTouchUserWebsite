@@ -1,0 +1,156 @@
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE – TABLET (768px – 1023px)
+═══════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  .why-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .hero-image {
+    display: none;
+  }
+
+  .desktop-hero {
+    padding: 36px 28px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE – MOBILE (≤767px)
+═══════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .mobile-only {
+    display: flex;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .top-navbar {
+    display: none;
+  }
+
+  .page-wrapper {
+    padding-top: 0;
+    padding-bottom: calc(var(--bottom-nav-height) + 8px);
+    padding-left: 16px;
+    padding-right: 16px;
+    max-width: 100%;
+  }
+
+  .bottom-navbar {
+    display: flex !important;
+  }
+
+  /* CATEGORY GRID – mobile 2×2 */
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .category-card {
+    padding: 14px 12px;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .cat-icon-wrap {
+    width: 38px;
+    height: 38px;
+  }
+
+  .cat-emoji {
+    font-size: 20px;
+  }
+
+  .category-card span {
+    font-size: 13px;
+  }
+
+  /* SERVICE GRID — mobile exactly 2 cols */
+  .service-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .service-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 12px;
+    gap: 8px;
+  }
+
+  .service-icon {
+    font-size: 20px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .service-card span {
+    font-size: 13px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .offer-card {
+    width: 200px;
+  }
+
+  .appliance-card {
+    width: 86px;
+  }
+
+  .appliance-img-wrap {
+    width: 82px;
+    height: 74px;
+    font-size: 30px;
+  }
+
+  /* Chat window full screen on mobile */
+  .chat-window {
+    padding-bottom: var(--bottom-nav-height);
+  }
+
+  /* Account page adjustments */
+  .account-hero {
+    padding: 20px 0 16px;
+  }
+
+  .avatar-ring {
+    width: 76px;
+    height: 76px;
+  }
+
+  .avatar-inner {
+    width: 70px;
+    height: 70px;
+    font-size: 22px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Tablet only – show bottom nav too? No, keep top nav
+═══════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .bottom-navbar {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* Large desktop */
+@media (min-width: 1400px) {
+  .page-wrapper {
+    max-width: 1300px;
+  }
+}
