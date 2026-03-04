@@ -4,6 +4,100 @@
   min-height: 100vh;
 }
 
+/* Mobile Header with Logo, Search, Cart */
+.bookings-mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.mobile-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-header-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.mobile-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.mobile-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-search-bar {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 20px;
+  padding: 6px 12px;
+  gap: 6px;
+}
+
+.mobile-search-icon {
+  font-size: 16px;
+  color: #999;
+}
+
+.mobile-search-bar input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  width: 100px;
+  outline: none;
+}
+
+.mobile-search-bar input::placeholder {
+  color: #999;
+}
+
+.mobile-cart-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  position: relative;
+}
+
+.mobile-cart-icon {
+  font-size: 22px;
+  color: #333;
+}
+
+.mobile-cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #22c55e;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Desktop Header */
 .bookings-header {
   display: flex;
   justify-content: space-between;
@@ -23,7 +117,7 @@
 .back-icon {
   font-size: 24px;
   color: #333;
-  transform: rotate(180deg);
+  /* Fixed: removed transform rotate so back icon points left */
 }
 
 .bookings-title {
@@ -51,17 +145,18 @@
   font-size: 14px;
 }
 
-/* Tabs Section */
+/* Bottom-of-section Tabs Style */
 .bookings-tabs {
   display: flex;
   padding: 0 20px;
   gap: 24px;
   border-bottom: 1px solid #f0f0f0;
   background: #fff;
+  position: relative;
 }
 
 .tab {
-  padding: 16px 0;
+  padding: 14px 0;
   background: none;
   border: none;
   font-size: 15px;
@@ -69,10 +164,12 @@
   color: #999;
   cursor: pointer;
   position: relative;
+  /* Remove default bottom border */
 }
 
 .tab.active {
   color: #333;
+  font-weight: 600;
 }
 
 .tab.active::after {
@@ -81,8 +178,42 @@
   bottom: -1px;
   left: 0;
   right: 0;
+  height: 3px;
+  background: #22c55e;
+  border-radius: 3px 3px 0 0;
+}
+
+/* Active & Upcoming / History Section Labels */
+.section-label-tabs {
+  display: flex;
+  padding: 16px 20px 0;
+  gap: 16px;
+  background: #fff;
+}
+
+.section-label-tab {
+  padding: 8px 0;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #999;
+  cursor: pointer;
+  position: relative;
+}
+
+.section-label-tab.active {
+  color: #333;
+}
+
+.section-label-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  right: 0;
   height: 2px;
-  background: #333;
+  background: #22c55e;
 }
 
 /* Content Section */
@@ -169,4 +300,53 @@
 
 .hidden {
   display: none;
+}
+
+/* Mobile Modal Style for Sections (90% height/width) */
+@media (max-width: 767px) {
+  .bookings-content {
+    padding: 16px;
+  }
+
+  .active-section,
+  .history-section {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    padding: 16px;
+    min-height: 70vh;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .section-subheading {
+    font-size: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 12px;
+  }
+
+  .bookings-list {
+    gap: 12px;
+  }
+
+  .booking-item {
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 10px;
+  }
+
+  .booking-service {
+    font-size: 15px;
+  }
+
+  .booking-status {
+    font-size: 13px;
+  }
+
+  .empty-message {
+    font-size: 14px;
+    text-align: center;
+    padding: 40px 0;
+  }
 }

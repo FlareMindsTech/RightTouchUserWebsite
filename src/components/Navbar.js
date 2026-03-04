@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, Wrench, MessageCircle, User, ShoppingCart } from 'lucide-react';
 import logo from '../assets/logo.jpeg';
 
-const Navbar = ({ currentPage, onNavigate }) => {
+const Navbar = ({ currentPage, onNavigate, cartItemCount = 0 }) => {
   const location = useLocation();
   
   // Determine active state based on current path
@@ -73,7 +73,7 @@ const Navbar = ({ currentPage, onNavigate }) => {
             title="Shopping Cart"
           >
             <ShoppingCart size={20} />
-            <span className="cart-badge">0</span>
+            {cartItemCount > 0 && <span className="cart-badge">{cartItemCount}</span>}
           </Link>
         </div>
       </div>

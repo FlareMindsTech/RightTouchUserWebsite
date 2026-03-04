@@ -14,6 +14,8 @@ import CartPage from './pages/CartPage';
 import BookingsPage from './pages/BookingsPage';
 import ServiceSheet from './components/ServiceSheet';
 import ChatWindow from './components/ChatWindow';
+import { MdSearch, MdShoppingCart } from 'react-icons/md';
+import logo from './assets/logo.jpeg';
 
 function App() {
   const navigate = useNavigate();
@@ -74,6 +76,12 @@ function App() {
     showToast(`${itemName} removed from cart`);
   };
 
+  const updateQuantity = (itemName, newQuantity) => {
+    setCartItems(cartItems.map(item => 
+      item.name === itemName ? { ...item, quantity: newQuantity } : item
+    ));
+  };
+
   const isInCart = (itemName) => {
     return cartItems.some(item => item.name === itemName);
   };
@@ -116,10 +124,32 @@ function App() {
     }
   };
 
+  const handleCartClick = () => {
+    navigate('/cart');
+  };
+
   return (
     <div className="App">
-      <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
+      <Navbar currentPage={currentPage} onNavigate={handleNavigate} cartItemCount={cartItems.length} />
       
+      {/* Global Mobile Header - shows on all pages */}
+      <div className="global-mobile-header mobile-only">
+        <div className="gmh-left">
+          <img src={logo} alt="RightTouch" className="gmh-logo" />
+          <span className="gmh-title">RightTouch</span>
+        </div>
+        <div className="gmh-right">
+          <div className="gmh-search">
+            <MdSearch className="gmh-search-icon" />
+            <input type="text" placeholder="Search..." />
+          </div>
+          <button className="gmh-cart-btn" onClick={handleCartClick}>
+            <MdShoppingCart className="gmh-cart-icon" />
+            {cartItems.length > 0 && <span className="gmh-cart-badge">{cartItems.length}</span>}
+          </button>
+        </div>
+      </div>
+
       <main className="page-wrapper">
         <Routes>
           <Route path="/" element={
@@ -178,6 +208,7 @@ function App() {
             <BookingsPage 
               isActive={currentPage === 'bookings'}
               showToast={showToast}
+              cartItemCount={cartItems.length}
             />
           } />
           <Route path="/cart" element={
@@ -185,6 +216,8 @@ function App() {
               isActive={currentPage === 'cart'}
               cartItems={cartItems}
               removeFromCart={removeFromCart}
+              updateQuantity={updateQuantity}
+              showToast={showToast}
             />
           } />
         </Routes>

@@ -174,6 +174,7 @@ const ProductServices = ({
   const [searchParams] = useSearchParams();
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [quantities, setQuantities] = useState({});
 
   // Get service type from URL params or props
   const urlServiceType = searchParams.get('type');
@@ -196,18 +197,72 @@ const ProductServices = ({
     setShowDetailsModal(true);
   };
 
-  // Handle Add to Cart
+  // Get quantity for a specific item
+  const getQuantity = (serviceName) => {
+    return quantities[serviceName] || 0;
+  };
+
+  // Increase quantity
+  const increaseQuantity = (service) => {
+    const currentQty = quantities[service.name] || 0;
+    setQuantities({
+      ...quantities,
+      [service.name]: currentQty + 1
+    });
+    // Also add to cart if not already there
+    if (!isInCart(service.name)) {
+      addToCart({
+        id: service.id,
+        name: service.name,
+        price: service.price,
+        serviceType: selectedServiceType,
+        quantity: 1
+      });
+    } else {
+      // Update cart item quantity
+      showToast(`Added another ${service.name}`);
+    }
+  };
+
+  // Decrease quantity
+  const decreaseQuantity = (service) => {
+    const currentQty = quantities[service.name] || 1;
+    if (currentQty > 1) {
+      setQuantities({
+        ...quantities,
+        [service.name]: currentQty - 1
+      });
+      showToast(`Removed one ${service.name}`);
+    } else {
+      // If quantity becomes 0, remove from cart and reset
+      const newQuantities = { ...quantities };
+      delete newQuantities[service.name];
+      setQuantities(newQuantities);
+      removeFromCart(service.name);
+      showToast(`${service.name} removed from cart`);
+    }
+  };
+
+  // Handle Add to Cart click - adds item with quantity 1
   const handleAddToCart = (service) => {
+    setQuantities({
+      ...quantities,
+      [service.name]: 1
+    });
     addToCart({
       id: service.id,
       name: service.name,
       price: service.price,
-      serviceType: selectedServiceType
+      serviceType: selectedServiceType,
+      quantity: 1
     });
   };
 
   // Handle Remove from Cart
   const handleRemoveFromCart = (serviceName) => {
+    const newQuantities = { ...quantities };
+    delete newQuantities[serviceName];
+    setQuantities(newQuantities);
     removeFromCart(serviceName);
   };
 
@@ -284,14 +339,23 @@ const ProductServices = ({
                     <img src={serviceImage} alt={service.name} />
                   </div>
                   
-                  {/* Add/Remove Button */}
+                  {/* Add/Remove/Quantity Button */}
                   {isInCart(service.name) ? (
-                    <button 
-                      className="cart-btn remove-from-cart"
-                      onClick={() => handleRemoveFromCart(service.name)}
-                    >
-                      Remove from Cart
-                    </button>
+                    <div className="quantity-container">
+                      <button 
+                        className="qty-btn qty-minus"
+                        onClick={() => decreaseQuantity(service)}
+                      >
+                        −
+                      </button>
+                      <span className="qty-value">{getQuantity(service.name) || 1}</span>
+                      <button 
+                        className="qty-btn qty-plus"
+                        onClick={() => increaseQuantity(service)}
+                      >
+                        +
+                      </button>
+                    </div>
                   ) : (
                     <button 
                       className="cart-btn add-to-cart"

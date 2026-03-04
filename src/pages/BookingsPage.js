@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { 
   MdOutlineChevronRight,
-  MdHelpOutline
+  MdHelpOutline,
+  MdOutlineLocationOn,
+  MdSearch,
+  MdShoppingCart
 } from 'react-icons/md';
+import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.jpeg';
 import BookingDetailPage from './BookingDetailPage';
 import './BookingsPage.css';
 
-const BookingsPage = ({ isActive, showToast, onBack }) => {
+const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
+  const navigate = useNavigate();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
 
@@ -24,6 +30,10 @@ const BookingsPage = ({ isActive, showToast, onBack }) => {
 
   const handleBookingClick = (booking) => {
     setSelectedBooking(booking);
+  };
+
+  const handleCartClick = () => {
+    navigate('/cart');
   };
 
   const bookings = [
@@ -47,8 +57,26 @@ const BookingsPage = ({ isActive, showToast, onBack }) => {
   // Otherwise show the main bookings page
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-bookings">
-      {/* Header Section */}
-      <div className="bookings-header">
+      {/* Mobile Header with Logo, Search, Cart */}
+      <div className="bookings-mobile-header mobile-only">
+        <div className="mobile-header-left">
+          <img src={logo} alt="RightTouch" className="mobile-header-logo" />
+          <span className="mobile-header-title">RightTouch</span>
+        </div>
+        <div className="mobile-header-right">
+          <div className="mobile-search-bar">
+            <MdSearch className="mobile-search-icon" />
+            <input type="text" placeholder="Search..." />
+          </div>
+          <button className="mobile-cart-btn" onClick={handleCartClick}>
+            <MdShoppingCart className="mobile-cart-icon" />
+            {cartItemCount > 0 && <span className="mobile-cart-badge">{cartItemCount}</span>}
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Header Section */}
+      <div className="bookings-header desktop-only">
         <button className="back-btn" onClick={handleBack}>
           <MdOutlineChevronRight className="back-icon" />
         </button>
@@ -56,22 +84,6 @@ const BookingsPage = ({ isActive, showToast, onBack }) => {
         <button className="help-btn" onClick={() => handleMenuItemClick('Help')}>
           <MdHelpOutline className="help-icon" />
           <span>Help</span>
-        </button>
-      </div>
-
-      {/* Tabs Section */}
-      <div className="bookings-tabs">
-        <button 
-          className={`tab ${activeTab === 'active' ? 'active' : ''}`}
-          onClick={() => setActiveTab('active')}
-        >
-          Active & Upcoming
-        </button>
-        <button 
-          className={`tab ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          History
         </button>
       </div>
 

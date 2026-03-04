@@ -128,7 +128,7 @@ const AccountPage = ({ isActive, showToast, onNavigate }) => {
         </div>
         <div className="menu-item" onClick={() => handleMenuItemClick('My rating')}>
           <MdOutlineStarOutline className="menu-icon" />
-          <span className="menu-text">My Activities</span>
+          <span className="menu-text">My rating</span>
           <MdOutlineChevronRight className="menu-arrow" />
         </div>
         <div className="menu-item" onClick={() => handleMenuItemClick('Manage address')}>

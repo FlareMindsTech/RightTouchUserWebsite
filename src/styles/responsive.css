@@ -35,6 +35,16 @@
     display: none;
   }
 
+  /* Show bookings mobile header on mobile */
+  .bookings-mobile-header {
+    display: none !important;
+  }
+
+  /* Show global mobile header on mobile */
+  .global-mobile-header {
+    display: flex !important;
+  }
+
   .page-wrapper {
     padding-top: 0;
     padding-bottom: calc(var(--bottom-nav-height) + 8px);
