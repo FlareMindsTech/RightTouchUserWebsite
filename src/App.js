@@ -1,5 +1,6 @@
 // App.js
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
 // Import components
 import Navbar from './components/Navbar';
@@ -15,10 +16,9 @@ import ServiceSheet from './components/ServiceSheet';
 import ChatWindow from './components/ChatWindow';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState(() => {
-    // Load saved page from localStorage on initial render
-    return localStorage.getItem('currentPage') || 'home';
-  });
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const [toast, setToast] = useState({ show: false, message: '' });
   const [showServiceSheet, setShowServiceSheet] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -27,6 +27,14 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+
+  // Get current page from URL path
+  const getCurrentPageFromPath = () => {
+    const path = location.pathname.replace('/', '') || 'home';
+    return path;
+  };
+  
+  const currentPage = getCurrentPageFromPath();
 
   // Check for dark mode preference
   useEffect(() => {
@@ -37,17 +45,14 @@ function App() {
     }
   }, []);
 
-  // Save current page to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('currentPage', currentPage);
-  }, [currentPage]);
-
-  const navigate = (page, element = null) => {
+  const handleNavigate = (page, element = null) => {
     // If element is a string, treat it as service type
     if (typeof element === 'string') {
       setSelectedServiceType(element);
+      navigate(`/product-services?type=${encodeURIComponent(element)}`);
+    } else {
+      navigate(`/${page === 'home' ? '' : page}`);
     }
-    setCurrentPage(page);
     
     // Update active classes for navigation links
     if (element && typeof element === 'object') {
@@ -113,60 +118,79 @@ function App() {
 
   return (
     <div className="App">
-      <Navbar currentPage={currentPage} onNavigate={navigate} />
+      <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
       
       <main className="page-wrapper">
-        <HomePage 
-          isActive={currentPage === 'home'} 
-          onNavigate={navigate}
-          onOpenService={openServiceSheet}
-          showToast={showToast}
-        />
-        
-        <ServicePage 
-          isActive={currentPage === 'services'} 
-          onNavigate={navigate}
-          onOpenServiceDetail={openServiceSheet}
-        />
-        
-        <ProductServices 
-          isActive={currentPage === 'product-services'} 
-          onNavigate={navigate}
-          selectedServiceType={selectedServiceType}
-          cartItems={cartItems}
-          addToCart={addToCart}
-          removeFromCart={removeFromCart}
-          isInCart={isInCart}
-          showToast={showToast}
-        />
-        
-        <ChatPage 
-          isActive={currentPage === 'chat'} 
-          onOpenChat={openChat}
-          onNavigate={navigate}
-        />
-        
-        <AccountPage 
-          isActive={currentPage === 'account'}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
-          showToast={showToast}
-          onNavigate={navigate}
-        />
-        
-        <BookingsPage 
-          isActive={currentPage === 'bookings'}
-          showToast={showToast}
-        />
-        
-        <CartPage 
-          isActive={currentPage === 'cart'}
-          cartItems={cartItems}
-          removeFromCart={removeFromCart}
-        />
+        <Routes>
+          <Route path="/" element={
+            <HomePage 
+              isActive={currentPage === 'home'}
+              onNavigate={handleNavigate}
+              onOpenService={openServiceSheet}
+              showToast={showToast}
+            />
+          } />
+          <Route path="/home" element={
+            <HomePage 
+              isActive={currentPage === 'home'}
+              onNavigate={handleNavigate}
+              onOpenService={openServiceSheet}
+              showToast={showToast}
+            />
+          } />
+          <Route path="/services" element={
+            <ServicePage 
+              isActive={currentPage === 'services'}
+              onNavigate={handleNavigate}
+              onOpenServiceDetail={openServiceSheet}
+            />
+          } />
+          <Route path="/product-services" element={
+            <ProductServices 
+              isActive={currentPage === 'product-services'}
+              onNavigate={handleNavigate}
+              selectedServiceType={selectedServiceType}
+              setSelectedServiceType={setSelectedServiceType}
+              cartItems={cartItems}
+              addToCart={addToCart}
+              removeFromCart={removeFromCart}
+              isInCart={isInCart}
+              showToast={showToast}
+            />
+          } />
+          <Route path="/chat" element={
+            <ChatPage 
+              isActive={currentPage === 'chat'}
+              onOpenChat={openChat}
+              onNavigate={handleNavigate}
+            />
+          } />
+          <Route path="/account" element={
+            <AccountPage 
+              isActive={currentPage === 'account'}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={toggleDarkMode}
+              showToast={showToast}
+              onNavigate={handleNavigate}
+            />
+          } />
+          <Route path="/bookings" element={
+            <BookingsPage 
+              isActive={currentPage === 'bookings'}
+              showToast={showToast}
+            />
+          } />
+          <Route path="/cart" element={
+            <CartPage 
+              isActive={currentPage === 'cart'}
+              cartItems={cartItems}
+              removeFromCart={removeFromCart}
+            />
+          } />
+        </Routes>
       </main>
 
-      <BottomNav currentPage={currentPage} onNavigate={navigate} />
+      <BottomNav currentPage={currentPage} onNavigate={handleNavigate} />
 
       {showServiceSheet && (
         <ServiceSheet 

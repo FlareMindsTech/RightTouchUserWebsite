@@ -1,45 +1,57 @@
 // components/Navbar.jsx
 import React from 'react';
-import { Home, Wrench, MessageCircle, User, ShoppingCart, Zap } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Wrench, MessageCircle, User, ShoppingCart } from 'lucide-react';
+import logo from '../assets/logo.jpeg';
 
 const Navbar = ({ currentPage, onNavigate }) => {
+  const location = useLocation();
+  
+  // Determine active state based on current path
+  const isActive = (path) => {
+    if (path === 'home') {
+      return location.pathname === '/' || location.pathname === '/home';
+    }
+    return location.pathname === `/${path}`;
+  };
+
   return (
     <header className="top-navbar">
       <div className="nav-container">
         <div className="nav-brand">
-          <div className="brand-icon"><Zap size={24} /></div>
-          <span className="brand-name">RightTouch</span>
+          <Link to="/" className="brand-link">
+            <div className="brand-icon">
+              <img src={logo} alt="RightTouch Logo" className="brand-logo" />
+            </div>
+            <span className="brand-name">RightTouch</span>
+          </Link>
         </div>
         
         <nav className="nav-links">
-          <a 
-            href="#" 
-            className={`nav-link ${currentPage === 'home' ? 'active' : ''}`}
-            onClick={(e) => { e.preventDefault(); onNavigate('home', e.currentTarget); }}
+          <Link 
+            to="/" 
+            className={`nav-link ${isActive('home') ? 'active' : ''}`}
           >
             <span className="nav-icon"><Home size={18} /></span> Home
-          </a>
-          <a 
-            href="#" 
-            className={`nav-link ${currentPage === 'services' ? 'active' : ''}`}
-            onClick={(e) => { e.preventDefault(); onNavigate('services', e.currentTarget); }}
+          </Link>
+          <Link 
+            to="/services" 
+            className={`nav-link ${isActive('services') ? 'active' : ''}`}
           >
             <span className="nav-icon"><Wrench size={18} /></span> Services
-          </a>
-          <a 
-            href="#" 
-            className={`nav-link ${currentPage === 'chat' ? 'active' : ''}`}
-            onClick={(e) => { e.preventDefault(); onNavigate('chat', e.currentTarget); }}
+          </Link>
+          <Link 
+            to="/chat" 
+            className={`nav-link ${isActive('chat') ? 'active' : ''}`}
           >
             <span className="nav-icon"><MessageCircle size={18} /></span> Chat
-          </a>
-          <a 
-            href="#" 
-            className={`nav-link ${currentPage === 'account' ? 'active' : ''}`}
-            onClick={(e) => { e.preventDefault(); onNavigate('account', e.currentTarget); }}
+          </Link>
+          <Link 
+            to="/account" 
+            className={`nav-link ${isActive('account') ? 'active' : ''}`}
           >
             <span className="nav-icon"><User size={18} /></span> Account
-          </a>
+          </Link>
         </nav>
 
         <div className="nav-search desktop-only" style={{display:'flex', flexDirection:'row', alignItems:'center'}}>
@@ -55,14 +67,14 @@ const Navbar = ({ currentPage, onNavigate }) => {
         </div>
 
         <div className="nav-actions desktop-only">
-          <button 
+          <Link 
+            to="/cart" 
             className="cart-icon-btn"
-            onClick={() => onNavigate('cart', null)}
             title="Shopping Cart"
           >
             <ShoppingCart size={20} />
             <span className="cart-badge">0</span>
-          </button>
+          </Link>
         </div>
       </div>
     </header>
@@ -70,4 +82,3 @@ const Navbar = ({ currentPage, onNavigate }) => {
 };
   
 export default Navbar;
-

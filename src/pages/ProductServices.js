@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 // Service data for different product types
 const serviceData = {
@@ -162,15 +163,28 @@ const serviceData = {
 const ProductServices = ({ 
   isActive, 
   onNavigate, 
-  selectedServiceType,
+  selectedServiceType: propServiceType,
+  setSelectedServiceType,
   cartItems,
   addToCart,
   removeFromCart,
   isInCart,
   showToast
 }) => {
+  const [searchParams] = useSearchParams();
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+
+  // Get service type from URL params or props
+  const urlServiceType = searchParams.get('type');
+  const selectedServiceType = urlServiceType || propServiceType;
+
+  // Update parent state when URL changes
+  React.useEffect(() => {
+    if (setSelectedServiceType && urlServiceType) {
+      setSelectedServiceType(urlServiceType);
+    }
+  }, [urlServiceType, setSelectedServiceType]);
 
   // Get the current service type data
   const currentServiceData = serviceData[selectedServiceType] || serviceData['AC'];
