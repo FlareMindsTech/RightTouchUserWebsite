@@ -188,7 +188,7 @@ function App() {
       <div className="global-mobile-header mobile-only">
         <div className="gmh-left">
           <img src={logo} alt="RightTouch" className="gmh-logo" />
-          <span className="gmh-title">RightTouch</span>
+          {/* <span className="gmh-title">RightTouch</span> */}
         </div>
         <div className="gmh-right">
           <div className="gmh-search">

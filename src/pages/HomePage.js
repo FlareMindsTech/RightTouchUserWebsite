@@ -25,9 +25,9 @@ const HomePage = ({ isActive, onNavigate, onOpenService, showToast }) => {
   ];
 
   const offers = [
-    { id: 1, badge: 'HOT DEAL', title: 'Deep clean with foam-jet AC services', desc: 'AC service & repair', icon: <Wind size={40} /> },
-    { id: 2, badge: 'NEW', title: 'Home affordable carpet cleaning', desc: 'Electrical & carpet services', icon: <Brush size={40} /> },
-    { id: 3, badge: 'SAVE 20%', title: 'Premium plumbing services', desc: 'Bathroom & kitchen repair', icon: <Wrench size={40} /> }
+    { id: 1, badge: 'HOT DEAL', title: 'Deep clean with foam-jet AC services', desc: 'AC service & repair', bgImage: 'ac-bg' },
+    { id: 2, badge: 'NEW', title: 'Home affordable carpet cleaning', desc: 'Electrical & carpet services', bgImage: 'carpet-bg' },
+    { id: 3, badge: 'SAVE 20%', title: 'Premium plumbing services', desc: 'Bathroom & kitchen repair', bgImage: 'plumbing-bg' }
   ];
 
   const appliances = [
@@ -122,14 +122,13 @@ const HomePage = ({ isActive, onNavigate, onOpenService, showToast }) => {
         <h2 className="section-title">Offers for you</h2>
         <div className="carousel-track" id="offersCarousel">
           {offers.map(offer => (
-            <div key={offer.id} className={`offer-card ${offer.id === 2 ? 'offer-card-2' : offer.id === 3 ? 'offer-card-3' : ''}`}>
+            <div key={offer.id} className={`offer-card ${offer.bgImage} ${offer.id === 2 ? 'offer-card-2' : offer.id === 3 ? 'offer-card-3' : ''}`}>
               <div className="offer-badge">{offer.badge}</div>
               <div className="offer-text">
                 <h3>{offer.title}</h3>
                 <p>{offer.desc}</p>
                 <button className="btn-book-white" onClick={() => handleBookNow(offer)}>Book Now</button>
               </div>
-              <div className={`offer-img offer-img-${offer.id}`}>{offer.icon}</div>
             </div>
           ))}
         </div>

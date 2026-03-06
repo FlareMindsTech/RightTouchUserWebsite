@@ -346,6 +346,25 @@ body.dark .desktop-hero {
   background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 
+/* Background images for offer cards */
+.offer-card.ac-bg {
+  background: linear-gradient(135deg, #1447e6, #2563eb), url('../assets/AC.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.offer-card.carpet-bg {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9), url('../assets/fridge.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.offer-card.plumbing-bg {
+  background: linear-gradient(135deg, #dc2626, #b91c1c), url('../assets/water purifier.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
 .offer-badge {
   position: absolute;
   top: 12px;

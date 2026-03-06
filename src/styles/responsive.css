@@ -45,6 +45,37 @@
     display: flex !important;
   }
 
+  /* Mobile header size increases */
+  .global-mobile-header {
+    padding: 18px 22px;
+  }
+
+  .gmh-logo {
+    width: 100px;
+    height: 56px;
+  }
+
+  .gmh-title {
+    font-size: 28px;
+  }
+
+  .gmh-search {
+    padding: 14px 20px;
+  }
+
+  .gmh-search-icon {
+    font-size: 24px;
+  }
+
+  .gmh-search input {
+    width: 160px;
+    font-size: 17px;
+  }
+
+  .gmh-cart-icon {
+    font-size: 32px;
+  }
+
   .page-wrapper {
     padding-top: 0;
     padding-bottom: calc(var(--bottom-nav-height) + 8px);
