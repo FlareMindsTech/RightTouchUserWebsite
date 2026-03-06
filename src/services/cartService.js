@@ -16,6 +16,11 @@ export const updateCartItem = (data) =>
     body: JSON.stringify(data)
   });
 
+export const removeFromCart = (itemId) =>
+  apiClient(ENDPOINTS.CART.REMOVE(itemId), {
+    method: "DELETE"
+  });
+
 export const checkout = (data) =>
   apiClient(ENDPOINTS.CART.CHECKOUT, {
     method: "POST",

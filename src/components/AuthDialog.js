@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import './AuthDialog.css';
 import { loginCustomer, verifyLoginOTP } from '../services/authServices';
 
-const AuthDialog = ({ 
-  isOpen, 
-  onClose, 
-  onLoginSuccess, 
-  onNavigateToRegister, 
+const AuthDialog = ({
+  isOpen,
+  onClose,
+  onLoginSuccess,
+  onNavigateToRegister,
   onNavigateToForgotPassword,
-  onShowToast 
+  onShowToast
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [errors, setErrors] = useState({});
@@ -37,7 +37,7 @@ const AuthDialog = ({
     setIsLoading(true);
     try {
       const response = await loginCustomer({ identifier });
-      
+
       if (response?.success || response?.message?.toLowerCase().includes('otp')) {
         setOtpSent(true);
         onShowToast?.('OTP sent to your phone number');
@@ -60,7 +60,7 @@ const AuthDialog = ({
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    
+
     if (!otp || otp.length !== 4) {
       setOtpError('Please enter a valid 4-digit OTP');
       return;
@@ -73,12 +73,21 @@ const AuthDialog = ({
         otp: otp
       });
 
-      if (response?.success || response?.user) {
-        localStorage.setItem('currentUser', JSON.stringify(response.user || {
+      const resToken = response?.token || response?.result?.token;
+      const resUser = response?.user || response?.result?.user || response?.result;
+
+      if (response?.success || resToken) {
+        if (resToken) {
+          localStorage.setItem('token', resToken);
+        }
+
+        const userToSave = resUser && typeof resUser === 'object' ? resUser : {
           identifier: identifier,
           role: 'Customer'
-        }));
-        onLoginSuccess(response.user || { identifier: identifier, role: 'Customer' });
+        };
+
+        localStorage.setItem('currentUser', JSON.stringify(userToSave));
+        onLoginSuccess(userToSave);
         onClose();
         // Reset form
         setIdentifier('');
@@ -112,7 +121,7 @@ const AuthDialog = ({
     <div className="auth-dialog-overlay" onClick={onClose}>
       <div className="auth-dialog" onClick={(e) => e.stopPropagation()}>
         <button className="auth-close-btn" onClick={onClose}>×</button>
-        
+
         <div className="auth-header">
           <h2>Welcome Back</h2>
           <p>Login to continue</p>

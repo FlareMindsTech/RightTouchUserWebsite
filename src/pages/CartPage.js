@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
   MdOutlineLocationOn,
   MdEdit,
   MdAccessTime,
@@ -7,47 +7,54 @@ import {
   MdArrowForwardIos,
   MdClose
 } from 'react-icons/md';
+import { getMyAddresses } from '../services/addressService';
+import { checkout } from '../services/cartService';
+import { useNavigate } from 'react-router-dom';
 import './CartPage.css';
 
-const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToast }) => {
+const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToast, currentUser, fetchCart }) => {
+  const navigate = useNavigate();
   const [selectedTip, setSelectedTip] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [showCouponPopup, setShowCouponPopup] = useState(false);
   const [customTip, setCustomTip] = useState('');
-const [showAddressPopup, setShowAddressPopup] = useState(false);
+  const [showAddressPopup, setShowAddressPopup] = useState(false);
   const [addressForm, setAddressForm] = useState({
-    name: 'Kavin',
-    address: 'Door 123, Main Street, Anna Nagar, Chennai - 600040',
-    phone: '+91 98765 43210'
+    name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : 'User',
+    address: 'No address added yet.',
+    phone: currentUser?.identifier || '',
+    id: null
   });
-  
-  // Mock default address (now uses addressForm state)
-  const defaultAddress = addressForm;
 
-  // Mock contact person
+  const fetchAddresses = useCallback(async () => {
+    try {
+      const response = await getMyAddresses();
+      if (response?.success && response.result?.length > 0) {
+        const defaultAddr = response.result.find(addr => addr.isDefault) || response.result[0];
+        setAddressForm({
+          name: defaultAddr.name || currentUser?.fname || 'User',
+          address: defaultAddr.address || `${defaultAddr.city || ''} ${defaultAddr.state || ''}`,
+          phone: defaultAddr.phone || currentUser?.identifier || '',
+          id: defaultAddr._id
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch addresses:', error);
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (isActive && currentUser) {
+      fetchAddresses();
+    }
+  }, [isActive, currentUser, fetchAddresses]);
+
+  // Contact person from currentUser
   const contactPerson = {
-    name: 'John Doe',
-    phone: '+91 98765 43210'
+    name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : 'User',
+    phone: currentUser?.identifier || ''
   };
 
-  // Mock service durations
-  const serviceDurations = {
-    'Basic AC Service': '1-2hr',
-    'Standard AC Service': '1-3hr',
-    'Premium AC Service': '2-4hr',
-    'Basic Washing Machine Service': '1-2hr',
-    'Standard Washing Machine Service': '1-3hr',
-    'Premium Washing Machine Service': '2-3hr',
-    'Basic Refrigerator Service': '1-2hr',
-    'Standard Refrigerator Service': '1-3hr',
-    'Premium Refrigerator Service': '2-3hr',
-    'Basic Water Purifier Service': '1hr',
-    'Standard Water Purifier Service': '1-2hr',
-    'Premium Water Purifier Service': '2hr',
-    'Basic TV Service': '1hr',
-    'Standard TV Service': '1-2hr',
-    'Premium TV Service': '2hr'
-  };
 
   // Calculate totals
   const getSubtotal = () => {
@@ -70,19 +77,42 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
     return getSubtotal() + getTax() + getTipAmount();
   };
 
+  const handleCheckout = async () => {
+    if (!addressForm.id) {
+      showToast('Please add or select a delivery address');
+      setShowAddressPopup(true);
+      return;
+    }
+
+    try {
+      showToast('Processing checkout...');
+      const response = await checkout({ addressId: addressForm.id });
+      if (response?.success) {
+        showToast('Checkout successful!');
+        if (fetchCart) fetchCart(); // Refresh cart
+        navigate('/bookings'); // Redirect to bookings page
+      } else {
+        showToast(response?.message || 'Checkout failed');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      showToast('Failed to complete checkout. Please try again.');
+    }
+  };
+
   const handleIncreaseQty = (item) => {
     const currentQty = item.quantity || 1;
-    updateQuantity(item.name, currentQty + 1);
+    updateQuantity(item.originalId, item.itemType, currentQty + 1);
     showToast(`Added another ${item.name}`);
   };
 
   const handleDecreaseQty = (item) => {
     const currentQty = item.quantity || 1;
     if (currentQty > 1) {
-      updateQuantity(item.name, currentQty - 1);
+      updateQuantity(item.originalId, item.itemType, currentQty - 1);
       showToast(`Removed one ${item.name}`);
     } else {
-      removeFromCart(item.name);
+      removeFromCart(item.id);
       showToast(`${item.name} removed from cart`);
     }
   };
@@ -114,10 +144,10 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
             <span className="address-title">Delivery Address</span>
           </div>
           <div className="address-details">
-            <p className="address-name">{defaultAddress.name}</p>
-            <p className="address-text">{defaultAddress.address}</p>
+            <p className="address-name">{addressForm.name}</p>
+            <p className="address-text">{addressForm.address}</p>
           </div>
-<a href="#" className="change-link" onClick={(e) => { e.preventDefault(); setShowAddressPopup(true); }}>Change</a>
+          <a href="#" className="change-link" onClick={(e) => { e.preventDefault(); setShowAddressPopup(true); }}>Change</a>
         </div>
 
         {/* Cart Items */}
@@ -133,32 +163,32 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
               <div key={`${item.id}-${index}`} className="cart-item-card">
                 <div className="cart-item-left">
                   <div className="cart-item-image">
-                    {item.serviceType === 'AC' && <img src={require('../assets/AC.jpg')} alt={item.name} />}
-                    {item.serviceType === 'Washing Machine' && <img src={require('../assets/washing machine.jpg')} alt={item.name} />}
-                    {item.serviceType === 'Refrigerator' && <img src={require('../assets/fridge.jpg')} alt={item.name} />}
-                    {item.serviceType === 'Water Purifier' && <img src={require('../assets/water purifier.jpg')} alt={item.name} />}
-                    {item.serviceType === 'Television' && <img src={require('../assets/AC.jpg')} alt={item.name} />}
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} />
+                    ) : (
+                      <div className="placeholder-image">🛒</div>
+                    )}
                   </div>
                 </div>
                 <div className="cart-item-middle">
                   <h4 className="cart-item-name">{item.name}</h4>
-                  <span className="service-badge">{item.serviceType}</span>
+                  <span className="service-badge">{item.itemType}</span>
                   <div className="service-duration">
                     <MdAccessTime className="duration-icon" />
-                    <span>{serviceDurations[item.name] || '1-2hr'}</span>
+                    <span>{item.itemId?.serviceDuration || '1-2hr'}</span>
                   </div>
                   <p className="cart-item-price">₹{item.price}</p>
                 </div>
                 <div className="cart-item-right">
                   <div className="quantity-container-cart">
-                    <button 
+                    <button
                       className="qty-btn-cart qty-minus"
                       onClick={() => handleDecreaseQty(item)}
                     >
                       −
                     </button>
                     <span className="qty-value-cart">{item.quantity || 1}</span>
-                    <button 
+                    <button
                       className="qty-btn-cart qty-plus"
                       onClick={() => handleIncreaseQty(item)}
                     >
@@ -200,7 +230,7 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
           </div>
         )}
 
-{/* Coupon Popup */}
+        {/* Coupon Popup */}
         {showCouponPopup && (
           <div className="coupon-popup-overlay" onClick={() => setShowCouponPopup(false)}>
             <div className="coupon-popup" onClick={(e) => e.stopPropagation()}>
@@ -209,9 +239,9 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
               </button>
               <h3 className="coupon-heading">Apply Coupon</h3>
               <div className="coupon-input-container">
-                <input 
-                  type="text" 
-                  className="coupon-input" 
+                <input
+                  type="text"
+                  className="coupon-input"
                   placeholder="Enter Coupon Code"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
@@ -248,31 +278,31 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
               <div className="address-form-container">
                 <div className="address-form-group">
                   <label className="address-form-label">Name</label>
-                  <input 
-                    type="text" 
-                    className="address-form-input" 
+                  <input
+                    type="text"
+                    className="address-form-input"
                     placeholder="Enter your name"
                     value={addressForm.name}
-                    onChange={(e) => setAddressForm({...addressForm, name: e.target.value})}
+                    onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
                   />
                 </div>
                 <div className="address-form-group">
                   <label className="address-form-label">Address</label>
-                  <textarea 
-                    className="address-form-input address-form-textarea" 
+                  <textarea
+                    className="address-form-input address-form-textarea"
                     placeholder="Enter your address"
                     value={addressForm.address}
-                    onChange={(e) => setAddressForm({...addressForm, address: e.target.value})}
+                    onChange={(e) => setAddressForm({ ...addressForm, address: e.target.value })}
                   />
                 </div>
                 <div className="address-form-group">
                   <label className="address-form-label">Phone Number</label>
-                  <input 
-                    type="tel" 
-                    className="address-form-input" 
+                  <input
+                    type="tel"
+                    className="address-form-input"
                     placeholder="Enter phone number"
                     value={addressForm.phone}
-                    onChange={(e) => setAddressForm({...addressForm, phone: e.target.value})}
+                    onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
                   />
                 </div>
                 <div className="address-popup-buttons">
@@ -335,7 +365,7 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
             <h4 className="tip-title">Add a tip to thank the professional</h4>
             <div className="tip-options">
               {tipOptions.map((option, index) => (
-                <button 
+                <button
                   key={index}
                   className={`tip-option ${selectedTip === option.amount ? 'selected' : ''} ${option.mostTipped ? 'most-tipped' : ''}`}
                   onClick={() => {
@@ -355,9 +385,9 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
             </div>
             {selectedTip === null && (
               <div className="custom-tip-container">
-                <input 
-                  type="number" 
-                  className="custom-tip-input" 
+                <input
+                  type="number"
+                  className="custom-tip-input"
                   placeholder="Enter custom amount"
                   value={customTip}
                   onChange={(e) => setCustomTip(e.target.value)}
@@ -370,7 +400,7 @@ const [showAddressPopup, setShowAddressPopup] = useState(false);
         {/* Checkout Button */}
         {cartItems.length > 0 && (
           <div className="checkout-section">
-            <button className="checkout-btn">
+            <button className="checkout-btn" onClick={handleCheckout}>
               Proceed to Checkout • ₹{getTotal()}
             </button>
           </div>

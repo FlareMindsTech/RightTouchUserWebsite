@@ -42,7 +42,7 @@
   border-radius: 12px;
   padding: 15px;
   text-align: left;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   cursor: pointer;
 }
 
@@ -141,4 +141,63 @@
     margin-left: 5px;
     margin-right: 5px;
   }
+}
+
+/* Profile Edit Form Styles */
+.profile-edit-form {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.profile-edit-form .input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-edit-form label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.profile-edit-form input,
+.profile-edit-form select {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.profile-edit-form input:focus,
+.profile-edit-form select:focus {
+  border-color: var(--green, #22c55e);
+}
+
+.save-profile-btn {
+  margin-top: 10px;
+  padding: 14px;
+  background: var(--green, #22c55e);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.save-profile-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.account-email {
+  font-size: 14px;
+  color: #64748b;
+  margin: 4px 0;
 }

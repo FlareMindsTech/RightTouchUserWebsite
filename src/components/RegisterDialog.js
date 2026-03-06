@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { FaFacebook, FaGoogle, FaApple } from 'react-icons/fa';
 import './AuthDialog.css';
 import { signup, verifyOTP } from '../services/authServices';
 
-const RegisterDialog = ({ 
-  isOpen, 
-  onClose, 
-  onRegisterSuccess, 
+const RegisterDialog = ({
+  isOpen,
+  onClose,
+  onRegisterSuccess,
   onNavigateToLogin,
-  onShowToast 
+  onShowToast
 }) => {
   const [formData, setFormData] = useState({
     identifier: '',
@@ -26,9 +25,9 @@ const RegisterDialog = ({
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
     // Clear error when user types
     if (errors[name]) {
@@ -68,7 +67,7 @@ const RegisterDialog = ({
         termsAndServices: formData.termsAndServices,
         privacyPolicy: formData.privacyPolicy
       });
-      
+
       if (response?.success || response?.message?.toLowerCase().includes('otp')) {
         setOtpSent(true);
         onShowToast?.('OTP sent to your phone number');
@@ -91,7 +90,7 @@ const RegisterDialog = ({
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    
+
     if (!otp || otp.length !== 4) {
       setOtpError('Please enter a valid 4-digit OTP');
       return;
@@ -104,12 +103,21 @@ const RegisterDialog = ({
         otp: otp
       });
 
-      if (response?.success || response?.user) {
-        localStorage.setItem('currentUser', JSON.stringify(response.user || {
+      const resToken = response?.token || response?.result?.token;
+      const resUser = response?.user || response?.result?.user || response?.result;
+
+      if (response?.success || resToken) {
+        if (resToken) {
+          localStorage.setItem('token', resToken);
+        }
+
+        const userToSave = resUser && typeof resUser === 'object' ? resUser : {
           identifier: formData.identifier,
           role: formData.role
-        }));
-        onRegisterSuccess(response.user || { identifier: formData.identifier, role: formData.role });
+        };
+
+        localStorage.setItem('currentUser', JSON.stringify(userToSave));
+        onRegisterSuccess(userToSave);
         onClose();
         // Reset form
         setFormData({
@@ -153,7 +161,7 @@ const RegisterDialog = ({
     <div className="auth-dialog-overlay" onClick={onClose}>
       <div className="auth-dialog" onClick={(e) => e.stopPropagation()}>
         <button className="auth-close-btn" onClick={onClose}>×</button>
-        
+
         <div className="auth-header">
           <h2>Create Account</h2>
           <p>Register to get started</p>

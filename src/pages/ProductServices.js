@@ -1,170 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  ChevronLeft,
+  Star,
+  CheckCircle2,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck,
+  Clock,
+  Zap,
+  Info,
+  Hammer,
+  ClipboardList,
+  AlertCircle,
+  Truck,
+  Box
+} from 'lucide-react';
+import { getServiceById } from '../services/serviceService';
 
-// Service data for different product types
-const serviceData = {
-  'AC': {
-    image: require('../assets/AC.jpg'),
-    rating: 4.8,
-    reviews: '12K',
-    services: [
-      {
-        id: 1,
-        name: 'Basic AC Service',
-        price: 299,
-        rating: 4.5,
-        servicesIncluded: ['Full AC cleaning', 'Filter cleaning', 'Gas pressure check'],
-        servicesNotIncluded: ['Spare parts cost', 'Gas refill extra']
-      },
-      {
-        id: 2,
-        name: 'Standard AC Service',
-        price: 499,
-        rating: 4.7,
-        servicesIncluded: ['Full AC cleaning', 'Filter cleaning', 'Gas pressure check', 'Cooling performance test'],
-        servicesNotIncluded: ['Spare parts cost', 'Gas refill extra']
-      },
-      {
-        id: 3,
-        name: 'Premium AC Service',
-        price: 799,
-        rating: 4.9,
-        servicesIncluded: ['Full AC cleaning', 'Filter cleaning', 'Gas pressure check', 'Cooling performance test', 'Deep coil cleaning'],
-        servicesNotIncluded: ['Spare parts cost', 'Gas refill extra']
-      }
-    ]
-  },
-  'Washing Machine': {
-    image: require('../assets/washing machine.jpg'),
-    rating: 4.7,
-    reviews: '8K',
-    services: [
-      {
-        id: 1,
-        name: 'Basic Washing Machine Service',
-        price: 249,
-        rating: 4.4,
-        servicesIncluded: ['Full cleaning', 'Filter cleaning', 'Drainage check'],
-        servicesNotIncluded: ['Spare parts cost', 'Internal parts repair']
-      },
-      {
-        id: 2,
-        name: 'Standard Washing Machine Service',
-        price: 449,
-        rating: 4.6,
-        servicesIncluded: ['Full cleaning', 'Filter cleaning', 'Drainage check', 'Spin performance test'],
-        servicesNotIncluded: ['Spare parts cost', 'Internal parts repair']
-      },
-      {
-        id: 3,
-        name: 'Premium Washing Machine Service',
-        price: 699,
-        rating: 4.8,
-        servicesIncluded: ['Full cleaning', 'Filter cleaning', 'Drainage check', 'Spin performance test', 'Deep drum cleaning'],
-        servicesNotIncluded: ['Spare parts cost', 'Internal parts repair']
-      }
-    ]
-  },
-  'Refrigerator': {
-    image: require('../assets/fridge.jpg'),
-    rating: 4.6,
-    reviews: '6K',
-    services: [
-      {
-        id: 1,
-        name: 'Basic Refrigerator Service',
-        price: 199,
-        rating: 4.3,
-        servicesIncluded: ['Full cleaning', 'Coil cleaning', 'Temperature check'],
-        servicesNotIncluded: ['Spare parts cost', 'Gas refill extra']
-      },
-      {
-        id: 2,
-        name: 'Standard Refrigerator Service',
-        price: 399,
-        rating: 4.5,
-        servicesIncluded: ['Full cleaning', 'Coil cleaning', 'Temperature check', 'Door seal check'],
-        servicesNotIncluded: ['Spare parts cost', 'Gas refill extra']
-      },
-      {
-        id: 3,
-        name: 'Premium Refrigerator Service',
-        price: 599,
-        rating: 4.7,
-        servicesIncluded: ['Full cleaning', 'Coil cleaning', 'Temperature check', 'Door seal check', 'Deep frost removal'],
-        servicesNotIncluded: ['Spare parts cost', 'Gas refill extra']
-      }
-    ]
-  },
-  'Water Purifier': {
-    image: require('../assets/water purifier.jpg'),
-    rating: 4.5,
-    reviews: '4K',
-    services: [
-      {
-        id: 1,
-        name: 'Basic Water Purifier Service',
-        price: 149,
-        rating: 4.2,
-        servicesIncluded: ['Filter cleaning', 'UV bulb check', 'Water flow check'],
-        servicesNotIncluded: ['Spare parts cost', 'Filter replacement']
-      },
-      {
-        id: 2,
-        name: 'Standard Water Purifier Service',
-        price: 299,
-        rating: 4.4,
-        servicesIncluded: ['Filter cleaning', 'UV bulb check', 'Water flow check', 'Quality test'],
-        servicesNotIncluded: ['Spare parts cost', 'Filter replacement']
-      },
-      {
-        id: 3,
-        name: 'Premium Water Purifier Service',
-        price: 449,
-        rating: 4.6,
-        servicesIncluded: ['Filter cleaning', 'UV bulb check', 'Water flow check', 'Quality test', 'Full sanitization'],
-        servicesNotIncluded: ['Spare parts cost', 'Filter replacement']
-      }
-    ]
-  },
-  'Television': {
-    image: require('../assets/AC.jpg'),
-    rating: 4.4,
-    reviews: '3K',
-    services: [
-      {
-        id: 1,
-        name: 'Basic TV Service',
-        price: 199,
-        rating: 4.1,
-        servicesIncluded: ['Screen cleaning', 'Power check', 'Remote testing'],
-        servicesNotIncluded: ['Spare parts cost', 'Screen repair']
-      },
-      {
-        id: 2,
-        name: 'Standard TV Service',
-        price: 349,
-        rating: 4.3,
-        servicesIncluded: ['Screen cleaning', 'Power check', 'Remote testing', 'Audio check'],
-        servicesNotIncluded: ['Spare parts cost', 'Screen repair']
-      },
-      {
-        id: 3,
-        name: 'Premium TV Service',
-        price: 499,
-        rating: 4.5,
-        servicesIncluded: ['Screen cleaning', 'Power check', 'Remote testing', 'Audio check', 'Internal cleaning'],
-        servicesNotIncluded: ['Spare parts cost', 'Screen repair']
-      }
-    ]
-  }
-};
-
-const ProductServices = ({ 
-  isActive, 
-  onNavigate, 
-  selectedServiceType: propServiceType,
-  setSelectedServiceType,
+const ProductServices = ({
+  isActive,
+  onNavigate,
   cartItems,
   addToCart,
   removeFromCart,
@@ -173,487 +30,317 @@ const ProductServices = ({
 }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedService, setSelectedService] = useState(null);
-  const [quantities, setQuantities] = useState({});
+  const serviceId = searchParams.get('serviceId');
+
+  const [service, setService] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
-  // Dummy data for frequently added products
-  const frequentlyAddedProducts = [
-    { id: 101, name: 'AC Filter', price: 150, image: require('../assets/AC.jpg') },
-    { id: 102, name: 'Gas Refill', price: 500, image: require('../assets/washing machine.jpg') },
-    { id: 103, name: 'Remote Control', price: 299, image: require('../assets/fridge.jpg') },
-    { id: 104, name: 'Copper Pipe', price: 450, image: require('../assets/water purifier.jpg') },
-    { id: 105, name: 'Installation Kit', price: 350, image: require('../assets/AC.jpg') }
-  ];
+  useEffect(() => {
+    const fetchServiceDetails = async () => {
+      if (!serviceId) {
+        setLoading(false);
+        return;
+      }
 
-  // Handle adding product from carousel to cart
-  const handleAddProductToCart = (product) => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getServiceById(serviceId);
+
+        const data = response?.result || response?.data || response;
+        if (data && data._id) {
+          setService(data);
+        } else {
+          setError("Service not found");
+        }
+      } catch (err) {
+        console.error("Error fetching service details:", err);
+        setError("Failed to load service details. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isActive) {
+      fetchServiceDetails();
+    }
+  }, [serviceId, isActive]);
+
+  const handleBack = () => {
+    navigate('/services');
+  };
+
+  const handleAddToCart = () => {
+    if (!service) return;
     addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      serviceType: 'Product',
-      quantity: 1
+      ...service,
+      itemType: 'service'
     });
-    showToast(`${product.name} added to cart`);
   };
 
-  // Dummy data for reviews
-  const reviews = [
-    {
-      id: 1,
-      userName: 'Rajesh Kumar',
-      date: '15 Jan 2024',
-      serviceName: 'Basic AC Service',
-      rating: 5,
-      statement: 'Excellent service! The technician was very professional and completed the work on time. Highly recommended!'
-    },
-    {
-      id: 2,
-      userName: 'Priya Sharma',
-      date: '10 Jan 2024',
-      serviceName: 'Premium AC Service',
-      rating: 4,
-      statement: 'Great experience overall. The team was punctual and did a thorough job. Will definitely use again.'
-    },
-    {
-      id: 3,
-      userName: 'Amit Patel',
-      date: '05 Jan 2024',
-      serviceName: 'Standard AC Service',
-      rating: 5,
-      statement: 'Very satisfied with the service. They explained everything clearly and the AC is working perfectly now.'
-    },
-    {
-      id: 4,
-      userName: 'Sneha Reddy',
-      date: '28 Dec 2023',
-      serviceName: 'Basic AC Service',
-      rating: 4,
-      statement: 'Good service at reasonable price. The technician was knowledgeable and fixed the issue quickly.'
-    }
-  ];
-
-  // Dummy data for FAQs
-  const faqs = [
-    {
-      question: 'How long does the service take?',
-      answer: 'Basic service typically takes 45-60 minutes, while premium service may take 90-120 minutes depending on the condition of your AC.'
-    },
-    {
-      question: 'Do you provide warranty on service?',
-      answer: 'Yes, we provide 30 days warranty on all our services. If you face any issues within the warranty period, we will fix it free of cost.'
-    },
-    {
-      question: 'Are the technicians verified?',
-      answer: 'All our technicians are background-verified, certified, and have minimum 3 years of experience in AC servicing.'
-    },
-    {
-      question: 'What payment methods do you accept?',
-      answer: 'We accept all major payment methods including UPI, Credit/Debit cards, Net Banking, and Cash on Delivery.'
-    },
-    {
-      question: 'Can I reschedule my appointment?',
-      answer: 'Yes, you can reschedule your appointment up to 2 hours before the scheduled time without any extra charges.'
-    }
-  ];
-
-  // Categories for the category grid
-  const categories = [
-    { image: require('../assets/AC.jpg'), name: 'AC' },
-    { image: require('../assets/washing machine.jpg'), name: 'Washing Machine' },
-    { image: require('../assets/fridge.jpg'), name: 'Refrigerator' },
-    { image: require('../assets/water purifier.jpg'), name: 'Water Purifier' }
-  ];
-
-  // Get service type from URL params or props
-  const urlServiceType = searchParams.get('type');
-  const selectedServiceType = urlServiceType || propServiceType;
-
-  // Update parent state when URL changes
-  React.useEffect(() => {
-    if (setSelectedServiceType && urlServiceType) {
-      setSelectedServiceType(urlServiceType);
-    }
-  }, [urlServiceType, setSelectedServiceType]);
-
-  // Get the current service type data
-  const currentServiceData = serviceData[selectedServiceType] || serviceData['AC'];
-  const serviceImage = currentServiceData.image;
-
-  // Handle category click
-  const handleCategoryClick = (categoryName) => {
-    navigate(`/product-services?type=${encodeURIComponent(categoryName)}`);
-    showToast(`Opening ${categoryName} services`);
-  };
-
-  // Handle View Details click
-  const handleViewDetails = (service) => {
-    setSelectedService(service);
-    setShowDetailsModal(true);
-  };
-
-  // Get quantity for a specific item
-  const getQuantity = (serviceName) => {
-    return quantities[serviceName] || 0;
-  };
-
-  // Increase quantity
-  const increaseQuantity = (service) => {
-    const currentQty = quantities[service.name] || 0;
-    setQuantities({
-      ...quantities,
-      [service.name]: currentQty + 1
-    });
-    // Also add to cart if not already there
-    if (!isInCart(service.name)) {
-      addToCart({
-        id: service.id,
-        name: service.name,
-        price: service.price,
-        serviceType: selectedServiceType,
-        quantity: 1
-      });
-      showToast(`${service.name} added to cart`);
-    } else {
-      // Update cart item quantity
-      showToast(`Added another ${service.name}`);
+  const handleRemoveFromCart = () => {
+    if (!service) return;
+    const cartItem = cartItems.find(item => (item.itemId?._id || item.originalId) === service._id);
+    if (cartItem) {
+      removeFromCart(cartItem.id);
     }
   };
 
-  // Decrease quantity
-  const decreaseQuantity = (service) => {
-    const currentQty = quantities[service.name] || 1;
-    if (currentQty > 1) {
-      setQuantities({
-        ...quantities,
-        [service.name]: currentQty - 1
-      });
-      showToast(`Removed one ${service.name}`);
-    } else {
-      // If quantity becomes 0, remove from cart and reset
-      const newQuantities = { ...quantities };
-      delete newQuantities[service.name];
-      setQuantities(newQuantities);
-      removeFromCart(service.name);
-      showToast(`${service.name} removed from cart`);
-    }
-  };
+  if (loading && isActive) {
+    return (
+      <div className="page-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
-  // Handle Add to Cart click - adds item with quantity 1
-  const handleAddToCart = (service) => {
-    setQuantities({
-      ...quantities,
-      [service.name]: 1
-    });
-    addToCart({
-      id: service.id,
-      name: service.name,
-      price: service.price,
-      serviceType: selectedServiceType,
-      quantity: 1
-    });
-    showToast(`${service.name} added to cart`);
-  };
-
-  // Handle Remove from Cart
-  const handleRemoveFromCart = (serviceName) => {
-    const newQuantities = { ...quantities };
-    delete newQuantities[serviceName];
-    setQuantities(newQuantities);
-    removeFromCart(serviceName);
-  };
-
-  // Close modal
-  const closeModal = () => {
-    setShowDetailsModal(false);
-    setSelectedService(null);
-  };
-
-  // Handle backdrop click
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      closeModal();
-    }
-  };
-
-  // Sub-headings based on service type
-  const subHeadings = ['Basic Service', 'Standard Service', 'Premium Service'];
+  if ((error || !service) && isActive) {
+    return (
+      <div className="page-wrapper" style={{ textAlign: 'center', paddingTop: '100px' }}>
+        <h2 style={{ color: '#ef4444' }}>{error || "Service Not Found"}</h2>
+        <button className="back-btn-simple" onClick={handleBack} style={{ marginTop: '20px' }}>
+          <ChevronLeft size={20} /> Back to Services
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-product-services">
-      {/* Mobile header */}
-      <div className="page-header-mobile mobile-only">
-        <h1 className="page-title-mobile">{selectedServiceType || 'Services'}</h1>
-      </div>
-
-      {/* Desktop header */}
-      <div className="services-hero desktop-only">
-        <h1>{selectedServiceType || 'All'} <span className="accent">Services</span></h1>
-        <p>Professional, verified experts for every home service need</p>
-      </div>
-
-      {/* Category Grid */}
-      <div className="section-wrap">
-        <div className="category-grid">
-          {categories.map(cat => (
-            <div 
-              key={cat.name}
-              className={`category-card ${selectedServiceType === cat.name ? 'active' : ''}`}
-              onClick={() => handleCategoryClick(cat.name)}
-            >
-              <div className="cat-icon-wrap">
-                <img src={cat.image} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              </div>
-              <span>{cat.name}</span>
+      {/* Detail Header */}
+      <div className="services-hero" style={{ textAlign: 'left', padding: '30px 20px' }}>
+        <button className="back-btn-simple" onClick={handleBack} style={{ marginBottom: '15px' }}>
+          <ChevronLeft size={20} /> Back
+        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+          <div style={{ flex: 1, minWidth: '300px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <h1 style={{ fontSize: '28px', margin: 0 }}>{service.serviceName}</h1>
+              {service.isPopular && <span className="badge" style={{ background: '#fef3c7', color: '#92400e', fontSize: '10px' }}>POPULAR</span>}
+              {service.isRecommended && <span className="badge" style={{ background: '#e0e7ff', color: '#3730a3', fontSize: '10px' }}>RECOMMENDED</span>}
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Service Packages by Sub-headings */}
-      <div className="section-wrap">
-        {subHeadings.map((heading, index) => {
-          const service = currentServiceData.services[index];
-          if (!service) return null;
-          
-          return (
-            <div key={heading} className="service-package-section">
-              <h2 className="section-title">{heading}</h2>
-              
-              {/* Service Card */}
-              <div className="product-service-card">
-                {/* Left Side */}
-                <div className="service-card-left">
-                  <h3 className="service-name">{service.name}</h3>
-                  
-                  {/* Star Rating */}
-                  <div className="service-rating">
-                    <span className="star">★</span>
-                    <span className="rating-value">{service.rating}</span>
-                  </div>
-                  
-                  {/* Services List */}
-                  <ul className="service-list">
-                    {service.servicesIncluded.slice(0, 3).map((item, idx) => (
-                      <li key={idx}>{item}</li>
-                    ))}
-                  </ul>
-                  
-                  {/* View Details Link */}
-                  <button 
-                    className="view-details-link"
-                    onClick={() => handleViewDetails(service)}
-                  >
-                    View Details
-                  </button>
-                </div>
-                
-                {/* Right Side */}
-                <div className="service-card-right">
-                  <div className="service-image">
-                    <img src={serviceImage} alt={service.name} />
-                  </div>
-                  
-                  {/* Add/Remove/Quantity Button */}
-                  {isInCart(service.name) ? (
-                    <div className="quantity-container">
-                      <button 
-                        className="qty-btn qty-minus"
-                        onClick={() => decreaseQuantity(service)}
-                      >
-                        −
-                      </button>
-                      <span className="qty-value">{getQuantity(service.name) || 1}</span>
-                      <button 
-                        className="qty-btn qty-plus"
-                        onClick={() => increaseQuantity(service)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  ) : (
-                    <button 
-                      className="cart-btn add-to-cart"
-                      onClick={() => handleAddToCart(service)}
-                    >
-                      Add to Cart
-                    </button>
-                  )}
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontWeight: '700' }}>
+                <Star size={18} fill="#f59e0b" />
+                <span>{service.ratingSummary?.averageRating || 0}</span>
+                <span style={{ color: '#64748b', fontWeight: '500', fontSize: '14px' }}>
+                  ({service.ratingSummary?.totalRatings || 0} reviews)
+                </span>
               </div>
+              <span className="accent" style={{ background: 'var(--green-bg)', padding: '4px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: '600' }}>
+                {service.serviceType || 'Service'}
+              </span>
             </div>
-          );
-        })}
-      </div>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '700px' }}>{service.description}</p>
 
-      {/* View Details Modal */}
-      {showDetailsModal && selectedService && (
-        <div className="modal-backdrop" onClick={handleBackdropClick}>
-          <div className="view-details-modal">
-            <button className="modal-close" onClick={closeModal}>×</button>
-            
-            <div className="modal-content">
-              {/* Service Name Header with Add to Cart */}
-              <div className="modal-header-row">
-                <div className="modal-header-left">
-                  <h2 className="modal-service-name">{selectedService.name}</h2>
-                  {/* Star Rating */}
-                  <div className="modal-rating">
-                    <span className="star">★</span>
-                    <span className="rating-value">{selectedService.rating}</span>
-                  </div>
-                  {/* Price in Bold */}
-                  <p className="modal-price">₹{selectedService.price}</p>
-                </div>
-                <div className="modal-header-right">
-                  {isInCart(selectedService.name) ? (
-                    <div className="quantity-container modal-qty">
-                      <button 
-                        className="qty-btn qty-minus"
-                        onClick={() => decreaseQuantity(selectedService)}
-                      >
-                        −
-                      </button>
-                      <span className="qty-value">{getQuantity(selectedService.name) || 1}</span>
-                      <button 
-                        className="qty-btn qty-plus"
-                        onClick={() => increaseQuantity(selectedService)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  ) : (
-                    <button 
-                      className="cart-btn add-to-cart modal-add-btn"
-                      onClick={() => handleAddToCart(selectedService)}
-                    >
-                      Add to Cart
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Frequently Added Together */}
-              <div className="modal-section">
-                <h3 className="modal-section-title">Frequently added together</h3>
-                <div className="modal-product-carousel">
-                  {frequentlyAddedProducts.map(product => (
-                    <div key={product.id} className="modal-product-card">
-                      <div className="modal-product-image">
-                        <img src={product.image} alt={product.name} />
-                      </div>
-                      <span className="modal-product-name">{product.name}</span>
-                      <div className="modal-product-bottom">
-                        <span className="modal-product-price">₹{product.price}</span>
-                        <button 
-                          className="modal-product-cart-btn"
-                          onClick={() => handleAddProductToCart(product)}
-                        >
-                          Add
-                        </button>
-                      </div>
-                    </div>
+            {service.supportedBrands && service.supportedBrands.length > 0 && (
+              <div style={{ marginTop: '15px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Supported Brands: </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
+                  {service.supportedBrands.map(brand => (
+                    <span key={brand} style={{ background: '#f1f5f9', padding: '2px 10px', borderRadius: '4px', fontSize: '12px', color: '#475569' }}>{brand}</span>
                   ))}
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Services Included */}
-              <div className="modal-section">
-                <h3 className="modal-section-title">Services Included</h3>
-                <ul className="modal-list included">
-                  {selectedService.servicesIncluded.map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Services Not Included */}
-              <div className="modal-section">
-                <h3 className="modal-section-title">Services Does Not Includes</h3>
-                <ul className="modal-list not-included">
-                  {selectedService.servicesNotIncluded.map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Please Note */}
-              <div className="modal-section note-section">
-                <h3 className="modal-section-title">Please note</h3>
-                <ul className="modal-note-list">
-                  <li>Provide a stool if required</li>
-                  <li>Provide a ladder if required</li>
-                </ul>
-              </div>
-
-              {/* Reviews Section */}
-              <div className="modal-section reviews-section">
-                <div className="reviews-header">
-                  <h3 className="modal-section-title">Reviews</h3>
-                  <div className="reviews-summary">
-                    <span className="star">★</span>
-                    <span className="rating-value">4.5</span>
-                    <span className="review-count">(12K reviews)</span>
-                  </div>
+          <div className="price-card-sticky">
+            <div style={{ marginBottom: '20px' }}>
+              <span style={{ fontSize: '32px', fontWeight: '800', color: 'var(--green)' }}>₹{service.discountedPrice || service.serviceCost}</span>
+              {service.serviceCost > (service.discountedPrice || 0) && (
+                <div style={{ marginTop: '4px' }}>
+                  <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: '8px' }}>₹{service.serviceCost}</span>
+                  <span style={{ color: '#ef4444', fontWeight: '700', fontSize: '14px' }}>{service.serviceDiscountPercentage}% OFF</span>
                 </div>
-                <div className="reviews-list">
-                  {reviews.slice(0, 4).map(review => (
-                    <div key={review.id} className="review-card">
-                      <div className="review-header">
-                        <span className="review-user">{review.userName}</span>
-                        <span className="review-date">{review.date}</span>
-                      </div>
-                      <div className="review-rating">
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <span key={i} className={`star ${i < review.rating ? 'filled' : ''}`}>★</span>
-                        ))}
-                      </div>
-                      <span className="review-service">{review.serviceName}</span>
-                      <p className="review-statement">{review.statement}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
+            </div>
 
-              {/* Frequently Asked Questions */}
-              <div className="modal-section faq-section">
-                <h3 className="modal-section-title">Frequently Asked Questions</h3>
-                <div className="faq-list">
-                  {faqs.slice(0, 3).map((faq, idx) => (
-                    <div key={idx} className="faq-item">
-                      <button 
-                        className={`faq-question ${openFaqIndex === idx ? 'active' : ''}`}
-                        onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
-                      >
-                        {faq.question}
-                        <span className="faq-icon">{openFaqIndex === idx ? '−' : '+'}</span>
-                      </button>
-                      {openFaqIndex === idx && (
-                        <div className="faq-answer">
-                          <p>{faq.answer}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {faqs.length > 3 && (
-                  <button className="show-more-btn">Show More</button>
-                )}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '15px', marginBottom: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Minimum Visit Charge</span>
+                <span style={{ fontWeight: '600' }}>₹{service.minimumVisitCharge || 0}</span>
               </div>
+              {service.discountAmount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--green)' }}>
+                  <span>You Save</span>
+                  <span>₹{service.discountAmount}</span>
+                </div>
+              )}
+            </div>
 
-              {/* Done Button */}
-              <div className="modal-done-section">
-                <button className="done-btn" onClick={closeModal}>Done</button>
+            {isInCart(service._id) ? (
+              <button className="cart-btn remove-from-cart" onClick={handleRemoveFromCart} style={{ width: '100%', height: '48px' }}>
+                Remove from Cart
+              </button>
+            ) : (
+              <button className="cart-btn add-to-cart" onClick={handleAddToCart} style={{ width: '100%', height: '48px' }}>
+                Add to Cart
+              </button>
+            )}
+
+            <div style={{ marginTop: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                <Clock size={16} style={{ color: 'var(--green)', marginBottom: '4px' }} />
+                <p style={{ fontSize: '11px', margin: 0, fontWeight: '600' }}>{service.duration || 'Flexible'}</p>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
+                <Truck size={16} style={{ color: service.siteVisitRequired ? 'var(--green)' : '#94a3b8', marginBottom: '4px' }} />
+                <p style={{ fontSize: '11px', margin: 0, fontWeight: '600' }}>{service.siteVisitRequired ? 'Site Visit' : 'Remote/Studio'}</p>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      <div className="section-wrap" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '30px', padding: '0 20px' }}>
+
+        {/* What's Included */}
+        <div className="detail-card-new">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: 'var(--text-primary)' }}>
+            <CheckCircle2 size={22} color="var(--green)" /> What's Included
+          </h3>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {service.whatIncluded?.map((item, idx) => (
+              <li key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                <span style={{ color: 'var(--green)', fontWeight: 'bold' }}>✓</span> {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* What's Not Included */}
+        <div className="detail-card-new">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: 'var(--text-primary)' }}>
+            <XCircle size={22} color="#ef4444" /> What's Not Included
+          </h3>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {service.whatNotIncluded?.map((item, idx) => (
+              <li key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✕</span> {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Rectify Method (How it works) */}
+        <div className="detail-card-new" style={{ background: '#f0f9ff', borderColor: '#bae6fd' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#0369a1' }}>
+            <Hammer size={22} /> How it works (Rectify Method)
+          </h3>
+          <div style={{ position: 'relative', paddingLeft: '20px' }}>
+            {service.rectifyMethod?.map((step, idx) => (
+              <div key={idx} style={{ marginBottom: '15px', position: 'relative' }}>
+                <div style={{
+                  position: 'absolute', left: '-20px', top: '2px',
+                  width: '14px', height: '14px', borderRadius: '50%',
+                  background: '#0ea5e9', color: 'white', fontSize: '9px',
+                  display: 'grid', placeItems: 'center', fontWeight: 'bold'
+                }}>{idx + 1}</div>
+                <p style={{ margin: 0, fontSize: '14px', color: '#0c4a6e', fontWeight: '500' }}>{step}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Service Checklist */}
+        <div className="detail-card-new">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: 'var(--text-primary)' }}>
+            <ClipboardList size={22} color="var(--green)" /> Service Checklist
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            {service.serviceChecklist?.map((item, idx) => (
+              <div key={idx} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--green)' }}></div>
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Fault Reasons & Tools */}
+        <div className="detail-card-new" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#991b1b', fontSize: '14px' }}>
+              <AlertCircle size={18} /> Common Fault Reasons
+            </h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {service.faultReasons?.map(reason => (
+                <span key={reason} style={{ background: '#fee2e2', color: '#b91c1c', padding: '4px 10px', borderRadius: '4px', fontSize: '12px' }}>{reason}</span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#1e293b', fontSize: '14px' }}>
+              <Box size={18} /> Tools & Equipment Used
+            </h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {service.toolsEquipments?.map(tool => (
+                <span key={tool} style={{ background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '4px', fontSize: '12px' }}>{tool}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Service Highlights & Warranty */}
+        <div className="detail-card-new" style={{ background: 'var(--bg-input)' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: 'var(--text-primary)' }}>
+            <Zap size={22} color="#3b82f6" /> Service Highlights
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {service.serviceHighlights?.map((item, idx) => (
+              <span key={idx} className="highlight-badge">
+                {item}
+              </span>
+            ))}
+          </div>
+          <div className="warranty-box-new">
+            <ShieldCheck size={18} /> Service Warranty: {service.serviceWarranty || '15'} Days
+          </div>
+          {service.cancellationPolicy && (
+            <div style={{ marginTop: '15px', padding: '12px', border: '1px dashed #cbd5e1', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <strong>Cancellation Policy:</strong> {service.cancellationPolicy}
+            </div>
+          )}
+          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: service.requiresSpareParts ? '#f59e0b' : '#22c55e' }}>
+            <Info size={14} />
+            {service.requiresSpareParts ? 'This service may require spare parts (extra cost)' : 'No additional spare parts typically required'}
+          </div>
+        </div>
+      </div>
+
+      {/* FAQs Section */}
+      <div className="section-wrap" style={{ padding: '40px 20px' }}>
+        <h2 style={{ marginBottom: '24px', fontSize: '24px' }}>Frequently Asked <span className="accent">Questions</span></h2>
+        <div style={{ maxWidth: '800px' }}>
+          {service.frequentlyAskedQuestions?.map((faq, idx) => {
+            const q = typeof faq === 'string' ? faq : faq.question;
+            const a = typeof faq === 'string' ? "Please contact support for details." : faq.answer;
+
+            return (
+              <div key={idx} className="faq-item-new">
+                <button
+                  className={`faq-btn-new ${openFaqIndex === idx ? 'active' : ''}`}
+                  onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                >
+                  {q}
+                  {openFaqIndex === idx ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </button>
+                {openFaqIndex === idx && (
+                  <div className="faq-answer-new">
+                    {a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 };
 
 export default ProductServices;
-
