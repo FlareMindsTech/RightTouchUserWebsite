@@ -10,8 +10,11 @@ import {
   Bath, 
   Bug 
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail }) => {
+  const navigate = useNavigate();
+  
   const services = [
     { icon: <Wrench size={24} />, name: 'Appliance Repair' },
     { icon: <Zap size={24} />, name: 'Electricians' },
@@ -23,9 +26,25 @@ const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail }) => {
     { icon: <Bug size={24} />, name: 'Pest Control' }
   ];
 
-
+  // Map general services to product categories for navigation
+  const serviceToCategoryMap = {
+    'Appliance Repair': 'AC',
+    'Electricians': 'AC',
+    'House Cleaning': 'AC',
+    'Carpenter': 'AC',
+    'Plumber': 'AC',
+    'Kitchen Cleaning': 'AC',
+    'Bathroom Cleaning': 'AC',
+    'Pest Control': 'AC'
+  };
 
   const filteredServices = services;
+
+  // Handle service click - navigate to product-services page
+  const handleServiceClick = (serviceName) => {
+    const category = serviceToCategoryMap[serviceName] || 'AC';
+    navigate(`/product-services?type=${encodeURIComponent(category)}`);
+  };
 
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
@@ -47,7 +66,7 @@ const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail }) => {
             <div 
               key={service.name}
               className="service-card"
-              onClick={() => onOpenServiceDetail(service.name)}
+              onClick={() => handleServiceClick(service.name)}
             >
               <div className="service-icon">{service.icon}</div>
               <span>{service.name}</span>

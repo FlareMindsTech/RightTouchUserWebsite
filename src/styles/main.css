@@ -24,13 +24,11 @@
   display: block;
 }
 
-/* ═══════════════════════════════════════════════════════
-   PAGE WRAPPER
-═══════════════════════════════════════════════════════ */
+
 .page-wrapper {
   max-width: 1200px;
   margin: 0 auto;
-  padding-top: calc(var(--nav-height) + 12px);
+  padding-top: 5%;
   padding-bottom: 32px;
   padding-left: 24px;
   padding-right: 24px;

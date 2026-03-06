@@ -87,7 +87,7 @@ const AccountPage = ({ isActive, showToast, onNavigate }) => {
   };
 
   return (
-    <section className={`page ${isActive ? '' : 'hidden'}`} id="page-account">
+      <section className={`page-wrapper content-a page ${isActive ? '' : 'hidden'}`} id="page-account">
       {/* Header Section */}
       <div className="account-header">
         <div className="user-info">

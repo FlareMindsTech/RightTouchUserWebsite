@@ -155,7 +155,7 @@
   position: relative;
 }
 
-.tab {
+.tab-btn {
   padding: 14px 0;
   background: none;
   border: none;
@@ -164,15 +164,14 @@
   color: #999;
   cursor: pointer;
   position: relative;
-  /* Remove default bottom border */
 }
 
-.tab.active {
+.tab-btn.active {
   color: #333;
   font-weight: 600;
 }
 
-.tab.active::after {
+.tab-btn.active::after {
   content: '';
   position: absolute;
   bottom: -1px;

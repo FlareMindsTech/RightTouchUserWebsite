@@ -14,13 +14,15 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   const [couponCode, setCouponCode] = useState('');
   const [showCouponPopup, setShowCouponPopup] = useState(false);
   const [customTip, setCustomTip] = useState('');
-  
-  // Mock default address
-  const defaultAddress = {
+const [showAddressPopup, setShowAddressPopup] = useState(false);
+  const [addressForm, setAddressForm] = useState({
     name: 'Kavin',
     address: 'Door 123, Main Street, Anna Nagar, Chennai - 600040',
     phone: '+91 98765 43210'
-  };
+  });
+  
+  // Mock default address (now uses addressForm state)
+  const defaultAddress = addressForm;
 
   // Mock contact person
   const contactPerson = {
@@ -115,7 +117,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
             <p className="address-name">{defaultAddress.name}</p>
             <p className="address-text">{defaultAddress.address}</p>
           </div>
-          <a href="#" className="change-link">Change</a>
+<a href="#" className="change-link" onClick={(e) => { e.preventDefault(); setShowAddressPopup(true); }}>Change</a>
         </div>
 
         {/* Cart Items */}
@@ -198,7 +200,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           </div>
         )}
 
-        {/* Coupon Popup */}
+{/* Coupon Popup */}
         {showCouponPopup && (
           <div className="coupon-popup-overlay" onClick={() => setShowCouponPopup(false)}>
             <div className="coupon-popup" onClick={(e) => e.stopPropagation()}>
@@ -229,6 +231,60 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                 <div className="coupon-option">
                   <span className="coupon-code">FREESERVICE</span>
                   <span className="coupon-desc">Free basic service on AC repair</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Address Popup */}
+        {showAddressPopup && (
+          <div className="address-popup-overlay" onClick={() => setShowAddressPopup(false)}>
+            <div className="address-popup" onClick={(e) => e.stopPropagation()}>
+              <button className="address-popup-close" onClick={() => setShowAddressPopup(false)}>
+                <MdClose />
+              </button>
+              <h3 className="address-popup-heading">Change Delivery Address</h3>
+              <div className="address-form-container">
+                <div className="address-form-group">
+                  <label className="address-form-label">Name</label>
+                  <input 
+                    type="text" 
+                    className="address-form-input" 
+                    placeholder="Enter your name"
+                    value={addressForm.name}
+                    onChange={(e) => setAddressForm({...addressForm, name: e.target.value})}
+                  />
+                </div>
+                <div className="address-form-group">
+                  <label className="address-form-label">Address</label>
+                  <textarea 
+                    className="address-form-input address-form-textarea" 
+                    placeholder="Enter your address"
+                    value={addressForm.address}
+                    onChange={(e) => setAddressForm({...addressForm, address: e.target.value})}
+                  />
+                </div>
+                <div className="address-form-group">
+                  <label className="address-form-label">Phone Number</label>
+                  <input 
+                    type="tel" 
+                    className="address-form-input" 
+                    placeholder="Enter phone number"
+                    value={addressForm.phone}
+                    onChange={(e) => setAddressForm({...addressForm, phone: e.target.value})}
+                  />
+                </div>
+                <div className="address-popup-buttons">
+                  <button className="address-cancel-btn" onClick={() => setShowAddressPopup(false)}>
+                    Cancel
+                  </button>
+                  <button className="address-save-btn" onClick={() => {
+                    showToast('Address updated successfully!');
+                    setShowAddressPopup(false);
+                  }}>
+                    Save Address
+                  </button>
                 </div>
               </div>
             </div>

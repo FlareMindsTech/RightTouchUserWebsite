@@ -11,7 +11,7 @@ import logo from '../assets/logo.jpeg';
 import BookingDetailPage from './BookingDetailPage';
 import './BookingsPage.css';
 
-const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
+const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNavigate }) => {
   const navigate = useNavigate();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
@@ -41,6 +41,11 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
     { service: 'Bathroom Cleaning', status: 'Completed', date: 'Jun 21, 2025' },
     { service: 'Electrician', status: 'Completed', date: 'Jan 15, 2025' },
     { service: 'Chimney', status: 'Completed', date: 'Jan 29, 2025' }
+  ];
+
+  const activeBookings = [
+    { service: 'AC Service', status: 'Upcoming', date: 'Jul 05, 2025' },
+    { service: 'Washing Machine Repair', status: 'In Progress', date: 'Jul 03, 2025' }
   ];
 
   // If a booking is selected, show the detail page
@@ -89,11 +94,48 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
 
       {/* Content Section */}
       <div className="bookings-content">
+        {/* Tab Navigation */}
+        <div className="bookings-tabs">
+          <button 
+            className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`}
+            onClick={() => setActiveTab('active')}
+          >
+            Active & Upcoming
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            History
+          </button>
+        </div>
+
         {/* Active & Upcoming Section */}
         {activeTab === 'active' && (
           <div className="active-section">
             <h3 className="section-subheading">Active & Upcoming</h3>
-            <p className="empty-message">You have no upcoming bookings</p>
+            {activeBookings.length > 0 ? (
+              <div className="bookings-list">
+                {activeBookings.map((booking, index) => (
+                  <div 
+                    key={index} 
+                    className="booking-item"
+                    onClick={() => handleBookingClick(booking)}
+                  >
+                    <div className="booking-details">
+                      <h4 className="booking-service">{booking.service}</h4>
+                      <p className="booking-status">
+                        <span className="status-dot status-active"></span>
+                        {booking.status} · {booking.date}
+                      </p>
+                    </div>
+                    <MdOutlineChevronRight className="booking-arrow" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-message">You have no upcoming bookings</p>
+            )}
           </div>
         )}
 

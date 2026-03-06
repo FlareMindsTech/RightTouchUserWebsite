@@ -646,6 +646,148 @@
   background: #16a34a;
 }
 
+/* Address Popup - Mobile Bottom Sheet (default) */
+.address-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.address-popup {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  padding: 24px;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  overflow-y: auto;
+}
+
+.address-popup-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f5f5f5;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.address-popup-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 20px 0;
+  padding-right: 40px;
+}
+
+.address-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.address-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.address-form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.address-form-input {
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.address-form-input:focus {
+  border-color: #22c55e;
+}
+
+.address-form-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.address-popup-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.address-cancel-btn {
+  flex: 1;
+  padding: 14px;
+  background: white;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.address-cancel-btn:hover {
+  background: #f5f5f5;
+}
+
+.address-save-btn {
+  flex: 1;
+  padding: 14px;
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.address-save-btn:hover {
+  background: #16a34a;
+}
+
+/* Desktop: Centered Dialog */
+@media (min-width: 768px) {
+  .address-popup-overlay {
+    align-items: center;
+  }
+  
+  .address-popup {
+    border-radius: 16px;
+    max-width: 450px;
+    animation: fadeIn 0.3s ease;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 /* Mobile adjustments */
 @media (max-width: 767px) {
   .cart-page {
