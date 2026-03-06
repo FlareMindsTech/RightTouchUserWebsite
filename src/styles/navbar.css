@@ -214,6 +214,39 @@ body.dark .top-navbar {
   padding: 0 5px;
 }
 
+/* Login/Logout Buttons */
+.login-btn-nav,
+.logout-btn-nav {
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.login-btn-nav {
+  background: var(--green);
+  color: white;
+  border: none;
+}
+
+.login-btn-nav:hover {
+  background: var(--green-dark);
+}
+
+.logout-btn-nav {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.logout-btn-nav:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
 /* Add these styles to your existing navbar CSS */
 
 .brand-link {

@@ -7,7 +7,7 @@ import {
   MdShoppingCart
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/logo.jpeg';
+import logo from '../assets/logo.png';
 import BookingDetailPage from './BookingDetailPage';
 import './BookingsPage.css';
 

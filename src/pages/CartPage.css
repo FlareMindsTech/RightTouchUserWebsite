@@ -804,3 +804,21 @@
   }
 }
 
+/* Desktop checkout button - stick to bottom of screen */
+@media (min-width: 768px) {
+  .checkout-section {
+    position: sticky;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 600px;
+    border-radius: 12px;
+    margin: 0 auto;
+    padding: 16px 24px;
+  }
+  
+  .cart-container {
+    padding-bottom: 100px;
+  }
+}
+

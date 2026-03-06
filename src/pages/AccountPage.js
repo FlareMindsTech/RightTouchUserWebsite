@@ -20,7 +20,6 @@ import {
   LuBookmark,
   LuPlus
 } from 'react-icons/lu';
-import BookingsPage from './BookingsPage';
 import './AccountPage.css';
 
 const AccountPage = ({ isActive, showToast, onNavigate }) => {
@@ -79,15 +78,8 @@ const AccountPage = ({ isActive, showToast, onNavigate }) => {
     showToast('Edit address');
   };
 
-  // Close dropdown when clicking outside
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      setActiveDropdown(null);
-    }
-  };
-
   return (
-      <section className={`page-wrapper content-a page ${isActive ? '' : 'hidden'}`} id="page-account">
+    <section className={`page-wrapper content-a page ${isActive ? '' : 'hidden'}`} id="page-account">
       {/* Header Section */}
       <div className="account-header">
         <div className="user-info">
@@ -147,11 +139,6 @@ const AccountPage = ({ isActive, showToast, onNavigate }) => {
           <MdOutlineChevronRight className="menu-arrow" />
         </div>
       </div>
-
-      {/* Logout Button */}
-      <button className="logout-btn" onClick={() => showToast('Logged out successfully')}>
-        Logout
-      </button>
 
       {/* Address Modal */}
       {showAddressModal && (
@@ -236,3 +223,4 @@ const AccountPage = ({ isActive, showToast, onNavigate }) => {
 };
 
 export default AccountPage;
+
