@@ -11,7 +11,6 @@ export const ENDPOINTS = {
     GET_MY_PROFILE: "/api/user/me",
     COMPLETE_PROFILE: "/api/user/complete-profile",
     UPDATE_PROFILE: "/api/user/me",
-    GET_USER_BY_ID: (role, id) => `/api/user/users/${role}/${id}`,
     DELETE_MY_ACCOUNT: "/api/user/delete-my-account"
   },
 

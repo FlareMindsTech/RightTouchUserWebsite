@@ -1,4 +1,4 @@
-import { apiClient } from "../api/apiClient";
+import { apiClient } from "../api/api";
 import { ENDPOINTS } from "../api/endpoints";
 
 export const createPaymentOrder = (data) =>

@@ -1,4 +1,4 @@
-import { apiClient } from "../api/apiClient";
+import { apiClient } from "../api/api";
 import { ENDPOINTS } from "../api/endpoints";
 
 export const signup = (data) =>
@@ -20,13 +20,13 @@ export const verifyOTP = (data) =>
   });
 
 export const loginCustomer = (data) =>
-  apiClient(ENDPOINTS.AUTH.LOGIN, {
+  apiClient(ENDPOINTS.AUTH.LOGIN_CUSTOMER, {
     method: "POST",
     body: JSON.stringify(data)
   });
 
 export const verifyLoginOTP = (data) =>
-  apiClient(ENDPOINTS.AUTH.LOGIN_VERIFY, {
+  apiClient(ENDPOINTS.AUTH.LOGIN_CUSTOMER_VERIFY, {
     method: "POST",
     body: JSON.stringify(data)
   });

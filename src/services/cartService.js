@@ -1,4 +1,4 @@
-import { apiClient } from "../api/apiClient";
+import { apiClient } from "../api/api";
 import { ENDPOINTS } from "../api/endpoints";
 
 export const addToCart = (data) =>
@@ -8,7 +8,7 @@ export const addToCart = (data) =>
   });
 
 export const getMyCart = () =>
-  apiClient(ENDPOINTS.CART.GET);
+  apiClient(ENDPOINTS.CART.GET_MY_CART);
 
 export const updateCartItem = (data) =>
   apiClient(ENDPOINTS.CART.UPDATE, {
