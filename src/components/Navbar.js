@@ -1,10 +1,10 @@
 // components/Navbar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Wrench, MessageCircle, User, ShoppingCart } from 'lucide-react';
-import logo from '../assets/logo.jpeg';
+import { Home, Wrench, User, ShoppingCart } from 'lucide-react';
+import logo from '../assets/logo.png';
 
-const Navbar = ({ currentPage, onNavigate, cartItemCount = 0 }) => {
+const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLoginClick, onLogout }) => {
   const location = useLocation();
   
   // Determine active state based on current path
@@ -41,16 +41,10 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0 }) => {
             <span className="nav-icon"><Wrench size={18} /></span> Services
           </Link>
           <Link 
-            to="/chat" 
-            className={`nav-link ${isActive('chat') ? 'active' : ''}`}
-          >
-            <span className="nav-icon"><MessageCircle size={18} /></span> Chat
-          </Link>
-          <Link 
             to="/account" 
             className={`nav-link ${isActive('account') ? 'active' : ''}`}
           >
-            <span className="nav-icon"><User size={18} /></span> Account
+            <span className="nav-icon"><User size={18} /></span> {currentUser ? currentUser.name : 'Account'}
           </Link>
         </nav>
 
@@ -75,6 +69,16 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0 }) => {
             <ShoppingCart size={20} />
             {cartItemCount > 0 && <span className="cart-badge">{cartItemCount}</span>}
           </Link>
+          
+          {currentUser ? (
+            <button className="logout-btn-nav" onClick={onLogout} title="Logout">
+              Logout
+            </button>
+          ) : (
+            <button className="login-btn-nav" onClick={onLoginClick} title="Login">
+              Login
+            </button>
+          )}
         </div>
       </div>
     </header>
@@ -82,3 +86,4 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0 }) => {
 };
   
 export default Navbar;
+

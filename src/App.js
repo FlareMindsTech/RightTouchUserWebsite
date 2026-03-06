@@ -8,14 +8,16 @@ import BottomNav from './components/BottomNav';
 import HomePage from './pages/HomePage';
 import ServicePage from './pages/ServicePage';
 import ProductServices from './pages/ProductServices';
-import ChatPage from './pages/ChatPage';
 import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
 import BookingsPage from './pages/BookingsPage';
 import ServiceSheet from './components/ServiceSheet';
 import ChatWindow from './components/ChatWindow';
+import AuthDialog from './components/AuthDialog';
+import RegisterDialog from './components/RegisterDialog';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import { MdSearch, MdShoppingCart } from 'react-icons/md';
-import logo from './assets/logo.jpeg';
+import logo from './assets/logo.png';
 
 function App() {
   const navigate = useNavigate();
@@ -29,6 +31,11 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  
+  // Auth states
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Get current page from URL path
   const getCurrentPageFromPath = () => {
@@ -38,8 +45,14 @@ function App() {
   
   const currentPage = getCurrentPageFromPath();
 
-  // Check for dark mode preference
+  // Check for user login on mount
   useEffect(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+    }
+    
+    // Check for dark mode preference
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
     if (savedDarkMode) {
@@ -67,6 +80,11 @@ function App() {
 
   // Cart functions
   const addToCart = (item) => {
+    // Check if user is logged in
+    if (!currentUser) {
+      setShowLoginDialog(true);
+      return;
+    }
     setCartItems([...cartItems, item]);
     showToast(`${item.name} added to cart`);
   };
@@ -128,9 +146,43 @@ function App() {
     navigate('/cart');
   };
 
+  // Auth handlers
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    showToast(`Welcome back, ${user.name || 'User'}!`);
+  };
+
+  const handleRegisterSuccess = (user) => {
+    setCurrentUser(user);
+    showToast(`Welcome, ${user.name}!`);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('currentUser');
+    setCurrentUser(null);
+    showToast('Logged out successfully');
+  };
+
+  const openLoginFromRegister = () => {
+    setShowRegisterDialog(false);
+    setShowLoginDialog(true);
+  };
+
+  const openRegisterFromLogin = () => {
+    setShowLoginDialog(false);
+    setShowRegisterDialog(true);
+  };
+
   return (
     <div className="App">
-      <Navbar currentPage={currentPage} onNavigate={handleNavigate} cartItemCount={cartItems.length} />
+      <Navbar 
+        currentPage={currentPage} 
+        onNavigate={handleNavigate} 
+        cartItemCount={cartItems.length}
+        currentUser={currentUser}
+        onLoginClick={() => setShowLoginDialog(true)}
+        onLogout={handleLogout}
+      />
       
       {/* Global Mobile Header - shows on all pages */}
       <div className="global-mobile-header mobile-only">
@@ -188,13 +240,6 @@ function App() {
               showToast={showToast}
             />
           } />
-          <Route path="/chat" element={
-            <ChatPage 
-              isActive={currentPage === 'chat'}
-              onOpenChat={openChat}
-              onNavigate={handleNavigate}
-            />
-          } />
           <Route path="/account" element={
             <AccountPage 
               isActive={currentPage === 'account'}
@@ -202,6 +247,7 @@ function App() {
               onToggleDarkMode={toggleDarkMode}
               showToast={showToast}
               onNavigate={handleNavigate}
+              currentUser={currentUser}
             />
           } />
           <Route path="/bookings" element={
@@ -218,6 +264,14 @@ function App() {
               removeFromCart={removeFromCart}
               updateQuantity={updateQuantity}
               showToast={showToast}
+            />
+          } />
+          <Route path="/forgot-password" element={
+            <ForgotPasswordPage 
+              onBackToLogin={() => {
+                navigate('/');
+                setShowLoginDialog(true);
+              }}
             />
           } />
         </Routes>
@@ -240,9 +294,29 @@ function App() {
         />
       )}
 
+      {/* Auth Dialogs */}
+      <AuthDialog 
+        isOpen={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+        onLoginSuccess={handleLoginSuccess}
+        onNavigateToRegister={openRegisterFromLogin}
+        onNavigateToForgotPassword={() => {
+          setShowLoginDialog(false);
+          navigate('/forgot-password');
+        }}
+      />
+
+      <RegisterDialog 
+        isOpen={showRegisterDialog}
+        onClose={() => setShowRegisterDialog(false)}
+        onRegisterSuccess={handleRegisterSuccess}
+        onNavigateToLogin={openLoginFromRegister}
+      />
+
       {toast.show && <div className="toast">{toast.message}</div>}
     </div>
   );
 }
 
 export default App;
+

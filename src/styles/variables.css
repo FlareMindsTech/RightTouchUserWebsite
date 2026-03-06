@@ -61,6 +61,16 @@ body {
   overflow-x: hidden;
 }
 
+/* Hide scrollbar for all browsers */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
 a {
   text-decoration: none;
   color: inherit;
