@@ -36,17 +36,18 @@
 }
 
 .btab-icon {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   display: grid;
   place-items: center;
   transition: var(--transition);
 }
 
 .btab-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 16px;
   stroke: currentColor;
+  
 }
 
 .btab-label {

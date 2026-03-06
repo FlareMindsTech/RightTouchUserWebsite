@@ -130,7 +130,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
 
       {/* Menu List */}
       <div className="menu-list">
-        <div className="menu-item" onClick={() => handleMenuItemClick('My plans')}>
+        {/* <div className="menu-item" onClick={() => handleMenuItemClick('My plans')}>
           <LuBookOpen className="menu-icon" />
           <span className="menu-text">My plans</span>
           <MdOutlineChevronRight className="menu-arrow" />
@@ -144,7 +144,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           <LuBookmark className="menu-icon" />
           <span className="menu-text">Plus membership</span>
           <MdOutlineChevronRight className="menu-arrow" />
-        </div>
+        </div> */}
         <div className="menu-item" onClick={() => handleMenuItemClick('My rating')}>
           <MdOutlineStarOutline className="menu-icon" />
           <span className="menu-text">My rating</span>
@@ -155,11 +155,11 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           <span className="menu-text">Manage address</span>
           <MdOutlineChevronRight className="menu-arrow" />
         </div>
-        <div className="menu-item" onClick={() => handleMenuItemClick('Manage payment methods')}>
+        {/* <div className="menu-item" onClick={() => handleMenuItemClick('Manage payment methods')}>
           <MdOutlinePayments className="menu-icon" />
           <span className="menu-text">Manage payment methods</span>
           <MdOutlineChevronRight className="menu-arrow" />
-        </div>
+        </div> */}
         <div className="menu-item" onClick={() => handleMenuItemClick('Settings')}>
           <MdOutlineSettings className="menu-icon" />
           <span className="menu-text">Settings</span>

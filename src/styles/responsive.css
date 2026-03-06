@@ -25,6 +25,7 @@
 @media (max-width: 767px) {
   .mobile-only {
     display: flex;
+    
   }
 
   .desktop-only {
@@ -45,35 +46,56 @@
     display: flex !important;
   }
 
-  /* Mobile header size increases */
+
+  /* Mobile header size increases - increase padding and contents significantly */
   .global-mobile-header {
-    padding: 18px 22px;
+    padding: 10px 16px;
+    min-height: 70px;
+  }
+
+  .gmh-left {
+    gap: 10px;
   }
 
   .gmh-logo {
-    width: 100px;
-    height: 56px;
+    width: calc(75px * 2.3);
+    height: calc(46px * 2.3);
   }
 
   .gmh-title {
-    font-size: 28px;
+    font-size: calc(20px * 1.8);
+  }
+
+  .gmh-right {
+    gap: 16px;
   }
 
   .gmh-search {
-    padding: 14px 20px;
+    padding: 10px 16px;
+    gap: 10px;
   }
 
   .gmh-search-icon {
-    font-size: 24px;
+    font-size: calc(18px * 2.1);
   }
 
   .gmh-search input {
-    width: 160px;
-    font-size: 17px;
+    width: calc(120px * 2.0);
+    font-size: calc(14px * 2.0);
+  }
+
+  .gmh-cart-btn {
+    padding: 8px;
   }
 
   .gmh-cart-icon {
-    font-size: 32px;
+    font-size: calc(24px * 2.2);
+  }
+
+  .gmh-cart-badge {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
   }
 
   .page-wrapper {
