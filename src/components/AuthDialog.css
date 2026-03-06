@@ -293,3 +293,92 @@
   }
 }
 
+/* OTP Styles */
+.otp-info {
+  text-align: center;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.otp-info p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.otp-phone {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #111827 !important;
+  margin-top: 4px !important;
+}
+
+.otp-resend {
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 8px;
+}
+
+.otp-resend button {
+  background: none;
+  border: none;
+  color: #22c55e;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.otp-resend button:hover {
+  text-decoration: underline;
+}
+
+.back-to-register {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+
+.back-to-register:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+/* Checkbox Styles */
+.checkbox-group {
+  margin-bottom: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.4;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #22c55e;
+  cursor: pointer;
+}
+
+.checkbox-label span {
+  flex: 1;
+}
+

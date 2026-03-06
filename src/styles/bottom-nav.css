@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════════════
-   BOTTOM NAVBAR (mobile only)
-═══════════════════════════════════════════════════════ */
+
 .bottom-navbar {
   position: fixed;
   bottom: 0;
@@ -35,16 +33,16 @@
 }
 
 .btab-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   transition: var(--transition);
 }
 
 .btab-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   stroke: currentColor;
 }
 

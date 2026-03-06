@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MdEdit, 
   MdOutlineChevronRight,
@@ -11,18 +11,20 @@ import {
   MdMoreVert,
   MdStarOutline,
   MdDeleteOutline,
-  MdCheck
+  MdCheck,
+  MdLogin
 } from 'react-icons/md';
 import { 
   LuClipboardList, 
   LuHeadphones, 
   LuBookOpen, 
   LuBookmark,
-  LuPlus
+  LuPlus,
+  LuLogOut
 } from 'react-icons/lu';
 import './AccountPage.css';
 
-const AccountPage = ({ isActive, showToast, onNavigate }) => {
+const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClick }) => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   
@@ -78,15 +80,40 @@ const AccountPage = ({ isActive, showToast, onNavigate }) => {
     showToast('Edit address');
   };
 
+  const handleLoginClick = () => {
+    if (onLoginClick) {
+      onLoginClick();
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('currentUser');
+    showToast('Logged out successfully');
+    if (onNavigate) {
+      onNavigate('home');
+    }
+    // Trigger a custom event to notify App.js
+    window.dispatchEvent(new Event('userLoggedOut'));
+  };
+
   return (
     <section className={`page-wrapper content-a page ${isActive ? '' : 'hidden'}`} id="page-account">
       {/* Header Section */}
       <div className="account-header">
         <div className="user-info">
-          <h2 className="account-name">Adam</h2>
-          <p className="account-phone">+91 8462749236</p>
+          {currentUser ? (
+            <>
+              <h2 className="account-name">{currentUser.name || currentUser.fname || 'User'}</h2>
+              <p className="account-phone">+91 {currentUser.identifier || currentUser.phone || ''}</p>
+            </>
+          ) : (
+            <>
+              <h2 className="account-name">Welcome</h2>
+              <p className="account-phone">Login to access your account</p>
+            </>
+          )}
         </div>
-        <MdEdit className="edit-icon" />
+        {currentUser && <MdEdit className="edit-icon" />}
       </div>
 
       {/* Top Quick Cards */}
@@ -139,6 +166,19 @@ const AccountPage = ({ isActive, showToast, onNavigate }) => {
           <MdOutlineChevronRight className="menu-arrow" />
         </div>
       </div>
+
+      {/* Login/Logout Button */}
+      {currentUser ? (
+        <button className="logout-btn" onClick={handleLogout}>
+          <LuLogOut className="btn-icon" />
+          Logout
+        </button>
+      ) : (
+        <button className="login-btn" onClick={handleLoginClick}>
+          <MdLogin className="btn-icon" />
+          Login
+        </button>
+      )}
 
       {/* Address Modal */}
       {showAddressModal && (

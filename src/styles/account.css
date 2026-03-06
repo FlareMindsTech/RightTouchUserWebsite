@@ -103,6 +103,40 @@
   font-size: 16px;
   cursor: pointer;
   margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logout-btn .btn-icon {
+  font-size: 20px;
+}
+
+/* Login Button */
+.login-btn {
+  width: 100%;
+  padding: 18px;
+  background: var(--green);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-btn:hover {
+  background: var(--green-dark);
+}
+
+.login-btn .btn-icon {
+  font-size: 20px;
 }
 
 .edit-icon {
@@ -234,15 +268,18 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .address-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   background: var(--green-bg);
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: 50px;
+  flex-shrink: 0;
 }
 
 .address-badge .badge-icon {
@@ -251,21 +288,24 @@
 }
 
 .address-badge span {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--green-dark);
+  white-space: nowrap;
 }
 
 .default-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--green);
   background: var(--green-bg);
-  padding: 4px 8px;
+  padding: 4px 6px;
   border-radius: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .default-badge .check-icon {

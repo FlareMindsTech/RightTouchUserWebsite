@@ -248,6 +248,7 @@ function App() {
               showToast={showToast}
               onNavigate={handleNavigate}
               currentUser={currentUser}
+              onLoginClick={() => setShowLoginDialog(true)}
             />
           } />
           <Route path="/bookings" element={
@@ -304,6 +305,7 @@ function App() {
           setShowLoginDialog(false);
           navigate('/forgot-password');
         }}
+        onShowToast={showToast}
       />
 
       <RegisterDialog 
@@ -311,6 +313,7 @@ function App() {
         onClose={() => setShowRegisterDialog(false)}
         onRegisterSuccess={handleRegisterSuccess}
         onNavigateToLogin={openLoginFromRegister}
+        onShowToast={showToast}
       />
 
       {toast.show && <div className="toast">{toast.message}</div>}

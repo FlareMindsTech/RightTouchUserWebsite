@@ -69,16 +69,6 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLog
             <ShoppingCart size={20} />
             {cartItemCount > 0 && <span className="cart-badge">{cartItemCount}</span>}
           </Link>
-          
-          {currentUser ? (
-            <button className="logout-btn-nav" onClick={onLogout} title="Logout">
-              Logout
-            </button>
-          ) : (
-            <button className="login-btn-nav" onClick={onLoginClick} title="Login">
-              Login
-            </button>
-          )}
         </div>
       </div>
     </header>

@@ -71,7 +71,7 @@ body.dark .desktop-hero {
 .hero-title {
   font-size: clamp(28px, 3vw, 42px);
   font-weight: 800;
-  color: var(--text-primary);
+  color: var(--green);
   line-height: 1.15;
   letter-spacing: -1px;
   margin-bottom: 14px;

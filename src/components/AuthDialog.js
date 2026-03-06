@@ -1,32 +1,30 @@
 import React, { useState } from 'react';
-import { FaFacebook, FaGoogle, FaApple } from 'react-icons/fa';
 import './AuthDialog.css';
+import { loginCustomer, verifyLoginOTP } from '../services/authServices';
 
 const AuthDialog = ({ 
   isOpen, 
   onClose, 
   onLoginSuccess, 
   onNavigateToRegister, 
-  onNavigateToForgotPassword 
+  onNavigateToForgotPassword,
+  onShowToast 
 }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
 
   if (!isOpen) return null;
 
-  const validate = () => {
+  const validatePhone = () => {
     const newErrors = {};
-    if (!email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    if (!identifier.trim()) {
+      newErrors.identifier = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(identifier)) {
+      newErrors.identifier = 'Please enter a valid 10-digit phone number';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -34,35 +32,80 @@ const AuthDialog = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validatePhone()) return;
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find(u => u.email === email && u.password === password);
+    try {
+      const response = await loginCustomer({ identifier });
       
-      if (user) {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        onLoginSuccess(user);
-        onClose();
+      if (response?.success || response?.message?.toLowerCase().includes('otp')) {
+        setOtpSent(true);
+        onShowToast?.('OTP sent to your phone number');
       } else {
-        setErrors({ password: 'Invalid email or password' });
+        setErrors({ identifier: 'Login failed. Please try again.' });
       }
-      setIsLoading(false);
-    }, 1000);
+    } catch (error) {
+      setErrors({ identifier: 'Login failed. Please try again.' });
+    }
+    setIsLoading(false);
   };
 
-  const handleSocialLogin = (provider) => {
-    // Simulate social login
-    const mockUser = {
-      name: 'Social User',
-      email: `user@${provider}.com`,
-      role: 'Customer'
-    };
-    localStorage.setItem('currentUser', JSON.stringify(mockUser));
-    onLoginSuccess(mockUser);
-    onClose();
+  const handleOtpChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 4) {
+      setOtp(value);
+      setOtpError('');
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    
+    if (!otp || otp.length !== 4) {
+      setOtpError('Please enter a valid 4-digit OTP');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await verifyLoginOTP({
+        identifier: identifier,
+        otp: otp
+      });
+
+      if (response?.success || response?.user) {
+        localStorage.setItem('currentUser', JSON.stringify(response.user || {
+          identifier: identifier,
+          role: 'Customer'
+        }));
+        onLoginSuccess(response.user || { identifier: identifier, role: 'Customer' });
+        onClose();
+        // Reset form
+        setIdentifier('');
+        setOtpSent(false);
+        setOtp('');
+      } else {
+        setOtpError('Invalid OTP. Please try again.');
+      }
+    } catch (error) {
+      setOtpError('OTP verification failed. Please try again.');
+    }
+    setIsLoading(false);
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await loginCustomer({ identifier });
+      onShowToast?.('OTP resent successfully');
+    } catch (error) {
+      onShowToast?.('Failed to resend OTP');
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setOtpSent(false);
+    setOtp('');
+    setOtpError('');
   };
 
   return (
@@ -75,63 +118,65 @@ const AuthDialog = ({
           <p>Login to continue</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="auth-input-group">
-            <label>Email</label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={errors.email ? 'error' : ''}
-            />
-            {errors.email && <span className="error-text">{errors.email}</span>}
-          </div>
-
-          <div className="auth-input-group">
-            <div className="label-row">
-              <label>Password</label>
-              <button 
-                type="button" 
-                className="forgot-password-link"
-                onClick={() => {
-                  onClose();
-                  onNavigateToForgotPassword();
+        {!otpSent ? (
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="auth-input-group">
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                placeholder="Enter your phone number"
+                value={identifier}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  if (value.length <= 10) {
+                    setIdentifier(value);
+                    setErrors({});
+                  }
                 }}
-              >
-                Forgot Password?
-              </button>
+                className={errors.identifier ? 'error' : ''}
+                maxLength={10}
+              />
+              {errors.identifier && <span className="error-text">{errors.identifier}</span>}
             </div>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={errors.password ? 'error' : ''}
-            />
-            {errors.password && <span className="error-text">{errors.password}</span>}
-          </div>
 
-          <button type="submit" className="auth-submit-btn" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
+            <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+              {isLoading ? 'Sending OTP...' : 'Send OTP'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} className="auth-form">
+            <div className="otp-info">
+              <p>Enter the 4-digit OTP sent to</p>
+              <p className="otp-phone">+91 {identifier}</p>
+            </div>
 
-        <div className="auth-divider">
-          <span>Or login with</span>
-        </div>
+            <div className="auth-input-group">
+              <label>Enter OTP</label>
+              <input
+                type="text"
+                placeholder="Enter 4-digit OTP"
+                value={otp}
+                onChange={handleOtpChange}
+                className={otpError ? 'error' : ''}
+                maxLength={4}
+              />
+              {otpError && <span className="error-text">{otpError}</span>}
+            </div>
 
-        <div className="social-buttons">
-          <button className="social-btn facebook" onClick={() => handleSocialLogin('facebook')}>
-            <FaFacebook />
-          </button>
-          <button className="social-btn google" onClick={() => handleSocialLogin('google')}>
-            <FaGoogle />
-          </button>
-          <button className="social-btn apple" onClick={() => handleSocialLogin('apple')}>
-            <FaApple />
-          </button>
-        </div>
+            <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Login'}
+            </button>
+
+            <div className="otp-resend">
+              <span>Didn't receive the code? </span>
+              <button type="button" onClick={handleResendOtp}>Resend OTP</button>
+            </div>
+
+            <button type="button" className="back-to-register" onClick={handleBackToLogin}>
+              Change phone number
+            </button>
+          </form>
+        )}
 
         <div className="auth-footer">
           <p>Don't have an account? <button onClick={onNavigateToRegister}>Register Now</button></p>

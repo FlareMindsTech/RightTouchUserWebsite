@@ -1,28 +1,35 @@
 import React, { useState } from 'react';
 import { FaFacebook, FaGoogle, FaApple } from 'react-icons/fa';
 import './AuthDialog.css';
+import { signup, verifyOTP } from '../services/authServices';
 
 const RegisterDialog = ({ 
   isOpen, 
   onClose, 
   onRegisterSuccess, 
-  onNavigateToLogin 
+  onNavigateToLogin,
+  onShowToast 
 }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    identifier: '',
     role: 'Customer',
-    password: '',
-    confirmPassword: ''
+    termsAndServices: false,
+    privacyPolicy: false
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
 
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
     // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -31,26 +38,19 @@ const RegisterDialog = ({
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+    if (!formData.identifier.trim()) {
+      newErrors.identifier = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(formData.identifier)) {
+      newErrors.identifier = 'Please enter a valid 10-digit phone number';
     }
     if (!formData.role) {
       newErrors.role = 'Please select a role';
     }
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    if (!formData.termsAndServices) {
+      newErrors.termsAndServices = 'You must accept terms and services';
     }
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    if (!formData.privacyPolicy) {
+      newErrors.privacyPolicy = 'You must accept privacy policy';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -61,44 +61,92 @@ const RegisterDialog = ({
     if (!validate()) return;
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      // Check if email already exists
-      if (users.find(u => u.email === formData.email)) {
-        setErrors({ email: 'Email already registered' });
-        setIsLoading(false);
-        return;
-      }
-
-      const newUser = {
-        id: Date.now(),
-        name: formData.name,
-        email: formData.email,
+    try {
+      const response = await signup({
+        identifier: formData.identifier,
         role: formData.role,
-        password: formData.password
-      };
+        termsAndServices: formData.termsAndServices,
+        privacyPolicy: formData.privacyPolicy
+      });
       
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-      
-      onRegisterSuccess(newUser);
-      onClose();
-      setIsLoading(false);
-    }, 1000);
+      if (response?.success || response?.message?.toLowerCase().includes('otp')) {
+        setOtpSent(true);
+        onShowToast?.('OTP sent to your phone number');
+      } else {
+        setErrors({ identifier: 'Registration failed. Please try again.' });
+      }
+    } catch (error) {
+      setErrors({ identifier: 'Registration failed. Please try again.' });
+    }
+    setIsLoading(false);
   };
 
-  const handleSocialLogin = (provider) => {
-    const mockUser = {
-      name: 'Social User',
-      email: `user@${provider}.com`,
-      role: 'Customer'
-    };
-    localStorage.setItem('currentUser', JSON.stringify(mockUser));
-    onRegisterSuccess(mockUser);
-    onClose();
+  const handleOtpChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 4) {
+      setOtp(value);
+      setOtpError('');
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    
+    if (!otp || otp.length !== 4) {
+      setOtpError('Please enter a valid 4-digit OTP');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await verifyOTP({
+        identifier: formData.identifier,
+        otp: otp
+      });
+
+      if (response?.success || response?.user) {
+        localStorage.setItem('currentUser', JSON.stringify(response.user || {
+          identifier: formData.identifier,
+          role: formData.role
+        }));
+        onRegisterSuccess(response.user || { identifier: formData.identifier, role: formData.role });
+        onClose();
+        // Reset form
+        setFormData({
+          identifier: '',
+          role: 'Customer',
+          termsAndServices: false,
+          privacyPolicy: false
+        });
+        setOtpSent(false);
+        setOtp('');
+      } else {
+        setOtpError('Invalid OTP. Please try again.');
+      }
+    } catch (error) {
+      setOtpError('OTP verification failed. Please try again.');
+    }
+    setIsLoading(false);
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await signup({
+        identifier: formData.identifier,
+        role: formData.role,
+        termsAndServices: formData.termsAndServices,
+        privacyPolicy: formData.privacyPolicy
+      });
+      onShowToast?.('OTP resent successfully');
+    } catch (error) {
+      onShowToast?.('Failed to resend OTP');
+    }
+  };
+
+  const handleBackToRegister = () => {
+    setOtpSent(false);
+    setOtp('');
+    setOtpError('');
   };
 
   return (
@@ -111,94 +159,100 @@ const RegisterDialog = ({
           <p>Register to get started</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="auth-input-group">
-            <label>Name</label>
-            <input
-              type="text"
-              name="name"
-              placeholder="Enter your name"
-              value={formData.name}
-              onChange={handleChange}
-              className={errors.name ? 'error' : ''}
-            />
-            {errors.name && <span className="error-text">{errors.name}</span>}
-          </div>
+        {!otpSent ? (
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="auth-input-group">
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                name="identifier"
+                placeholder="Enter your phone number"
+                value={formData.identifier}
+                onChange={handleChange}
+                className={errors.identifier ? 'error' : ''}
+                maxLength={10}
+              />
+              {errors.identifier && <span className="error-text">{errors.identifier}</span>}
+            </div>
 
-          <div className="auth-input-group">
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              className={errors.email ? 'error' : ''}
-            />
-            {errors.email && <span className="error-text">{errors.email}</span>}
-          </div>
+            <div className="auth-input-group">
+              <label>Role</label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className={errors.role ? 'error' : ''}
+              >
+                <option value="Customer">Customer</option>
+                <option value="Technician">Technician</option>
+              </select>
+              {errors.role && <span className="error-text">{errors.role}</span>}
+            </div>
 
-          <div className="auth-input-group">
-            <label>Role</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className={errors.role ? 'error' : ''}
-            >
-              <option value="Customer">Customer</option>
-              <option value="Technician">Technician</option>
-              <option value="Admin">Admin</option>
-            </select>
-            {errors.role && <span className="error-text">{errors.role}</span>}
-          </div>
+            <div className="auth-input-group checkbox-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  name="termsAndServices"
+                  checked={formData.termsAndServices}
+                  onChange={handleChange}
+                />
+                <span>I agree to the Terms and Services</span>
+              </label>
+              {errors.termsAndServices && <span className="error-text">{errors.termsAndServices}</span>}
+            </div>
 
-          <div className="auth-input-group">
-            <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              placeholder="Create a password"
-              value={formData.password}
-              onChange={handleChange}
-              className={errors.password ? 'error' : ''}
-            />
-            {errors.password && <span className="error-text">{errors.password}</span>}
-          </div>
+            <div className="auth-input-group checkbox-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  name="privacyPolicy"
+                  checked={formData.privacyPolicy}
+                  onChange={handleChange}
+                />
+                <span>I agree to the Privacy Policy</span>
+              </label>
+              {errors.privacyPolicy && <span className="error-text">{errors.privacyPolicy}</span>}
+            </div>
 
-          <div className="auth-input-group">
-            <label>Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={errors.confirmPassword ? 'error' : ''}
-            />
-            {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
-          </div>
+            <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+              {isLoading ? 'Sending OTP...' : 'Send OTP'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} className="auth-form">
+            <div className="otp-info">
+              <p>Enter the 4-digit OTP sent to</p>
+              <p className="otp-phone">+91 {formData.identifier}</p>
+            </div>
 
-          <button type="submit" className="auth-submit-btn" disabled={isLoading}>
-            {isLoading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
+            <div className="auth-input-group">
+              <label>Enter OTP</label>
+              <input
+                type="text"
+                placeholder="Enter 4-digit OTP"
+                value={otp}
+                onChange={handleOtpChange}
+                className={otpError ? 'error' : ''}
+                maxLength={4}
+              />
+              {otpError && <span className="error-text">{otpError}</span>}
+            </div>
 
-        <div className="auth-divider">
-          <span>Or Register with</span>
-        </div>
+            <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Verify OTP'}
+            </button>
 
-        <div className="social-buttons">
-          <button className="social-btn facebook" onClick={() => handleSocialLogin('facebook')}>
-            <FaFacebook />
-          </button>
-          <button className="social-btn google" onClick={() => handleSocialLogin('google')}>
-            <FaGoogle />
-          </button>
-          <button className="social-btn apple" onClick={() => handleSocialLogin('apple')}>
-            <FaApple />
-          </button>
-        </div>
+            <div className="otp-resend">
+              <span>Didn't receive the code? </span>
+              <button type="button" onClick={handleResendOtp}>Resend OTP</button>
+            </div>
+
+            <button type="button" className="back-to-register" onClick={handleBackToRegister}>
+              Change phone number
+            </button>
+          </form>
+        )}
 
         <div className="auth-footer">
           <p>Already have an account? <button onClick={onNavigateToLogin}>Login Now</button></p>
