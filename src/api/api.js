@@ -1,9 +1,4 @@
-const FALLBACK_URL = "https://fullrighttouch.onrender.com";
-// In development, use relative URLs so the React dev proxy handles routing (bypasses CORS).
-// In production, use the explicit REACT_APP_API_URL from the .env file.
-const BASE_URL = process.env.NODE_ENV === 'development'
-  ? ""   // Relative URL: React dev server will proxy to the backend
-  : (process.env.REACT_APP_API_URL || FALLBACK_URL);
+const BASE_URL = process.env.REACT_APP_API_URL || "https://fullrighttouch.onrender.com";
 
 export const apiClient = async (endpoint, options = {}) => {
   const token = localStorage.getItem("token");
