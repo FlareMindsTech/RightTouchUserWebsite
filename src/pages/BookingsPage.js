@@ -1,23 +1,26 @@
-import React, { useState } from 'react';
-import { 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
   MdOutlineChevronRight,
   MdHelpOutline,
-  MdOutlineLocationOn,
   MdSearch,
   MdShoppingCart
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import BookingDetailPage from './BookingDetailPage';
+import { getCustomerBookings } from '../services/bookingService';
 import './BookingsPage.css';
 
 const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNavigate }) => {
   const navigate = useNavigate();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
+  const [isLoading, setIsLoading] = useState(false);
+  const [bookingsHistory, setBookingsHistory] = useState([]);
+  const [activeBookingsList, setActiveBookingsList] = useState([]);
 
   const handleMenuItemClick = (item) => {
-    showToast(`Opening ${item}`);
+    showToast(`Opening ${item} `);
   };
 
   const handleBack = () => {
@@ -36,22 +39,51 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
     navigate('/cart');
   };
 
-  const bookings = [
-    { service: 'Plumber', status: 'Completed', date: 'Jun 29, 2025' },
-    { service: 'Bathroom Cleaning', status: 'Completed', date: 'Jun 21, 2025' },
-    { service: 'Electrician', status: 'Completed', date: 'Jan 15, 2025' },
-    { service: 'Chimney', status: 'Completed', date: 'Jan 29, 2025' }
-  ];
+  const fetchMyBookings = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const res = await getCustomerBookings();
+      if (res?.success && Array.isArray(res?.result)) {
+        const history = [];
+        const active = [];
 
-  const activeBookings = [
-    { service: 'AC Service', status: 'Upcoming', date: 'Jul 05, 2025' },
-    { service: 'Washing Machine Repair', status: 'In Progress', date: 'Jul 03, 2025' }
-  ];
+        res.result.forEach(booking => {
+          // Assume statuses like Pending, Scheduled, In Progress are active.
+          // Adjust based on your backend.
+          const statusLower = (booking.status || '').toLowerCase();
+          const isActiveStatus = ['pending', 'scheduled', 'in progress', 'assigned', 'accepted'].some(s => statusLower.includes(s));
+
+          if (isActiveStatus) {
+            active.push(booking);
+          } else {
+            history.push(booking);
+          }
+        });
+
+        setActiveBookingsList(active);
+        setBookingsHistory(history);
+      } else {
+        showToast(res?.message || 'Failed to fetch bookings');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error fetching bookings');
+    } finally {
+      setIsLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Removing showToast from dependencies prevents infinite API loop since showToast is not stable
+
+  useEffect(() => {
+    if (isActive) {
+      fetchMyBookings();
+    }
+  }, [isActive, fetchMyBookings]);
 
   // If a booking is selected, show the detail page
   if (selectedBooking) {
     return (
-      <BookingDetailPage 
+      <BookingDetailPage
         booking={selectedBooking}
         onBack={handleBack}
         showToast={showToast}
@@ -61,7 +93,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
 
   // Otherwise show the main bookings page
   return (
-    <section className={`page ${isActive ? '' : 'hidden'}`} id="page-bookings">
+    <section className={`page ${isActive ? '' : 'hidden'} `} id="page-bookings">
       {/* Mobile Header with Logo, Search, Cart */}
       <div className="bookings-mobile-header mobile-only">
         <div className="mobile-header-left">
@@ -96,14 +128,14 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
       <div className="bookings-content">
         {/* Tab Navigation */}
         <div className="bookings-tabs">
-          <button 
-            className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`}
+          <button
+            className={`tab - btn ${activeTab === 'active' ? 'active' : ''} `}
             onClick={() => setActiveTab('active')}
           >
             Active & Upcoming
           </button>
-          <button 
-            className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+          <button
+            className={`tab - btn ${activeTab === 'history' ? 'active' : ''} `}
             onClick={() => setActiveTab('history')}
           >
             History
@@ -114,19 +146,23 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
         {activeTab === 'active' && (
           <div className="active-section">
             <h3 className="section-subheading">Active & Upcoming</h3>
-            {activeBookings.length > 0 ? (
+            {isLoading ? (
+              <p className="empty-message">Loading active bookings...</p>
+            ) : activeBookingsList.length > 0 ? (
               <div className="bookings-list">
-                {activeBookings.map((booking, index) => (
-                  <div 
-                    key={index} 
+                {activeBookingsList.map((booking, index) => (
+                  <div
+                    key={index}
                     className="booking-item"
                     onClick={() => handleBookingClick(booking)}
                   >
                     <div className="booking-details">
-                      <h4 className="booking-service">{booking.service}</h4>
+                      <h4 className="booking-service">
+                        {booking?.cartId?.items?.[0]?.item?.name || 'Service Booking'}
+                      </h4>
                       <p className="booking-status">
                         <span className="status-dot status-active"></span>
-                        {booking.status} · {booking.date}
+                        {booking.status} · {booking.scheduleDate ? new Date(booking.scheduleDate).toLocaleDateString() : 'No date'}
                       </p>
                     </div>
                     <MdOutlineChevronRight className="booking-arrow" />
@@ -143,19 +179,23 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
         {activeTab === 'history' && (
           <div className="history-section">
             <h3 className="section-subheading">History</h3>
-            {bookings.length > 0 ? (
+            {isLoading ? (
+              <p className="empty-message">Loading booking history...</p>
+            ) : bookingsHistory.length > 0 ? (
               <div className="bookings-list">
-                {bookings.map((booking, index) => (
-                  <div 
-                    key={index} 
+                {bookingsHistory.map((booking, index) => (
+                  <div
+                    key={index}
                     className="booking-item"
                     onClick={() => handleBookingClick(booking)}
                   >
                     <div className="booking-details">
-                      <h4 className="booking-service">{booking.service}</h4>
+                      <h4 className="booking-service">
+                        {booking?.cartId?.items?.[0]?.item?.name || 'Service Booking'}
+                      </h4>
                       <p className="booking-status">
                         <span className="status-dot"></span>
-                        {booking.status} · {booking.date}
+                        {booking.status} · {booking.scheduleDate ? new Date(booking.scheduleDate).toLocaleDateString() : 'No date'}
                       </p>
                     </div>
                     <MdOutlineChevronRight className="booking-arrow" />

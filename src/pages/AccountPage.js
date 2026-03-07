@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  MdEdit, 
+import {
+  MdEdit,
   MdOutlineChevronRight,
   MdOutlineAccountBalanceWallet,
   MdOutlineStarOutline,
@@ -14,20 +14,77 @@ import {
   MdCheck,
   MdLogin
 } from 'react-icons/md';
-import { 
-  LuClipboardList, 
-  LuHeadphones, 
-  LuBookOpen, 
+import {
+  LuClipboardList,
+  LuHeadphones,
+  LuBookOpen,
   LuBookmark,
   LuPlus,
   LuLogOut
 } from 'react-icons/lu';
 import './AccountPage.css';
+import { getMyProfile, updateProfile } from '../services/userService';
 
 const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClick }) => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState(currentUser || {});
+  const [loading, setLoading] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    fname: '',
+    lname: '',
+    email: '',
+    gender: ''
+  });
+
+  useEffect(() => {
+    if (currentUser && isActive) {
+      fetchProfile();
+    }
+  }, [currentUser, isActive]);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await getMyProfile();
+      if (response?.success && response.result) {
+        setProfileData(response.result);
+        setEditFormData({
+          fname: response.result.fname || '',
+          lname: response.result.lname || '',
+          email: response.result.email || '',
+          gender: response.result.gender || ''
+        });
+        localStorage.setItem('currentUser', JSON.stringify(response.result));
+        window.dispatchEvent(new Event('userProfileUpdated'));
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await updateProfile(editFormData);
+      if (response?.success) {
+        showToast('Profile updated successfully');
+        setIsEditing(false);
+        fetchProfile();
+      } else {
+        showToast('Failed to update profile');
+      }
+    } catch (error) {
+      showToast('Error updating profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Sample addresses data
   const [addresses, setAddresses] = useState([
     {
@@ -88,11 +145,11 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('token');
     showToast('Logged out successfully');
     if (onNavigate) {
       onNavigate('home');
     }
-    // Trigger a custom event to notify App.js
     window.dispatchEvent(new Event('userLoggedOut'));
   };
 
@@ -103,8 +160,11 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         <div className="user-info">
           {currentUser ? (
             <>
-              <h2 className="account-name">{currentUser.name || currentUser.fname || 'User'}</h2>
-              <p className="account-phone">+91 {currentUser.identifier || currentUser.phone || ''}</p>
+              <h2 className="account-name">
+                {profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser.name || currentUser.fname || 'User')}
+              </h2>
+              <p className="account-email">{profileData.email || 'Complete your profile'}</p>
+              <p className="account-phone">+91 {profileData.identifier || currentUser.identifier || currentUser.phone || ''}</p>
             </>
           ) : (
             <>
@@ -113,8 +173,69 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
             </>
           )}
         </div>
-        {currentUser && <MdEdit className="edit-icon" />}
+        {currentUser && <MdEdit className="edit-icon" onClick={() => setIsEditing(true)} />}
       </div>
+
+      {/* Profile Edit Modal */}
+      {isEditing && (
+        <div className="modal-backdrop" onClick={() => setIsEditing(false)}>
+          <div className="address-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="address-modal-header">
+              <h2>Edit Profile</h2>
+              <button className="modal-close" onClick={() => setIsEditing(false)}>
+                <MdClose />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className="profile-edit-form">
+              <div className="input-group">
+                <label>First Name</label>
+                <input
+                  type="text"
+                  value={editFormData.fname}
+                  onChange={(e) => setEditFormData({ ...editFormData, fname: e.target.value })}
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+              <div className="input-group">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  value={editFormData.lname}
+                  onChange={(e) => setEditFormData({ ...editFormData, lname: e.target.value })}
+                  placeholder="Enter last name"
+                />
+              </div>
+              <div className="input-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  placeholder="Enter email"
+                  required
+                />
+              </div>
+              <div className="input-group">
+                <label>Gender</label>
+                <select
+                  value={editFormData.gender}
+                  onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <button type="submit" className="save-profile-btn" disabled={loading}>
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Top Quick Cards */}
       <div className="quick-cards">
@@ -124,7 +245,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         </div>
         <div className="quick-card" onClick={() => handleMenuItemClick('Help & Support')}>
           <LuHeadphones className="card-icon" />
-          <p>Help &<br/>Support</p>
+          <p>Help &<br />Support</p>
         </div>
       </div>
 
@@ -210,11 +331,11 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                       </span>
                     )}
                   </div>
-                  
+
                   <p className="address-text">{address.address}</p>
-                  
+
                   <div className="address-card-actions">
-                    <button 
+                    <button
                       className="three-dots-btn"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -227,7 +348,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                     {activeDropdown === address.id && (
                       <div className="dropdown-menu">
                         {!address.isDefault && (
-                          <button 
+                          <button
                             className="dropdown-item"
                             onClick={() => handleSetDefault(address.id)}
                           >
@@ -235,14 +356,14 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                             <span>Set as Default</span>
                           </button>
                         )}
-                        <button 
+                        <button
                           className="dropdown-item"
                           onClick={() => handleEdit(address.id)}
                         >
                           <MdEdit className="dropdown-icon" />
                           <span>Edit</span>
                         </button>
-                        <button 
+                        <button
                           className="dropdown-item delete"
                           onClick={() => handleDelete(address.id)}
                         >

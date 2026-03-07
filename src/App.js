@@ -16,13 +16,16 @@ import ChatWindow from './components/ChatWindow';
 import AuthDialog from './components/AuthDialog';
 import RegisterDialog from './components/RegisterDialog';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ProductPage from './pages/ProductPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 import { MdSearch, MdShoppingCart } from 'react-icons/md';
 import logo from './assets/logo.png';
+import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [toast, setToast] = useState({ show: false, message: '' });
   const [showServiceSheet, setShowServiceSheet] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -31,7 +34,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [cartItems, setCartItems] = useState([]);
-  
+
   // Auth states
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
@@ -42,23 +45,78 @@ function App() {
     const path = location.pathname.replace('/', '') || 'home';
     return path;
   };
-  
+
   const currentPage = getCurrentPageFromPath();
 
   // Check for user login on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
+    const savedToken = localStorage.getItem('token');
+
+    if (savedUser && savedToken) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error('Failed to parse saved user:', e);
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+      }
+    } else if (savedUser || savedToken) {
+      // Clear inconsistent state
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
     }
-    
+
     // Check for dark mode preference
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
     if (savedDarkMode) {
       document.body.classList.add('dark-mode');
     }
+    // Listen for custom events
+    const handleLogoutEvent = () => setCurrentUser(null);
+    const handleProfileUpdateEvent = () => {
+      const savedUser = localStorage.getItem('currentUser');
+      if (savedUser) setCurrentUser(JSON.parse(savedUser));
+    };
+
+    window.addEventListener('userLoggedOut', handleLogoutEvent);
+    window.addEventListener('userProfileUpdated', handleProfileUpdateEvent);
+
+    if (savedUser && savedToken) {
+      fetchCart();
+    }
+
+    return () => {
+      window.removeEventListener('userLoggedOut', handleLogoutEvent);
+      window.removeEventListener('userProfileUpdated', handleProfileUpdateEvent);
+    };
   }, []);
+
+  const fetchCart = async () => {
+    try {
+      const response = await getMyCart();
+      if (response?.success && response.result) {
+        // The backend returns an array of cart items directly in response.result
+        const items = Array.isArray(response.result) ? response.result : (response.result.items || []);
+
+        setCartItems(items.map(cartItem => {
+          const detail = cartItem.item || {};
+          return {
+            ...cartItem,
+            name: detail.productName || detail.serviceName || 'Unknown Item',
+            price: detail.discountedPrice || detail.serviceCost || detail.productPrice || detail.estimatedPriceFrom || 0,
+            id: cartItem._id, // Backend cart item ID
+            originalId: cartItem.itemId, // Original Product/Service ID
+            itemType: cartItem.itemType,
+            image: detail.productImages?.[0] || detail.serviceImages?.[0]
+          };
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+    }
+  };
 
   const handleNavigate = (page, element = null) => {
     // If element is a string, treat it as service type
@@ -68,7 +126,7 @@ function App() {
     } else {
       navigate(`/${page === 'home' ? '' : page}`);
     }
-    
+
     // Update active classes for navigation links
     if (element && typeof element === 'object') {
       document.querySelectorAll('.nav-link, .bottom-tab').forEach(el => {
@@ -79,29 +137,65 @@ function App() {
   };
 
   // Cart functions
-  const addToCart = (item) => {
+  const addToCart = async (itemData) => {
     // Check if user is logged in
     if (!currentUser) {
       setShowLoginDialog(true);
       return;
     }
-    setCartItems([...cartItems, item]);
-    showToast(`${item.name} added to cart`);
+
+    try {
+      const payload = {
+        itemId: itemData._id || itemData.itemId || itemData.id,
+        itemType: itemData.itemType,
+        quantity: itemData.quantity || 1
+      };
+      console.log("[App.js] addToCart payload:", payload);
+
+      const response = await apiAddToCart(payload);
+
+      if (response?.success) {
+        showToast(`Item added to cart`);
+        fetchCart();
+      } else {
+        showToast(response?.message || 'Failed to add to cart');
+      }
+    } catch (error) {
+      showToast('Error adding to cart');
+    }
   };
 
-  const removeFromCart = (itemName) => {
-    setCartItems(cartItems.filter(item => item.name !== itemName));
-    showToast(`${itemName} removed from cart`);
+  const removeFromCart = async (itemId) => {
+    try {
+      const response = await apiRemoveFromCart(itemId);
+      if (response?.success) {
+        showToast('Item removed from cart');
+        fetchCart();
+      } else {
+        showToast('Failed to remove item');
+      }
+    } catch (error) {
+      showToast('Error removing from cart');
+    }
   };
 
-  const updateQuantity = (itemName, newQuantity) => {
-    setCartItems(cartItems.map(item => 
-      item.name === itemName ? { ...item, quantity: newQuantity } : item
-    ));
+  const updateQuantity = async (itemId, itemType, newQuantity) => {
+    try {
+      const response = await updateCartItem({
+        itemId, // This is the original item ID
+        itemType,
+        quantity: newQuantity
+      });
+      if (response?.success) {
+        fetchCart();
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+    }
   };
 
-  const isInCart = (itemName) => {
-    return cartItems.some(item => item.name === itemName);
+  const isInCart = (targetId) => {
+    return cartItems.some(item => (item.itemId?._id || item.originalId) === targetId);
   };
 
   const showToast = (message) => {
@@ -120,11 +214,6 @@ function App() {
     document.body.style.overflow = 'auto';
   };
 
-  const openChat = (chatName) => {
-    setSelectedChat(chatName);
-    setShowChatWindow(true);
-  };
-
   const closeChat = () => {
     setShowChatWindow(false);
     setSelectedChat(null);
@@ -134,7 +223,7 @@ function App() {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
-    
+
     if (newDarkMode) {
       document.body.classList.add('dark-mode');
     } else {
@@ -175,15 +264,15 @@ function App() {
 
   return (
     <div className="App">
-      <Navbar 
-        currentPage={currentPage} 
-        onNavigate={handleNavigate} 
+      <Navbar
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
         cartItemCount={cartItems.length}
         currentUser={currentUser}
         onLoginClick={() => setShowLoginDialog(true)}
         onLogout={handleLogout}
       />
-      
+
       {/* Global Mobile Header - shows on all pages */}
       <div className="global-mobile-header mobile-only">
         <div className="gmh-left">
@@ -205,7 +294,7 @@ function App() {
       <main className="page-wrapper">
         <Routes>
           <Route path="/" element={
-            <HomePage 
+            <HomePage
               isActive={currentPage === 'home'}
               onNavigate={handleNavigate}
               onOpenService={openServiceSheet}
@@ -213,7 +302,7 @@ function App() {
             />
           } />
           <Route path="/home" element={
-            <HomePage 
+            <HomePage
               isActive={currentPage === 'home'}
               onNavigate={handleNavigate}
               onOpenService={openServiceSheet}
@@ -221,14 +310,18 @@ function App() {
             />
           } />
           <Route path="/services" element={
-            <ServicePage 
+            <ServicePage
               isActive={currentPage === 'services'}
               onNavigate={handleNavigate}
               onOpenServiceDetail={openServiceSheet}
+              addToCart={addToCart}
+              isInCart={isInCart}
+              removeFromCart={removeFromCart}
+              cartItems={cartItems}
             />
           } />
           <Route path="/product-services" element={
-            <ProductServices 
+            <ProductServices
               isActive={currentPage === 'product-services'}
               onNavigate={handleNavigate}
               selectedServiceType={selectedServiceType}
@@ -241,7 +334,7 @@ function App() {
             />
           } />
           <Route path="/account" element={
-            <AccountPage 
+            <AccountPage
               isActive={currentPage === 'account'}
               isDarkMode={isDarkMode}
               onToggleDarkMode={toggleDarkMode}
@@ -252,23 +345,45 @@ function App() {
             />
           } />
           <Route path="/bookings" element={
-            <BookingsPage 
+            <BookingsPage
               isActive={currentPage === 'bookings'}
               showToast={showToast}
               cartItemCount={cartItems.length}
             />
           } />
           <Route path="/cart" element={
-            <CartPage 
+            <CartPage
               isActive={currentPage === 'cart'}
               cartItems={cartItems}
               removeFromCart={removeFromCart}
               updateQuantity={updateQuantity}
               showToast={showToast}
+              currentUser={currentUser}
+              fetchCart={fetchCart}
+            />
+          } />
+          <Route path="/product-detail" element={
+            <ProductDetailPage
+              isActive={currentPage === 'product-detail'}
+              showToast={showToast}
+              addToCart={addToCart}
+              isInCart={isInCart}
+              removeFromCart={removeFromCart}
+              cartItems={cartItems}
+            />
+          } />
+          <Route path="/products" element={
+            <ProductPage
+              isActive={currentPage === 'products'}
+              onNavigate={handleNavigate}
+              addToCart={addToCart}
+              isInCart={isInCart}
+              removeFromCart={removeFromCart}
+              cartItems={cartItems}
             />
           } />
           <Route path="/forgot-password" element={
-            <ForgotPasswordPage 
+            <ForgotPasswordPage
               onBackToLogin={() => {
                 navigate('/');
                 setShowLoginDialog(true);
@@ -281,7 +396,7 @@ function App() {
       <BottomNav currentPage={currentPage} onNavigate={handleNavigate} />
 
       {showServiceSheet && (
-        <ServiceSheet 
+        <ServiceSheet
           service={selectedService}
           onClose={closeServiceSheet}
           showToast={showToast}
@@ -289,14 +404,14 @@ function App() {
       )}
 
       {showChatWindow && (
-        <ChatWindow 
+        <ChatWindow
           chatName={selectedChat}
           onClose={closeChat}
         />
       )}
 
       {/* Auth Dialogs */}
-      <AuthDialog 
+      <AuthDialog
         isOpen={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
         onLoginSuccess={handleLoginSuccess}
@@ -308,7 +423,7 @@ function App() {
         onShowToast={showToast}
       />
 
-      <RegisterDialog 
+      <RegisterDialog
         isOpen={showRegisterDialog}
         onClose={() => setShowRegisterDialog(false)}
         onRegisterSuccess={handleRegisterSuccess}

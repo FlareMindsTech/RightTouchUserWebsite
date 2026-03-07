@@ -1,128 +1,190 @@
-import React, { useState } from 'react';
-// Icons-ai import seiyavum
-import { 
-  Wind, 
-  Search, 
-  MapPin, 
-  ChevronDown, 
-  Wrench, 
-  Brush, 
-  ShieldCheck, 
-  Zap, 
-  CircleDollarSign, 
-  RotateCcw 
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Wind,
+  Search,
+  MapPin,
+  ChevronDown,
+  Wrench,
+  Brush,
+  ShieldCheck,
+  Zap,
+  CircleDollarSign,
+  RotateCcw,
 } from 'lucide-react';
+import { getAllCategories } from '../services/categoryService';
+import { getAllServices } from '../services/serviceService';
 
-const HomePage = ({ isActive, onNavigate, onOpenService, showToast }) => {
+// --- Static Data ---
+
+const offers = [
+  { id: 1, badge: 'HOT DEAL', title: 'Deep clean with foam-jet AC services', desc: 'AC service & repair', icon: <Wind size={40} /> },
+  { id: 2, badge: 'NEW', title: 'Home affordable carpet cleaning', desc: 'Electrical & carpet services', icon: <Brush size={40} /> },
+  { id: 3, badge: 'SAVE 20%', title: 'Premium plumbing services', desc: 'Bathroom & kitchen repair', icon: <Wrench size={40} /> }
+];
+
+const WHY_CHOOSE_US = [
+  { icon: <ShieldCheck className="text-blue-500" />, title: 'Verified Experts', desc: 'All technicians are background-checked and certified.' },
+  { icon: <Zap className="text-yellow-500" />, title: 'Fast Response', desc: 'Get a technician at your doorstep within 2 hours.' },
+  { icon: <CircleDollarSign className="text-green-500" />, title: 'Best Prices', desc: 'Transparent pricing. No hidden charges.' },
+  { icon: <RotateCcw className="text-red-500" />, title: 'Money-Back', desc: 'Not satisfied? Get a full refund, no questions asked.' }
+];
+
+// --- Category Icon Helper ---
+
+const CategoryIcon = ({ category }) => {
+  if (category.image) {
+    return (
+      <img
+        src={category.image}
+        alt={category.category}
+        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+      />
+    );
+  }
+  // Fallback: first letter avatar
+  return (
+    <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--green)' }}>
+      {category.category?.charAt(0) || '?'}
+    </span>
+  );
+};
+
+// --- Main Component ---
+
+const HomePage = ({ isActive, showToast }) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [serviceCategories, setServiceCategories] = useState([]);
+  const [productCategories, setProductCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Emoji-ku bathila Icons components
-  const categories = [
-    { image: require('../assets/AC.jpg'), name: 'AC' },
-    { image: require('../assets/washing machine.jpg'), name: 'Washing Machine' },
-    { image: require('../assets/fridge.jpg'), name: 'Refrigerator' },
-    { image: require('../assets/water purifier.jpg'), name: 'Water Purifier' }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isActive) return;
+      try {
+        setLoading(true);
+        const [servCatRes, prodCatRes, servRes] = await Promise.all([
+          getAllCategories({ categoryType: 'service' }),
+          getAllCategories({ categoryType: 'product' }),
+          getAllServices({ limit: 10 })
+        ]);
 
-  const offers = [
-    { id: 1, badge: 'HOT DEAL', title: 'Deep clean with foam-jet AC services', desc: 'AC service & repair', bgImage: 'ac-bg' },
-    { id: 2, badge: 'NEW', title: 'Home affordable carpet cleaning', desc: 'Electrical & carpet services', bgImage: 'carpet-bg' },
-    { id: 3, badge: 'SAVE 20%', title: 'Premium plumbing services', desc: 'Bathroom & kitchen repair', bgImage: 'plumbing-bg' }
-  ];
+        const servCats = servCatRes?.result || servCatRes?.data || servCatRes;
+        if (Array.isArray(servCats)) setServiceCategories(servCats);
 
-  const appliances = [
-    { image: require('../assets/AC.jpg'), name: 'AC' },
-    { image: require('../assets/washing machine.jpg'), name: 'Washing Machine' },
-    { image: require('../assets/water purifier.jpg'), name: 'Water Purifier' },
-    { image: require('../assets/AC.jpg'), name: 'Television' },
-    { image: require('../assets/fridge.jpg'), name: 'Refrigerator' }
-  ];
+        const prodCats = prodCatRes?.result || prodCatRes?.data || prodCatRes;
+        if (Array.isArray(prodCats)) setProductCategories(prodCats);
 
-  const whyChooseUs = [
-    { icon: <ShieldCheck className="text-blue-500" />, title: 'Verified Experts', desc: 'All technicians are background-checked and certified.' },
-    { icon: <Zap className="text-yellow-500" />, title: 'Fast Response', desc: 'Get a technician at your doorstep within 2 hours.' },
-    { icon: <CircleDollarSign className="text-green-500" />, title: 'Best Prices', desc: 'Transparent pricing. No hidden charges.' },
-    { icon: <RotateCcw className="text-red-500" />, title: 'Money-Back', desc: 'Not satisfied? Get a full refund, no questions asked.' }
-  ];
+        const servs = servRes?.result?.services || servRes?.data || servRes;
+        if (Array.isArray(servs)) setServices(servs);
+      } catch (err) {
+        console.error("Error fetching home data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleServiceClick = (service) => {
-    // Navigate to product services page with the selected service type
-    onNavigate('product-services', service);
-    showToast(`Opening ${service} services`);
+    fetchData();
+  }, [isActive]);
+
+  const handleCategoryClick = (category, type) => {
+    navigate(type === 'product' ? `/products` : `/services`);
+    showToast(`Opening ${category.category} ${type}s`);
   };
 
-  const handleApplianceClick = (appliance) => {
-    // Navigate to product services page with the selected appliance type
-    onNavigate('product-services', appliance);
-    showToast(`Opening ${appliance} services`);
+  const handleServiceClick = (service) => {
+    const categoryName = service.categoryId?.category || 'Service';
+    navigate(`/product-services?type=${encodeURIComponent(categoryName)}&serviceId=${service._id}`);
+    showToast(`Opening ${service.serviceName}`);
   };
 
   const handleBookNow = (offer) => {
     showToast(`Booking ${offer.title}`);
   };
 
+  if (!isActive) return null;
+
   return (
-    <section className={`page ${isActive ? '' : 'hidden'}`} id="page-home">
-      {/* Mobile location bar */}
+    <section className="page" id="page-home">
+      {/* Location Bar */}
       <div className="location-bar mobile-only">
         <div className="location-left">
           <MapPin size={20} className="location-pin" />
           <div className="location-text">
-            <strong>67B Gregorio Grove</strong>
-            <span>Jaskolskiville, South Africa <ChevronDown size={14} className="chevron" /></span>
+            <strong>Current Location</strong>
+            <span>Detecting address... <ChevronDown size={14} className="chevron" /></span>
           </div>
         </div>
       </div>
 
-      {/* Desktop hero */}
+      {/* Hero Section */}
       <div className="desktop-hero desktop-only">
         <div className="hero-content">
           <p className="hero-sub">Your Trusted Partner for</p>
-          <h1 className="hero-title">Home Repair & Services</h1>
-          <p className="hero-desc">Expert technicians for AC, appliances, plumbing & more. Book in minutes.</p>
-
-
+          <h1 className="hero-title">Home Repair &amp; Services</h1>
+          <p className="hero-desc">Expert technicians for AC, appliances, plumbing &amp; more. Book in minutes.</p>
         </div>
-        
       </div>
 
-      {/* Mobile search */}
+      {/* Search Section */}
       <div className="search-section mobile-only">
         <div className="search-box">
           <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search for 'AC Repair'"
+          <input
+            type="text"
+            placeholder="Search for services..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Category Grid */}
+      {/* Service Categories */}
       <div className="section-wrap">
+        <h2 className="section-title">Home <span className="accent">Services</span></h2>
         <div className="category-grid">
-          {categories.map(cat => (
-            <div 
-              key={cat.name}
-              className="category-card"
-              onClick={() => handleServiceClick(cat.name)}
-            >
-              <div className="cat-icon-wrap">
-                <img src={cat.image} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          {loading ? (
+            Array(4).fill(0).map((_, i) => (
+              <div key={i} className="category-card skeleton" style={{ height: '100px', background: '#f1f5f9' }}></div>
+            ))
+          ) : (
+            serviceCategories.slice(0, 8).map(cat => (
+              <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'service')}>
+                <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
+                  <CategoryIcon category={cat} />
+                </div>
+                <span>{cat.category}</span>
               </div>
-              <span>{cat.name}</span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
+
+      {/* Product Categories */}
+      {!loading && productCategories.length > 0 && (
+        <div className="section-wrap">
+          <h2 className="section-title">Professional <span className="accent">Products</span></h2>
+          <div className="category-grid">
+            {productCategories.slice(0, 8).map(cat => (
+              <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'product')}>
+                <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
+                  <CategoryIcon category={cat} />
+                </div>
+                <span>{cat.category}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Offers Carousel */}
       <div className="section-wrap">
         <h2 className="section-title">Offers for you</h2>
         <div className="carousel-track" id="offersCarousel">
           {offers.map(offer => (
-            <div key={offer.id} className={`offer-card ${offer.bgImage} ${offer.id === 2 ? 'offer-card-2' : offer.id === 3 ? 'offer-card-3' : ''}`}>
+            <div key={offer.id} className={`offer-card ${offer.id === 2 ? 'offer-card-2' : offer.id === 3 ? 'offer-card-3' : ''}`}>
               <div className="offer-badge">{offer.badge}</div>
               <div className="offer-text">
                 <h3>{offer.title}</h3>
@@ -134,18 +196,30 @@ const HomePage = ({ isActive, onNavigate, onOpenService, showToast }) => {
         </div>
       </div>
 
-      {/* Appliance Repair Carousel */}
+      {/* Appliance Repair Section */}
       <div className="section-wrap">
-        <h2 className="section-title">Appliance repair & Services</h2>
-        <div className="carousel-track" id="applianceCarousel">
-          {appliances.map(app => (
-            <div key={app.name} className="appliance-card" onClick={() => handleApplianceClick(app.name)}>
-              <div className={`appliance-img-wrap ${app.name.toLowerCase().replace(' ', '')}`}>
-                <img src={app.image} alt={app.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        <h2 className="section-title">Appliance repair &amp; Services</h2>
+        <div className="carousel-track">
+          {loading ? (
+            Array(4).fill(0).map((_, i) => (
+              <div key={i} className="appliance-card skeleton" style={{ minWidth: '120px', height: '140px', background: '#f1f5f9' }}></div>
+            ))
+          ) : (
+            services.map(service => (
+              <div key={service._id} className="appliance-card" onClick={() => handleServiceClick(service)}>
+                <div className="appliance-img-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green-dark)' }}>
+                  {service.serviceImages?.[0] ? (
+                    <img src={service.serviceImages[0]} alt={service.serviceName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  ) : (
+                    <Wrench size={32} />
+                  )}
+                </div>
+                <span style={{ fontSize: '12px', textAlign: 'center', display: 'block', marginTop: '8px', fontWeight: '600' }}>
+                  {service.serviceName}
+                </span>
               </div>
-              <span>{app.name}</span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -153,7 +227,7 @@ const HomePage = ({ isActive, onNavigate, onOpenService, showToast }) => {
       <div className="section-wrap desktop-only">
         <h2 className="section-title">Why Choose RightTouch?</h2>
         <div className="why-grid">
-          {whyChooseUs.map(item => (
+          {WHY_CHOOSE_US.map(item => (
             <div key={item.title} className="why-card">
               <div className="why-icon" style={{ fontSize: '2rem' }}>{item.icon}</div>
               <h4>{item.title}</h4>
