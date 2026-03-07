@@ -13,7 +13,7 @@ import { getAllServices } from '../services/serviceService';
 import { getAllCategories } from '../services/categoryService';
 import '../styles/services.css';
 
-const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail }) => {
+const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart }) => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [allServices, setAllServices] = useState([]);
