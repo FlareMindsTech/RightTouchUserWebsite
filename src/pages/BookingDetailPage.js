@@ -1,5 +1,5 @@
 import React from 'react';
-import { 
+import {
   MdOutlineChevronRight,
   MdShare,
   MdOutlineLocationOn,
@@ -9,92 +9,116 @@ import {
   MdReceipt,
   MdMessage,
   MdCall,
-  MdStarOutline
+  MdStarOutline,
+  MdCheckCircleOutline
 } from 'react-icons/md';
+import { createPaymentOrder, verifyPayment } from '../services/paymentService';
 import './BookingDetailPage.css';
+
+const loadRazorpaySDK = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const BookingDetailPage = ({ booking, onBack, showToast }) => {
   const handleAction = (action) => {
     showToast(`${action} clicked for ${booking.service}`);
   };
 
-  // Mock data based on booking type
-  const getBookingDetails = () => {
-    const details = {
-      'Plumber': {
-        id: 'BKP001',
-        professional: 'Rajesh Kumar',
-        rating: 4.8,
-        reviews: 156,
-        location: 'Door 123, Main Street, Chennai',
-        dateTime: 'Monday, Jun 29, 2025 · 10:00 AM',
-        amount: '₹1,299',
-        paymentMethod: 'Credit Card',
-        bookingFee: '₹49',
-        total: '₹1,348',
-        status: 'Completed',
-        images: [
-          'https://via.placeholder.com/300x200',
-          'https://via.placeholder.com/300x200',
-          'https://via.placeholder.com/300x200'
-        ]
-      },
-      'Bathroom Cleaning': {
-        id: 'BKP002',
-        professional: 'Suresh Reddy',
-        rating: 4.6,
-        reviews: 98,
-        location: 'Apt 45, Lake View Apartments, Chennai',
-        dateTime: 'Saturday, Jun 21, 2025 · 2:00 PM',
-        amount: '₹899',
-        paymentMethod: 'UPI',
-        bookingFee: '₹39',
-        total: '₹938',
-        status: 'Completed',
-        images: [
-          'https://via.placeholder.com/300x200',
-          'https://via.placeholder.com/300x200',
-          'https://via.placeholder.com/300x200'
-        ]
-      },
-      'Electrician': {
-        id: 'BKP003',
-        professional: 'Karthik',
-        rating: 4.7,
-        reviews: 203,
-        location: 'Plot 56, Anna Nagar, Chennai',
-        dateTime: 'Wednesday, Jan 15, 2025 · 11:30 AM',
-        amount: '₹599',
-        paymentMethod: 'Cash',
-        bookingFee: '₹29',
-        total: '₹628',
-        status: 'Completed',
-        images: [
-          'https://via.placeholder.com/300x200',
-          'https://via.placeholder.com/300x200',
-          'https://via.placeholder.com/300x200'
-        ]
-      },
-      'Chimney': {
-        id: 'BKP004',
-        professional: 'Mohan Das',
-        rating: 4.9,
-        reviews: 87,
-        location: 'House 78, Velachery, Chennai',
-        dateTime: 'Wednesday, Jan 29, 2025 · 4:00 PM',
-        amount: '₹1,499',
-        paymentMethod: 'Credit Card',
-        bookingFee: '₹59',
-        total: '₹1,558',
-        status: 'Completed',
-        images: [
-          'https://via.placeholder.com/300x200',
-          'https://via.placeholder.com/300x200',
-          'https://via.placeholder.com/300x200'
-        ]
+  const handlePayment = async () => {
+    try {
+      showToast('Initializing payment...');
+      const res = await loadRazorpaySDK();
+      if (!res) {
+        showToast('Razorpay SDK failed to load. Are you online?');
+        return;
       }
+
+      // Create Payment Order via backend wrapper
+      const orderRes = await createPaymentOrder({
+        bookingId: booking._id,
+        amount: parseInt(details.total.replace('₹', ''))
+      });
+
+      if (!orderRes?.success) {
+        showToast(orderRes?.message || 'Failed to initialize payment');
+        return;
+      }
+
+      const options = {
+        key: orderRes.result?.key || orderRes.key,
+        amount: orderRes.result?.amount || orderRes.amount,
+        currency: "INR",
+        name: "Right Touch",
+        description: `Payment for Booking ${details.id}`,
+        order_id: orderRes.result?.orderId || orderRes.orderId,
+        handler: async function (paymentResponse) {
+          try {
+            const verification = await verifyPayment({
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_signature: paymentResponse.razorpay_signature,
+              bookingId: booking._id
+            });
+
+            if (verification?.success) {
+              showToast('Payment successful!');
+              // Refresh or Navigate back to update UI
+              setTimeout(() => onBack(), 1000);
+            } else {
+              showToast('Payment verification failed');
+            }
+          } catch (err) {
+            console.error('Payment Verification error:', err);
+            showToast('Verification failed internally');
+          }
+        },
+        prefill: {
+          name: "Customer",
+          contact: "9999999999" // Use actual customer object if available
+        },
+        theme: { color: "#6c63ff" }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+
+    } catch (err) {
+      console.error(err);
+      showToast('Error launching payment');
+    }
+  };
+
+  const getBookingDetails = () => {
+    // Dynamically build details from the booking prop with fallbacks
+    const serviceName = booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || booking?.service || 'Service Booking';
+    const addressInfo = booking?.addressSnapshot || booking?.addressId;
+    const location = addressInfo ? (addressInfo.addressLine || `${addressInfo.flat || ''}, ${addressInfo.area || ''}, ${addressInfo.city || ''}`.replace(/^[,\s]+|[,\s]+$/g, '')) : (booking?.address || 'Address not specified');
+    const price = booking?.baseAmount || booking?.serviceId?.serviceCost || booking?.totalPrice || booking?.cartId?.totalPrice || 0;
+    const platformFee = booking?.platformFee || booking?.bookingFee || 0;
+    const totalAmount = parseInt(price) + parseInt(platformFee);
+
+    return {
+      id: booking?._id ? `BKP${booking._id.substring(booking._id.length - 4).toUpperCase()}` : 'BKP000',
+      professional: booking?.technicianSnapshot?.name || booking?.assignedTechnician?.name || (booking?.status === 'SEARCHING' ? 'Searching...' : 'Not assigned'),
+      rating: booking?.technicianSnapshot?.rating || booking?.assignedTechnician?.rating || 'New',
+      reviews: booking?.technicianSnapshot?.reviews || booking?.assignedTechnician?.reviews || 0,
+      location: location,
+      dateTime: booking?.scheduledAt ? new Date(booking.scheduledAt).toLocaleString() : (booking?.createdAt ? new Date(booking.createdAt).toLocaleString() : 'Date not fixed'),
+      amount: `₹${price}`,
+      paymentMethod: booking?.paymentProvider === 'razorpay' ? 'Online' : (booking?.paymentDetails?.method || booking?.paymentId ? 'Online' : 'Pending'),
+      bookingFee: `₹${platformFee}`,
+      total: `₹${totalAmount}`,
+      status: booking?.status || 'Pending',
+      images: booking?.workImages?.beforeImage || booking?.workImages?.afterImage
+        ? [booking.workImages.beforeImage, booking.workImages.afterImage].filter(Boolean)
+        : []
     };
-    return details[booking.service] || details['Plumber'];
   };
 
   const details = getBookingDetails();
@@ -138,7 +162,7 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
       {/* Service Details */}
       <div className="service-details-section">
         <h3>Service Details</h3>
-        
+
         <div className="detail-item">
           <MdOutlineLocationOn className="detail-icon" />
           <div className="detail-content">
@@ -162,12 +186,22 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
             <span className="detail-value">{details.professional}</span>
           </div>
         </div>
+
+        {booking.faultProblem && (
+          <div className="detail-item">
+            <MdMessage className="detail-icon" />
+            <div className="detail-content">
+              <span className="detail-label">Reported Problem</span>
+              <span className="detail-value">{booking.faultProblem}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Payment Details */}
       <div className="payment-section">
         <h3>Payment Details</h3>
-        
+
         <div className="payment-breakdown">
           <div className="payment-row">
             <span>Service Charge</span>
@@ -196,7 +230,7 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
       </div>
 
       {/* Work Images */}
-      {details.images && (
+      {details.images && details.images.length > 0 && (
         <div className="work-images-section">
           <h3>Work Images</h3>
           <div className="image-grid">
@@ -211,18 +245,27 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
 
       {/* Action Buttons */}
       <div className="action-buttons">
-        <button className="action-btn secondary" onClick={() => handleAction('Message')}>
-          <MdMessage className="action-icon" />
-          Message
-        </button>
-        <button className="action-btn secondary" onClick={() => handleAction('Call')}>
-          <MdCall className="action-icon" />
-          Call
-        </button>
-        <button className="action-btn primary" onClick={() => handleAction('Review')}>
-          <MdStarOutline className="action-icon" />
-          Rate & Review
-        </button>
+        {(details.status.toLowerCase() === 'completed' && booking?.paymentStatus === 'pending') ? (
+          <button className="action-btn primary" onClick={handlePayment} style={{ flex: 1, backgroundColor: '#4CAF50' }}>
+            <MdPayment className="action-icon" />
+            Pay Now ({details.total})
+          </button>
+        ) : (
+          <>
+            <button className="action-btn secondary" onClick={() => handleAction('Message')}>
+              <MdMessage className="action-icon" />
+              Message
+            </button>
+            <button className="action-btn secondary" onClick={() => handleAction('Call')}>
+              <MdCall className="action-icon" />
+              Call
+            </button>
+            <button className="action-btn primary" onClick={() => handleAction('Review')}>
+              <MdStarOutline className="action-icon" />
+              Rate & Review
+            </button>
+          </>
+        )}
       </div>
 
       {/* Rebook Button */}

@@ -8,7 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import BookingDetailPage from './BookingDetailPage';
-import { getCustomerBookings } from '../services/bookingService';
+import { getCustomerBookings, getBookings } from '../services/bookingService';
 import './BookingsPage.css';
 
 const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNavigate }) => {
@@ -42,29 +42,42 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
   const fetchMyBookings = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await getCustomerBookings();
-      if (res?.success && Array.isArray(res?.result)) {
-        const history = [];
-        const active = [];
 
-        res.result.forEach(booking => {
-          // Assume statuses like Pending, Scheduled, In Progress are active.
-          // Adjust based on your backend.
+      // Fetch both current bookings and history in parallel
+      const [currentRes, historyRes] = await Promise.all([
+        getCustomerBookings(),
+        getBookings()
+      ]);
+
+      const active = [];
+      const history = [];
+
+      // Process current bookings
+      if (Array.isArray(currentRes?.result)) {
+        currentRes.result.forEach(booking => {
           const statusLower = (booking.status || '').toLowerCase();
-          const isActiveStatus = ['pending', 'scheduled', 'in progress', 'assigned', 'accepted'].some(s => statusLower.includes(s));
-
+          const isActiveStatus = ['pending', 'searching', 'scheduled', 'in progress', 'assigned', 'accepted'].some(s => statusLower.includes(s));
+          // If it's explicitly an active status, push to active.
           if (isActiveStatus) {
             active.push(booking);
-          } else {
+          }
+        });
+      }
+
+      // Process history bookings
+      if (Array.isArray(historyRes?.result)) {
+        historyRes.result.forEach((booking) => {
+          const statusLower = (booking.status || '').toLowerCase();
+          const isHistoryStatus = ['completed', 'cancelled', 'expired'].some(s => statusLower.includes(s));
+          if (isHistoryStatus) {
             history.push(booking);
           }
         });
-
-        setActiveBookingsList(active);
-        setBookingsHistory(history);
-      } else {
-        showToast(res?.message || 'Failed to fetch bookings');
       }
+
+      setActiveBookingsList(active);
+      setBookingsHistory(history);
+
     } catch (err) {
       console.error(err);
       showToast('Error fetching bookings');
@@ -132,7 +145,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
             className={`tab - btn ${activeTab === 'active' ? 'active' : ''} `}
             onClick={() => setActiveTab('active')}
           >
-            Active & Upcoming
+            Active
           </button>
           <button
             className={`tab - btn ${activeTab === 'history' ? 'active' : ''} `}
@@ -145,7 +158,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
         {/* Active & Upcoming Section */}
         {activeTab === 'active' && (
           <div className="active-section">
-            <h3 className="section-subheading">Active & Upcoming</h3>
+            <h3 className="section-subheading">Active</h3>
             {isLoading ? (
               <p className="empty-message">Loading active bookings...</p>
             ) : activeBookingsList.length > 0 ? (
@@ -158,11 +171,11 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
                   >
                     <div className="booking-details">
                       <h4 className="booking-service">
-                        {booking?.cartId?.items?.[0]?.item?.name || 'Service Booking'}
+                        {booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking'}
                       </h4>
                       <p className="booking-status">
                         <span className="status-dot status-active"></span>
-                        {booking.status} · {booking.scheduleDate ? new Date(booking.scheduleDate).toLocaleDateString() : 'No date'}
+                        {booking.status} · {booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleDateString() : (booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'No date')}
                       </p>
                     </div>
                     <MdOutlineChevronRight className="booking-arrow" />
@@ -191,11 +204,11 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
                   >
                     <div className="booking-details">
                       <h4 className="booking-service">
-                        {booking?.cartId?.items?.[0]?.item?.name || 'Service Booking'}
+                        {booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking'}
                       </h4>
                       <p className="booking-status">
                         <span className="status-dot"></span>
-                        {booking.status} · {booking.scheduleDate ? new Date(booking.scheduleDate).toLocaleDateString() : 'No date'}
+                        {booking.status} · {booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleDateString() : (booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'No date')}
                       </p>
                     </div>
                     <MdOutlineChevronRight className="booking-arrow" />

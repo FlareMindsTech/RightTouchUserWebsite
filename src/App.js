@@ -18,6 +18,7 @@ import RegisterDialog from './components/RegisterDialog';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ProductPage from './pages/ProductPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import PaymentMethodsPage from './pages/PaymentMethodsPage';
 import { MdSearch, MdShoppingCart } from 'react-icons/md';
 import logo from './assets/logo.png';
 import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
@@ -342,6 +343,12 @@ function App() {
               onNavigate={handleNavigate}
               currentUser={currentUser}
               onLoginClick={() => setShowLoginDialog(true)}
+            />
+          } />
+          <Route path="/payment-methods" element={
+            <PaymentMethodsPage
+              isActive={currentPage === 'payment-methods'}
+              showToast={showToast}
             />
           } />
           <Route path="/bookings" element={

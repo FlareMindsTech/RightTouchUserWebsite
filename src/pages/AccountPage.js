@@ -112,6 +112,8 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       onNavigate('bookings');
     } else if (item === 'Manage address') {
       setShowAddressModal(true);
+    } else if (item === 'Manage payment methods') {
+      onNavigate('payment-methods');
     } else {
       showToast(`Opening ${item}`);
     }
@@ -276,11 +278,11 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           <span className="menu-text">Manage address</span>
           <MdOutlineChevronRight className="menu-arrow" />
         </div>
-        {/* <div className="menu-item" onClick={() => handleMenuItemClick('Manage payment methods')}>
+        <div className="menu-item" onClick={() => handleMenuItemClick('Manage payment methods')}>
           <MdOutlinePayments className="menu-icon" />
           <span className="menu-text">Manage payment methods</span>
           <MdOutlineChevronRight className="menu-arrow" />
-        </div> */}
+        </div>
         <div className="menu-item" onClick={() => handleMenuItemClick('Settings')}>
           <MdOutlineSettings className="menu-icon" />
           <span className="menu-text">Settings</span>

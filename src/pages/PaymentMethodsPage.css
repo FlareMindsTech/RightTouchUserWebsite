@@ -1,0 +1,179 @@
+.payment-methods-page {
+    padding-bottom: 80px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.payment-header {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background-color: white;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.payment-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-left: 16px;
+    color: #1a1a1a;
+}
+
+.payment-content {
+    padding: 16px;
+}
+
+.payment-section {
+    margin-bottom: 24px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.add-new-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #6c63ff;
+    background: none;
+    border: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.payment-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.card-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.card-icon-wrapper {
+    width: 48px;
+    height: 36px;
+    background: #f0f4f8;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+}
+
+.brand-icon {
+    font-size: 1.5rem;
+}
+
+.brand-icon.visa {
+    color: #1a1f71;
+}
+
+.brand-icon.mastercard {
+    color: #eb001b;
+}
+
+.brand-icon.phonepe {
+    color: #5f259f;
+}
+
+.brand-icon.paytm {
+    color: #00baf2;
+}
+
+.brand-icon.default {
+    color: #64748b;
+}
+
+.brand-icon.default-upi {
+    color: #10b981;
+}
+
+.card-bank {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.card-number {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.default-badge {
+    display: inline-block;
+    background: #e0e7ff;
+    color: #4f46e5;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-top: 6px;
+    font-weight: 600;
+}
+
+.card-right {
+    position: relative;
+}
+
+.menu-dots {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.remove-text-btn {
+    color: #ef4444;
+    background: none;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.security-assurance {
+    margin-top: 32px;
+    text-align: center;
+    padding: 16px;
+    background: #f0fdf4;
+    border-radius: 8px;
+    border: 1px dashed #bbf7d0;
+}
+
+.security-assurance p {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #166534;
+    font-size: 0.875rem;
+}
+
+.shield-icon {
+    font-size: 1.25rem;
+}
