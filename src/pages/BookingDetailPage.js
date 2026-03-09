@@ -100,14 +100,50 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
     const addressInfo = booking?.addressSnapshot || booking?.addressId;
     const location = addressInfo ? (addressInfo.addressLine || `${addressInfo.flat || ''}, ${addressInfo.area || ''}, ${addressInfo.city || ''}`.replace(/^[,\s]+|[,\s]+$/g, '')) : (booking?.address || 'Address not specified');
     const price = booking?.baseAmount || booking?.serviceId?.serviceCost || booking?.totalPrice || booking?.cartId?.totalPrice || 0;
-    const platformFee = booking?.platformFee || booking?.bookingFee || 0;
+    const platformFee = booking?.platformFee || booking?.bookingFee || booking?.commissionAmount || 0;
     const totalAmount = parseInt(price) + parseInt(platformFee);
+
+    const professionalName = booking?.technicianSnapshot?.name ||
+      (booking?.technicianId?.userId?.fname ? `${booking.technicianId.userId.fname} ${booking.technicianId.userId.lname || ''}`.trim() : null) ||
+      booking?.assignedTechnician?.name ||
+      (booking?.status === 'SEARCHING' ? 'Searching...' : 'Not assigned');
+
+    const professionalMobile = booking?.technicianSnapshot?.mobile ||
+      booking?.technicianId?.userId?.mobileNumber ||
+      'Not available';
+
+    const professionalImage = booking?.technicianSnapshot?.profileImage ||
+      booking?.technicianId?.profileImage ||
+      null;
+
+    const experience = booking?.technicianSnapshot?.experienceYears ||
+      booking?.technicianId?.experienceYears ||
+      0;
+
+    const specialization = booking?.technicianSnapshot?.specialization ||
+      booking?.technicianId?.specialization ||
+      'Technician';
+
+    const isOnline = booking?.technicianId?.availability?.isOnline || false;
+
+    const ratingValue = booking?.technicianSnapshot?.rating ||
+      booking?.technicianId?.rating?.avg ||
+      0;
+
+    const reviewCount = booking?.technicianSnapshot?.reviews ||
+      booking?.technicianId?.rating?.count ||
+      0;
 
     return {
       id: booking?._id ? `BKP${booking._id.substring(booking._id.length - 4).toUpperCase()}` : 'BKP000',
-      professional: booking?.technicianSnapshot?.name || booking?.assignedTechnician?.name || (booking?.status === 'SEARCHING' ? 'Searching...' : 'Not assigned'),
-      rating: booking?.technicianSnapshot?.rating || booking?.assignedTechnician?.rating || 'New',
-      reviews: booking?.technicianSnapshot?.reviews || booking?.assignedTechnician?.reviews || 0,
+      professional: professionalName,
+      professionalMobile: professionalMobile,
+      professionalImage: professionalImage,
+      experience: experience,
+      specialization: specialization,
+      isOnline: isOnline,
+      rating: ratingValue,
+      reviews: reviewCount,
       location: location,
       dateTime: booking?.scheduledAt ? new Date(booking.scheduledAt).toLocaleString() : (booking?.createdAt ? new Date(booking.createdAt).toLocaleString() : 'Date not fixed'),
       amount: `₹${price}`,
@@ -115,6 +151,7 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
       bookingFee: `₹${platformFee}`,
       total: `₹${totalAmount}`,
       status: booking?.status || 'Pending',
+      serviceName: serviceName,
       images: booking?.workImages?.beforeImage || booking?.workImages?.afterImage
         ? [booking.workImages.beforeImage, booking.workImages.afterImage].filter(Boolean)
         : []
@@ -138,20 +175,41 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
 
       {/* Status Bar */}
       <div className="status-bar">
-        <span className="status-badge completed">{booking.status}</span>
+        <span className={`status-badge ${details.status.toLowerCase()}`}>{details.status}</span>
         <span className="booking-id">ID: {details.id}</span>
       </div>
 
       {/* Professional Info */}
       <div className="professional-section">
         <div className="professional-info">
-          <div className="professional-avatar">
-            {details.professional.charAt(0)}
+          <div className="professional-avatar-container">
+            <div className="professional-avatar">
+              {details.professionalImage ? (
+                <img src={details.professionalImage} alt={details.professional} />
+              ) : (
+                details.professional ? details.professional.charAt(0) : '?'
+              )}
+            </div>
+            {booking?.technicianId && (
+              <span className={`online-status-dot ${details.isOnline ? 'online' : 'offline'}`}></span>
+            )}
           </div>
           <div className="professional-details">
-            <h3>{details.professional}</h3>
+            <div className="professional-header">
+              <h3>{details.professional}</h3>
+              {details.experience > 0 && (
+                <span className="experience-badge">{details.experience}y Exp</span>
+              )}
+            </div>
+            <p className="specialization-text">{details.specialization}</p>
+            {details.professionalMobile && details.professionalMobile !== 'Not available' && (
+              <p className="mobile-text">
+                <MdCall style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                {details.professionalMobile}
+              </p>
+            )}
             <div className="rating">
-              <span className="stars">{'★'.repeat(Math.floor(details.rating))}</span>
+              <span className="stars">{'★'.repeat(Math.round(details.rating) || 0)}</span>
               <span className="rating-value">{details.rating}</span>
               <span className="reviews">({details.reviews} reviews)</span>
             </div>
@@ -256,7 +314,13 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
               <MdMessage className="action-icon" />
               Message
             </button>
-            <button className="action-btn secondary" onClick={() => handleAction('Call')}>
+            <button className="action-btn secondary" onClick={() => {
+              if (details.professionalMobile && details.professionalMobile !== 'Not available') {
+                window.location.href = `tel:${details.professionalMobile}`;
+              } else {
+                handleAction('Call');
+              }
+            }}>
               <MdCall className="action-icon" />
               Call
             </button>
