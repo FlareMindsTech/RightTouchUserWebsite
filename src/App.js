@@ -400,7 +400,7 @@ function App() {
         </Routes>
       </main>
 
-      <BottomNav currentPage={currentPage} onNavigate={handleNavigate} />
+      <BottomNav currentPage={currentPage} onNavigate={handleNavigate} currentUser={currentUser} />
 
       {showServiceSheet && (
         <ServiceSheet

@@ -44,7 +44,7 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLog
             to="/account" 
             className={`nav-link ${isActive('account') ? 'active' : ''}`}
           >
-            <span className="nav-icon"><User size={18} /></span> {currentUser ? currentUser.name : 'Account'}
+            <span className="nav-icon"><User size={18} /></span> {currentUser?.name || currentUser?.identifier || 'Account'}
           </Link>
         </nav>
 
