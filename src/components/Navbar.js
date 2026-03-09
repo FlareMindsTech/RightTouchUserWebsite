@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, Wrench, User, ShoppingCart } from 'lucide-react';
 import logo from '../assets/logo.png';
 
-const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLoginClick, onLogout }) => {
+const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLoginClick, onLogout, searchQuery, onSearchChange }) => {
   const location = useLocation();
   
   // Determine active state based on current path
@@ -57,6 +57,8 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLog
             type="text" 
             className="search-input" 
             placeholder="Search services..."
+            value={searchQuery || ''}
+            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
           />
         </div>
 

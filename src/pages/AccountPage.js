@@ -114,6 +114,8 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       setShowAddressModal(true);
     } else if (item === 'Manage payment methods') {
       onNavigate('payment-methods');
+    } else if (item === 'Settings') {
+      onNavigate('settings');
     } else {
       showToast(`Opening ${item}`);
     }

@@ -785,11 +785,24 @@ body.dark .services-hero {
 /* ═══════════════════════════════════════════════════════
    CATEGORY VIEW STYLES
    ═══════════════════════════════════════════════════════ */
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.service-grid .service-card {
+  height: 100%;
+  min-height: 140px;
+}
+
 .category-card-new {
   flex-direction: column;
   padding: 24px 20px;
   text-align: center;
   height: 100%;
+  min-height: 160px;
   justify-content: center;
   border-width: 1.5px;
 }

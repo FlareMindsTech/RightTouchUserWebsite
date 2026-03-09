@@ -37,6 +37,42 @@ const ProductServices = ({
   const [error, setError] = useState(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
+  // Custom FAQ content
+  const customFAQs = [
+    {
+      question: "How do I book a service?",
+      answer: "Simply browse through our services, select the one you need, choose a convenient time slot, and book online. Our team will confirm your appointment within minutes."
+    },
+    {
+      question: "What areas do you serve?",
+      answer: "We currently serve all major cities and surrounding areas. Enter your location during booking to check if we cover your area."
+    },
+    {
+      question: "Are your technicians certified?",
+      answer: "Yes, all our technicians are fully certified, background-verified, and undergo regular training to ensure quality service delivery."
+    },
+    {
+      question: "What is your service warranty policy?",
+      answer: "We provide a minimum 15-day warranty on all services. If you experience any issues within the warranty period, we'll revisit and fix it at no additional cost."
+    },
+    {
+      question: "How do I reschedule or cancel my booking?",
+      answer: "You can reschedule or cancel your booking through the 'My Bookings' section in your account. Please note that cancellations made less than 2 hours before the scheduled time may incur a small fee."
+    },
+    {
+      question: "Do you use genuine spare parts?",
+      answer: "Yes, we use only genuine OEM spare parts for all repairs. If any part needs replacement, we'll always consult with you first and provide a transparent price estimate."
+    },
+    {
+      question: "What payment methods do you accept?",
+      answer: "We accept all major payment methods including credit/debit cards, UPI, net banking, and wallet payments. You can also pay cash after the service is completed."
+    },
+    {
+      question: "How do I track my service professional?",
+      answer: "Once your booking is confirmed, you'll receive real-time updates about the technician's location and estimated arrival time via SMS and in-app notifications."
+    }
+  ];
+
   useEffect(() => {
     const fetchServiceDetails = async () => {
       if (!serviceId) {
@@ -316,21 +352,106 @@ const ProductServices = ({
       <div className="section-wrap" style={{ padding: '40px 20px' }}>
         <h2 style={{ marginBottom: '24px', fontSize: '24px' }}>Frequently Asked <span className="accent">Questions</span></h2>
         <div style={{ maxWidth: '800px' }}>
-          {service.frequentlyAskedQuestions?.map((faq, idx) => {
+          {customFAQs.length > 0 ? customFAQs.map((faq, idx) => (
+              <div key={idx} style={{ 
+                marginBottom: '12px', 
+                border: '1px solid var(--border)', 
+                borderRadius: '12px', 
+                overflow: 'hidden',
+                background: 'var(--bg-card)'
+              }}>
+                <button
+                  style={{
+                    width: '100%',
+                    padding: '16px 18px',
+                    background: openFaqIndex === idx ? 'var(--green-bg)' : 'transparent',
+                    border: 'none',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    color: 'var(--text-primary)',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                >
+                  <span style={{ flex: 1, paddingRight: '10px' }}>{faq.question}</span>
+                  <span style={{ 
+                    color: 'var(--green)', 
+                    fontSize: '22px',
+                    fontWeight: '400',
+                    lineHeight: '1',
+                    transform: openFaqIndex === idx ? 'rotate(0deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease'
+                  }}>
+                    {openFaqIndex === idx ? '−' : '+'}
+                  </span>
+                </button>
+                {openFaqIndex === idx && (
+                  <div style={{
+                    padding: '16px 18px',
+                    background: 'var(--bg-input)',
+                    borderTop: '1px solid var(--border)',
+                    fontSize: '14px',
+                    color: 'var(--text-secondary)',
+                    lineHeight: '1.7'
+                  }}>
+                    {faq.answer}
+                  </div>
+                )}
+              </div>
+            )) : service.frequentlyAskedQuestions?.map((faq, idx) => {
             const q = typeof faq === 'string' ? faq : faq.question;
             const a = typeof faq === 'string' ? "Please contact support for details." : faq.answer;
 
             return (
-              <div key={idx} className="faq-item-new">
+              <div key={idx} style={{ 
+                marginBottom: '12px', 
+                border: '1px solid var(--border)', 
+                borderRadius: '12px', 
+                overflow: 'hidden',
+                background: 'var(--bg-card)'
+              }}>
                 <button
-                  className={`faq-btn-new ${openFaqIndex === idx ? 'active' : ''}`}
+                  style={{
+                    width: '100%',
+                    padding: '16px 18px',
+                    background: openFaqIndex === idx ? 'var(--green-bg)' : 'transparent',
+                    border: 'none',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    color: 'var(--text-primary)',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease'
+                  }}
                   onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
                 >
-                  {q}
-                  {openFaqIndex === idx ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  <span style={{ flex: 1, paddingRight: '10px' }}>{q}</span>
+                  <span style={{ 
+                    color: 'var(--green)', 
+                    fontSize: '22px',
+                    fontWeight: '400',
+                    lineHeight: '1'
+                  }}>
+                    {openFaqIndex === idx ? '−' : '+'}
+                  </span>
                 </button>
                 {openFaqIndex === idx && (
-                  <div className="faq-answer-new">
+                  <div style={{
+                    padding: '16px 18px',
+                    background: 'var(--bg-input)',
+                    borderTop: '1px solid var(--border)',
+                    fontSize: '14px',
+                    color: 'var(--text-secondary)',
+                    lineHeight: '1.7'
+                  }}>
                     {a}
                   </div>
                 )}

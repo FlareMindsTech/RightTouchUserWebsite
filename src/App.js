@@ -19,6 +19,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ProductPage from './pages/ProductPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import PaymentMethodsPage from './pages/PaymentMethodsPage';
+import SettingsPage from './pages/SettingsPage';
 import { MdSearch, MdShoppingCart } from 'react-icons/md';
 import logo from './assets/logo.png';
 import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
@@ -41,6 +42,9 @@ function App() {
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
+  // Search state
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+
   // Get current page from URL path
   const getCurrentPageFromPath = () => {
     const path = location.pathname.replace('/', '') || 'home';
@@ -48,6 +52,11 @@ function App() {
   };
 
   const currentPage = getCurrentPageFromPath();
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Check for user login on mount
   useEffect(() => {
@@ -272,6 +281,8 @@ function App() {
         currentUser={currentUser}
         onLoginClick={() => setShowLoginDialog(true)}
         onLogout={handleLogout}
+        searchQuery={globalSearchQuery}
+        onSearchChange={setGlobalSearchQuery}
       />
 
       {/* Global Mobile Header - shows on all pages */}
@@ -283,7 +294,12 @@ function App() {
         <div className="gmh-right">
           <div className="gmh-search">
             <MdSearch className="gmh-search-icon" />
-            <input type="text" placeholder="Search..." />
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              value={globalSearchQuery}
+              onChange={(e) => setGlobalSearchQuery(e.target.value)}
+            />
           </div>
           <button className="gmh-cart-btn" onClick={handleCartClick}>
             <MdShoppingCart className="gmh-cart-icon" />
@@ -300,6 +316,7 @@ function App() {
               onNavigate={handleNavigate}
               onOpenService={openServiceSheet}
               showToast={showToast}
+              searchQuery={globalSearchQuery}
             />
           } />
           <Route path="/home" element={
@@ -308,6 +325,7 @@ function App() {
               onNavigate={handleNavigate}
               onOpenService={openServiceSheet}
               showToast={showToast}
+              searchQuery={globalSearchQuery}
             />
           } />
           <Route path="/services" element={
@@ -319,6 +337,7 @@ function App() {
               isInCart={isInCart}
               removeFromCart={removeFromCart}
               cartItems={cartItems}
+              searchQuery={globalSearchQuery}
             />
           } />
           <Route path="/product-services" element={
@@ -395,6 +414,14 @@ function App() {
                 navigate('/');
                 setShowLoginDialog(true);
               }}
+            />
+          } />
+          <Route path="/settings" element={
+            <SettingsPage
+              isActive={currentPage === 'settings'}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={toggleDarkMode}
+              showToast={showToast}
             />
           } />
         </Routes>

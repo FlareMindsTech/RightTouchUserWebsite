@@ -6,14 +6,27 @@ import {
   Star,
   Sun,
   Car,
-  Wrench
+  Wrench,
+  Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAllServices } from '../services/serviceService';
 import { getAllCategories } from '../services/categoryService';
 import '../styles/services.css';
 
-const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart }) => {
+// Filter helper function
+const filterBySearch = (items, query) => {
+  if (!query || query.trim() === '') return items;
+  const searchTerm = query.toLowerCase().trim();
+  return items.filter(item => {
+    const name = item.serviceName?.toLowerCase() || '';
+    const description = item.description?.toLowerCase() || '';
+    const category = item.categoryId?.category?.toLowerCase() || '';
+    return name.includes(searchTerm) || description.includes(searchTerm) || category.includes(searchTerm);
+  });
+};
+
+const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart, searchQuery }) => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [allServices, setAllServices] = useState([]);
@@ -22,6 +35,12 @@ const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart }) 
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Filter categories by search
+  const filteredCategories = filterBySearch(categories, searchQuery);
+  
+  // Filter all services by search (when in categories view)
+  const searchedServices = filterBySearch(allServices, searchQuery);
 
   // Map category names to icons
   const categoryIconMap = {
@@ -127,6 +146,9 @@ const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart }) 
     );
   }
 
+  // Check if searching
+  const isSearching = searchQuery && searchQuery.trim() !== '';
+  
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
       {/* Page Header */}
@@ -149,7 +171,75 @@ const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart }) 
       </div>
 
       <div className="section-wrap">
-        {view === 'categories' ? (
+        {/* Show search results if searching */}
+        {isSearching ? (
+          <>
+            {searchedServices.length > 0 ? (
+              <div className="massive-list">
+                {searchedServices.map(service => (
+                  <div key={service._id} className="massive-section-wrap">
+                    <div className="massive-card">
+                      <div className="massive-card-content">
+                        <h3 className="massive-card-title">{service.serviceName}</h3>
+
+                        <div className="massive-card-rating">
+                          <Star size={16} className="star-icon" />
+                          <span>
+                            {service.ratingSummary?.averageRating || 0.0} ({service.ratingSummary?.totalRatings || 0} reviews)
+                          </span>
+                        </div>
+
+                        <div className="massive-card-price">
+                          ₹{service.discountedPrice || service.serviceCost} •
+                        </div>
+
+                        <ul className="massive-card-description">
+                          {(service.description?.split(',') || []).slice(0, 3).map((item, idx) => (
+                            <li key={idx}>{item.trim()}</li>
+                          ))}
+                        </ul>
+
+                        <div
+                          className="massive-card-link"
+                          onClick={() => handleServiceClick(service)}
+                        >
+                          View details
+                        </div>
+                      </div>
+
+                      <div className="massive-card-right">
+                        <div className="massive-card-image">
+                          {service.serviceImages?.[0] ? (
+                            <img src={service.serviceImages[0]} alt={service.serviceName} />
+                          ) : (
+                            <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
+                              <Wrench size={40} />
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          className="massive-add-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart({ ...service, itemType: 'service' });
+                          }}
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-services-message" style={{ textAlign: 'center', padding: '40px' }}>
+                <Search size={48} style={{ color: '#ccc', marginBottom: '16px' }} />
+                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>No results found</h3>
+                <p style={{ fontSize: '14px', color: '#666' }}>Try different keywords or browse categories</p>
+              </div>
+            )}
+          </>
+        ) : view === 'categories' ? (
           /* Category Grid */
           <div className="service-grid">
             {categories.map(cat => (
@@ -172,7 +262,7 @@ const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart }) 
             )}
           </div>
         ) : (
-          /* Service Grid (Filtered) */
+          /* Service Grid (Filtered by category) */
           <>
             {filteredServices.length === 0 ? (
               <div className="no-services-message" style={{ textAlign: 'center', padding: '40px' }}>

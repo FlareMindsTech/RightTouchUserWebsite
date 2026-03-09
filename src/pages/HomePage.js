@@ -52,13 +52,32 @@ const CategoryIcon = ({ category }) => {
 
 // --- Main Component ---
 
-const HomePage = ({ isActive, showToast }) => {
+// Filter helper function
+const filterBySearch = (items, query) => {
+  if (!query || query.trim() === '') return items;
+  const searchTerm = query.toLowerCase().trim();
+  return items.filter(item => {
+    const name = item.category?.toLowerCase() || item.serviceName?.toLowerCase() || '';
+    const description = item.description?.toLowerCase() || '';
+    return name.includes(searchTerm) || description.includes(searchTerm);
+  });
+};
+
+const HomePage = ({ isActive, showToast, searchQuery }) => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
   const [serviceCategories, setServiceCategories] = useState([]);
   const [productCategories, setProductCategories] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Filtered data based on search query
+  const filteredServiceCategories = filterBySearch(serviceCategories, searchQuery);
+  const filteredProductCategories = filterBySearch(productCategories, searchQuery);
+  const filteredServices = filterBySearch(services, searchQuery);
+
+  // Check if any results found
+  const hasSearchResults = searchQuery && searchQuery.trim() !== '' && 
+    (filteredServiceCategories.length > 0 || filteredProductCategories.length > 0 || filteredServices.length > 0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -106,6 +125,9 @@ const HomePage = ({ isActive, showToast }) => {
 
   if (!isActive) return null;
 
+  // If searching, show filtered results
+  const isSearching = searchQuery && searchQuery.trim() !== '';
+  
   return (
     <section className="page" id="page-home">
       {/* Location Bar */}
@@ -128,114 +150,176 @@ const HomePage = ({ isActive, showToast }) => {
         </div>
       </div>
 
-      {/* Search Section */}
-      <div className="search-section mobile-only">
-        <div className="search-box">
-          <Search size={18} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search for services..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Service Categories */}
-      <div className="section-wrap">
-        <h2 className="section-title">Home <span className="accent">Services</span></h2>
-        <div className="category-grid">
-          {loading ? (
-            Array(4).fill(0).map((_, i) => (
-              <div key={i} className="category-card skeleton" style={{ height: '100px', background: '#f1f5f9' }}></div>
-            ))
-          ) : (
-            serviceCategories.slice(0, 8).map(cat => (
-              <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'service')}>
-                <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
-                  <CategoryIcon category={cat} />
-                </div>
-                <span>{cat.category}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Product Categories */}
-      {!loading && productCategories.length > 0 && (
+      {/* Show search results if searching */}
+      {isSearching ? (
         <div className="section-wrap">
-          <h2 className="section-title">Professional <span className="accent">Products</span></h2>
-          <div className="category-grid">
-            {productCategories.slice(0, 8).map(cat => (
-              <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'product')}>
-                <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
-                  <CategoryIcon category={cat} />
-                </div>
-                <span>{cat.category}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Offers Carousel */}
-      <div className="section-wrap">
-        <h2 className="section-title">Offers for you</h2>
-        <div className="carousel-track" id="offersCarousel">
-          {offers.map(offer => (
-            <div key={offer.id} className={`offer-card ${offer.id === 2 ? 'offer-card-2' : offer.id === 3 ? 'offer-card-3' : ''}`}>
-              <div className="offer-badge">{offer.badge}</div>
-              <div className="offer-text">
-                <h3>{offer.title}</h3>
-                <p>{offer.desc}</p>
-                <button className="btn-book-white" onClick={() => handleBookNow(offer)}>Book Now</button>
+          <h2 className="section-title">Search <span className="accent">Results</span></h2>
+          
+          {/* Filtered Service Categories */}
+          {filteredServiceCategories.length > 0 && (
+            <div className="section-wrap" style={{ paddingTop: 0 }}>
+              <h3 className="section-title" style={{ fontSize: '14px' }}>Service Categories</h3>
+              <div className="category-grid">
+                {filteredServiceCategories.slice(0, 8).map(cat => (
+                  <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'service')}>
+                    <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
+                      <CategoryIcon category={cat} />
+                    </div>
+                    <span>{cat.category}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          )}
 
-      {/* Appliance Repair Section */}
-      <div className="section-wrap">
-        <h2 className="section-title">Appliance repair &amp; Services</h2>
-        <div className="carousel-track">
-          {loading ? (
-            Array(4).fill(0).map((_, i) => (
-              <div key={i} className="appliance-card skeleton" style={{ minWidth: '120px', height: '140px', background: '#f1f5f9' }}></div>
-            ))
-          ) : (
-            services.map(service => (
-              <div key={service._id} className="appliance-card" onClick={() => handleServiceClick(service)}>
-                <div className="appliance-img-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green-dark)' }}>
-                  {service.serviceImages?.[0] ? (
-                    <img src={service.serviceImages[0]} alt={service.serviceName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  ) : (
-                    <Wrench size={32} />
-                  )}
-                </div>
-                <span style={{ fontSize: '12px', textAlign: 'center', display: 'block', marginTop: '8px', fontWeight: '600' }}>
-                  {service.serviceName}
-                </span>
+          {/* Filtered Product Categories */}
+          {filteredProductCategories.length > 0 && (
+            <div className="section-wrap" style={{ paddingTop: 0 }}>
+              <h3 className="section-title" style={{ fontSize: '14px' }}>Product Categories</h3>
+              <div className="category-grid">
+                {filteredProductCategories.slice(0, 8).map(cat => (
+                  <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'product')}>
+                    <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
+                      <CategoryIcon category={cat} />
+                    </div>
+                    <span>{cat.category}</span>
+                  </div>
+                ))}
               </div>
-            ))
+            </div>
+          )}
+
+          {/* Filtered Services */}
+          {filteredServices.length > 0 && (
+            <div className="section-wrap" style={{ paddingTop: 0 }}>
+              <h3 className="section-title" style={{ fontSize: '14px' }}>Services</h3>
+              <div className="carousel-track">
+                {filteredServices.slice(0, 10).map(service => (
+                  <div key={service._id} className="appliance-card" onClick={() => handleServiceClick(service)}>
+                    <div className="appliance-img-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green-dark)' }}>
+                      {service.serviceImages?.[0] ? (
+                        <img src={service.serviceImages[0]} alt={service.serviceName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      ) : (
+                        <Wrench size={32} />
+                      )}
+                    </div>
+                    <span style={{ fontSize: '12px', textAlign: 'center', display: 'block', marginTop: '8px', fontWeight: '600' }}>
+                      {service.serviceName}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No results found */}
+          {!hasSearchResults && !loading && (
+            <div className="no-results" style={{ textAlign: 'center', padding: '40px 20px' }}>
+              <Search size={48} style={{ color: '#ccc', marginBottom: '16px' }} />
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>No results found</h3>
+              <p style={{ fontSize: '14px', color: '#666' }}>Try different keywords or browse our categories</p>
+            </div>
           )}
         </div>
-      </div>
-
-      {/* Why Choose Us */}
-      <div className="section-wrap desktop-only">
-        <h2 className="section-title">Why Choose RightTouch?</h2>
-        <div className="why-grid">
-          {WHY_CHOOSE_US.map(item => (
-            <div key={item.title} className="why-card">
-              <div className="why-icon" style={{ fontSize: '2rem' }}>{item.icon}</div>
-              <h4>{item.title}</h4>
-              <p>{item.desc}</p>
+      ) : (
+        <>
+          {/* Normal View - Service Categories */}
+          <div className="section-wrap">
+            <h2 className="section-title">Home <span className="accent">Services</span></h2>
+            <div className="category-grid">
+              {loading ? (
+                Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="category-card skeleton" style={{ height: '100px', background: '#f1f5f9' }}></div>
+                ))
+              ) : (
+                serviceCategories.slice(0, 8).map(cat => (
+                  <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'service')}>
+                    <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
+                      <CategoryIcon category={cat} />
+                    </div>
+                    <span>{cat.category}</span>
+                  </div>
+                ))
+              )}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+
+          {/* Product Categories */}
+          {!loading && productCategories.length > 0 && (
+            <div className="section-wrap">
+              <h2 className="section-title">Professional <span className="accent">Products</span></h2>
+              <div className="category-grid">
+                {productCategories.slice(0, 8).map(cat => (
+                  <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'product')}>
+                    <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
+                      <CategoryIcon category={cat} />
+                    </div>
+                    <span>{cat.category}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Offers Carousel */}
+          <div className="section-wrap">
+            <h2 className="section-title">Offers for you</h2>
+            <div className="carousel-track" id="offersCarousel">
+              {offers.map(offer => (
+                <div key={offer.id} className={`offer-card ${offer.id === 2 ? 'offer-card-2' : offer.id === 3 ? 'offer-card-3' : ''}`}>
+                  <div className="offer-badge">{offer.badge}</div>
+                  <div className="offer-text">
+                    <h3>{offer.title}</h3>
+                    <p>{offer.desc}</p>
+                    <button className="btn-book-white" onClick={() => handleBookNow(offer)}>Book Now</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Appliance Repair Section */}
+          <div className="section-wrap">
+            <h2 className="section-title">Appliance repair &amp; Services</h2>
+            <div className="carousel-track">
+              {loading ? (
+                Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="appliance-card skeleton" style={{ minWidth: '120px', height: '140px', background: '#f1f5f9' }}></div>
+                ))
+              ) : (
+                services.map(service => (
+                  <div key={service._id} className="appliance-card" onClick={() => handleServiceClick(service)}>
+                    <div className="appliance-img-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green-dark)' }}>
+                      {service.serviceImages?.[0] ? (
+                        <img src={service.serviceImages[0]} alt={service.serviceName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      ) : (
+                        <Wrench size={32} />
+                      )}
+                    </div>
+                    <span style={{ fontSize: '12px', textAlign: 'center', display: 'block', marginTop: '8px', fontWeight: '600' }}>
+                      {service.serviceName}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Why Choose Us */}
+          <div className="section-wrap desktop-only">
+            <h2 className="section-title">Why Choose RightTouch?</h2>
+            <div className="why-grid">
+              {WHY_CHOOSE_US.map(item => (
+                <div key={item.title} className="why-card">
+                  <div className="why-icon" style={{ fontSize: '2rem' }}>{item.icon}</div>
+                  <h4>{item.title}</h4>
+                  <p>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </section>
   );
 };
