@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin, Linkedin } from 'lucide-react';
-import logo from '../assets/logo.png';
+// import logo from '../assets/logo.png';
 import './Footer.css';
 
 const Footer = () => {
@@ -13,7 +13,6 @@ const Footer = () => {
                         {/* Branding Column */}
                         <div className="footer-col branding-col">
                             <Link to="/" className="footer-brand">
-                                <img src={logo} alt="RightTouch" />
                                 <span>Right<span className="accent">Touch</span></span>
                             </Link>
                             <p className="brand-pitch">
