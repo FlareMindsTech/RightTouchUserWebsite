@@ -972,7 +972,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           <div className="checkout-section">
             <button
               className="checkout-btn-premium"
-              onClick={handleProceedToCheckout}
+              onClick={handleCheckout}
               disabled={cartItems.length === 0}
             >
               {loading ? 'Processing...' : (

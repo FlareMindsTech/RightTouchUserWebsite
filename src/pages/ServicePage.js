@@ -32,17 +32,9 @@ const ServicesPage = ({
   onNavigate,
   onOpenServiceDetail,
   addToCart,
-<<<<<<< HEAD
-  cartItems = [],
-  updateQuantity,
-  removeFromCart,
-  showToast,
-  isInCart,
-=======
   removeFromCart,
   isInCart,
   cartItems,
->>>>>>> e4c1f269d395b82b6736db4bb49bb74fb203b85c
   searchQuery,
   categories: initialCategories = [],
   allServices: initialAllServices = [],
