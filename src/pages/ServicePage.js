@@ -32,6 +32,9 @@ const ServicesPage = ({
   onNavigate,
   onOpenServiceDetail,
   addToCart,
+  removeFromCart,
+  isInCart,
+  cartItems,
   searchQuery,
   categories: initialCategories = [],
   allServices: initialAllServices = [],
@@ -238,15 +241,29 @@ const ServicesPage = ({
                           </div>
                         )}
                       </div>
-                      <button
-                        className="massive-add-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart({ ...service, itemType: 'service' });
-                        }}
-                      >
-                        Add
-                      </button>
+                      {isInCart && isInCart(service._id) ? (
+                        <button
+                          className="massive-add-btn"
+                          style={{ background: '#ef4444', color: 'white', borderColor: '#ef4444' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const cartItem = cartItems?.find(item => (item.itemId?._id || item.originalId) === service._id);
+                            if (cartItem && removeFromCart) removeFromCart(cartItem.itemId?._id || cartItem.originalId);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      ) : (
+                        <button
+                          className="massive-add-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart({ ...service, itemType: 'service' });
+                          }}
+                        >
+                          Add
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
