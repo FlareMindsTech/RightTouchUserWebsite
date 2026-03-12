@@ -118,152 +118,12 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
   const totalAmount = getTotal();
 
-  const handleCheckout = async () => {
-    // 1. Check Profile Completion (Mandatory: First Name & Phone)
-    const hasFirstName = currentUser?.fname || profileData?.fname;
-    const hasPhone = currentUser?.mobileNumber || currentUser?.identifier || profileData?.mobileNumber;
-
-    if (!hasFirstName || !hasPhone) {
-      showToast('Please complete your profile details first');
-      navigate('/account?edit=profile');
-      return;
-    }
-
+const handleProceedToCheckout = () => {
     if (!currentUser) {
       showToast('Please login to checkout');
       return;
     }
-
-    if (!addressForm.id) {
-      showToast('Please select a delivery address');
-      setShowAddressPopup(true);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // 1. Create Booking / Checkout First
-      const checkoutRes = await checkout({
-        addressId: addressForm.id,
-        paymentMethod: 'razorpay',
-        tip: getTipAmount()
-      });
-
-      if (!checkoutRes?.success) {
-        showToast(checkoutRes?.message || 'Failed to create booking');
-        setLoading(false);
-        return;
-      }
-
-      // Extract bookingId from the response robustly
-      const bookingData = checkoutRes.result;
-      let bookingId = null;
-
-      if (Array.isArray(bookingData)) {
-        // If it's an array of created bookings, take the first one's ID
-        bookingId = bookingData[0]?._id;
-      } else if (bookingData && typeof bookingData === 'object') {
-        bookingId = bookingData._id || bookingData.bookingId || bookingData.id || bookingData.booking?._id;
-
-        if (!bookingId && Array.isArray(bookingData.bookings) && bookingData.bookings.length > 0) {
-          bookingId = bookingData.bookings[0]?._id;
-        }
-      }
-
-      console.log("Checkout complete. BookingData:", bookingData, "Extracted bookingId:", bookingId);
-
-      if (!bookingId) {
-        // Display what we got so user/developer can see what's wrong if it fails
-        const debugInfo = typeof bookingData === 'object' ? JSON.stringify(bookingData).substring(0, 50) : String(bookingData);
-        showToast('Booking created, but ID missing in response (' + debugInfo + ')');
-        setLoading(false);
-        return;
-      }
-
-      // 2. Load Razorpay Script
-      const isLoaded = await loadRazorpayScript();
-      if (!isLoaded) {
-        showToast('Razorpay SDK failed to load. Are you online?');
-        setLoading(false);
-        return;
-      }
-
-      // 3. Create Payment Order
-      const amount = getTotal();
-      const orderRes = await createPaymentOrder({
-        bookingId: bookingId,
-        amount: amount
-      });
-
-      if (!orderRes?.success) {
-        showToast(orderRes?.message || 'Failed to create payment order');
-        setLoading(false);
-        return;
-      }
-
-      const orderData = orderRes.result || orderRes;
-
-      // 4. Configure Razorpay Options
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY || orderData.key || 'rzp_test_YourKeyHere',
-        amount: orderData.amount,
-        currency: orderData.currency || "INR",
-        name: "RightTouch Services",
-        description: "Appliance Repair & Services",
-        image: "/logo.png",
-        order_id: orderData.orderId || orderData.id,
-        handler: async (response) => {
-          try {
-            // 5. Verify Payment on Backend
-            const verificationData = {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              bookingId: bookingId
-            };
-
-            const verifyRes = await verifyPayment(verificationData);
-            if (verifyRes?.success) {
-              showToast('Payment successful and order placed!');
-              fetchCart();
-              navigate('/bookings');
-            } else {
-              showToast('Payment verification failed');
-            }
-          } catch (err) {
-            console.error('Verification Error:', err);
-            showToast('Error verifying payment');
-          } finally {
-            setLoading(false);
-          }
-        },
-        prefill: {
-          name: currentUser.name || `${currentUser.fname || ''} ${currentUser.lname || ''}`.trim() || '',
-          email: currentUser.email || '',
-          contact: currentUser.phoneNumber || currentUser.mobileNumber || ''
-        },
-        theme: {
-          color: "#2ecc71"
-        },
-        modal: {
-          ondismiss: () => {
-            showToast('Payment cancelled. Booking is saved.');
-            fetchCart();
-            // navigate to bookings since backend might have cleared the cart
-            navigate('/bookings');
-            setLoading(false);
-          }
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-
-    } catch (error) {
-      console.error('Checkout Error:', error);
-      showToast('Error during checkout process');
-      setLoading(false);
-    }
+    navigate('/checkout');
   };
 
   const handleIncreaseQty = (item) => {
@@ -601,8 +461,8 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           <div className="checkout-section">
             <button
               className="checkout-btn-premium"
-              onClick={handleCheckout}
-              disabled={loading || cartItems.length === 0}
+              onClick={handleProceedToCheckout}
+              disabled={cartItems.length === 0}
             >
               {loading ? 'Processing...' : (
                 <>

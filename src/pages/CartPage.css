@@ -195,6 +195,7 @@
   background: #22c55e;
   border-radius: 6px;
   overflow: hidden;
+  max-width: fit-content;
 }
 
 .qty-btn-cart {

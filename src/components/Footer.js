@@ -58,7 +58,7 @@ const Footer = () => {
                                 <Phone size={18} className="icon" />
                                 <div className="text">
                                     <p className="label">Call us at</p>
-                                    <p className="value">+91 98765 43210</p>
+                                    <p className="value">+91 73051 07148</p>
                                 </div>
                             </div>
                             <div className="contact-item">

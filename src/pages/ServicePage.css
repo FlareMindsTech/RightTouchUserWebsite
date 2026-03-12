@@ -1,0 +1,24 @@
+/* ServicePage specific quantity container adjustments */
+.quantity-container-cart {
+  min-width: 72px !important; /* Reduced from default 84px (28*3) */
+  justify-content: center;
+}
+
+.qty-btn-cart {
+  width: 24px !important;  /* Reduced from 28px */
+  height: 24px !important;
+  font-size: 14px !important;
+}
+
+.qty-value-cart {
+  width: 24px !important;
+  font-size: 12px !important;
+}
+
+/* Ensure massive-card-right fits */
+.massive-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}

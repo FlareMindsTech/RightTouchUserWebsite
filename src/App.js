@@ -9,6 +9,7 @@ import ServicePage from './pages/ServicePage';
 import ProductServices from './pages/ProductServices';
 import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
 import BookingsPage from './pages/BookingsPage';
 import ServiceSheet from './components/ServiceSheet';
 // import ChatWindow from './components/ChatWindow';
@@ -333,14 +334,15 @@ function App() {
           {currentPage !== 'home' && (
             <img src={logo} alt="RightTouch" className="gmh-logo gmh-logo-mini" />
           )}
-          {['bookings', 'cart', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) ? (
+          {['bookings', 'cart', 'checkout', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) ? (
             <h1 className="gmh-title">{currentPage.charAt(0).toUpperCase() + currentPage.slice(1).replace('-', ' ')}</h1>
           ) : currentPage === 'home' ? (
             <img src={logo} alt="RightTouch" className="gmh-logo" />
           ) : null}
         </div>
         <div className="gmh-right">
-          {!['bookings', 'cart', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) && (
+
+          {!['bookings', 'cart', 'checkout', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) && (
             <div className="gmh-search">
               <MdSearch className="gmh-search-icon" />
               <input
@@ -392,9 +394,11 @@ function App() {
               onNavigate={handleNavigate}
               onOpenServiceDetail={openServiceSheet}
               addToCart={addToCart}
-              isInCart={isInCart}
-              removeFromCart={removeFromCart}
               cartItems={cartItems}
+              updateQuantity={updateQuantity}
+              removeFromCart={removeFromCart}
+              showToast={showToast}
+              isInCart={isInCart}
               searchQuery={globalSearchQuery}
               categories={serviceCategories}
               allServices={allServices}
@@ -450,6 +454,18 @@ function App() {
               fetchCart={fetchCart}
             />
           } />
+            <Route path="/checkout" element={
+              <CheckoutPage
+                isActive={currentPage === 'checkout'}
+                cartItems={cartItems}
+                removeFromCart={removeFromCart}
+                updateQuantity={updateQuantity}
+                fetchCart={fetchCart}
+                showToast={showToast}
+                currentUser={currentUser}
+                onNavigate={handleNavigate}
+              />
+            } />
           <Route path="/product-detail" element={
             <ProductDetailPage
               isActive={currentPage === 'product-detail'}
@@ -523,4 +539,3 @@ function App() {
 }
 
 export default App;
-

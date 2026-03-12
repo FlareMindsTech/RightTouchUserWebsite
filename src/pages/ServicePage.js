@@ -32,6 +32,11 @@ const ServicesPage = ({
   onNavigate,
   onOpenServiceDetail,
   addToCart,
+  cartItems = [],
+  updateQuantity,
+  removeFromCart,
+  showToast,
+  isInCart,
   searchQuery,
   categories: initialCategories = [],
   allServices: initialAllServices = [],
@@ -238,15 +243,56 @@ const ServicesPage = ({
                           </div>
                         )}
                       </div>
-                      <button
-                        className="massive-add-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart({ ...service, itemType: 'service' });
-                        }}
-                      >
-                        Add
-                      </button>
+                      {isInCart(service._id) ? (
+                        <div className="quantity-container-cart">
+                          <button
+                            className="qty-btn-cart qty-minus"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const cartItem = cartItems.find(item => (item.originalId || item.itemId?._id) === service._id);
+                              if (cartItem) {
+                                const currentQty = cartItem.quantity || 1;
+                                if (currentQty > 1) {
+                                  updateQuantity(cartItem.originalId || cartItem.itemId, cartItem.itemType || 'service', currentQty - 1);
+                                  showToast('Removed one from cart');
+                                } else {
+                                  removeFromCart(cartItem.id);
+                                  showToast(`${service.serviceName} removed from cart`);
+                                }
+                              }
+                            }}
+                          >
+                            −
+                          </button>
+                          <span className="qty-value-cart">
+                            {cartItems.find(item => (item.originalId || item.itemId?._id) === service._id)?.quantity || 1}
+                          </span>
+                          <button
+                            className="qty-btn-cart qty-plus"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const cartItem = cartItems.find(item => (item.originalId || item.itemId?._id) === service._id);
+                              if (cartItem) {
+                                const currentQty = cartItem.quantity || 1;
+                                updateQuantity(cartItem.originalId || cartItem.itemId, cartItem.itemType || 'service', currentQty + 1);
+                                showToast('Added one more to cart');
+                              }
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="massive-add-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart({ ...service, itemType: 'service' });
+                          }}
+                        >
+                          Add
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
