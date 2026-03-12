@@ -5,7 +5,9 @@ import {
     MdCreditCard,
     MdOutlineAccountBalanceWallet,
     MdMoreVert,
-    MdDeleteOutline
+    MdDeleteOutline,
+    MdArrowBack,
+    MdSecurity
 } from 'react-icons/md';
 import { SiVisa, SiMastercard, SiPhonepe, SiPaytm } from 'react-icons/si';
 import { useNavigate } from 'react-router-dom';
@@ -53,12 +55,15 @@ const PaymentMethodsPage = ({ isActive, showToast }) => {
     if (!isActive) return null;
 
     return (
-        <section className="payment-methods-page">
-            <div className="payment-header">
-                <button className="back-btn" onClick={handleBack}>
-                    <MdOutlineChevronRight className="back-icon" />
+        <section className="payment-methods-page-premium">
+            <div className="payment-header-premium">
+                <button className="back-btn-premium" onClick={handleBack}>
+                    <MdArrowBack />
                 </button>
-                <h2 className="payment-title">Manage Payment Methods</h2>
+                <div className="header-text">
+                    <h2 className="payment-title">Payment Methods</h2>
+                    <p className="payment-subtitle">Manage your cards and UPI IDs</p>
+                </div>
             </div>
 
             <div className="payment-content">
@@ -148,12 +153,15 @@ const PaymentMethodsPage = ({ isActive, showToast }) => {
                     </div>
                 </div>
 
-                {/* Razorpay Assurance */}
-                <div className="security-assurance">
-                    <p>
-                        <MdOutlineAccountBalanceWallet className="shield-icon" />
-                        100% Secure payments powered by <strong>Razorpay</strong>
-                    </p>
+                {/* Security Badge */}
+                <div className="razorpay-footer-premium">
+                    <div className="assurance-card">
+                        <MdSecurity className="shield-icon" />
+                        <div className="assurance-text">
+                            <h4>Secure Payments</h4>
+                            <p>All your transactions are encrypted and secured by <strong>Razorpay</strong></p>
+                        </div>
+                    </div>
                 </div>
 
             </div>

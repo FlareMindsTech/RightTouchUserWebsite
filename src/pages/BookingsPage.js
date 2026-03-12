@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   MdOutlineChevronRight,
   MdHelpOutline,
@@ -11,23 +11,22 @@ import BookingDetailPage from './BookingDetailPage';
 import { getCustomerBookings, getBookings } from '../services/bookingService';
 import './BookingsPage.css';
 
-const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNavigate }) => {
+const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
   const navigate = useNavigate();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
   const [isLoading, setIsLoading] = useState(false);
   const [bookingsHistory, setBookingsHistory] = useState([]);
   const [activeBookingsList, setActiveBookingsList] = useState([]);
-
-  const handleMenuItemClick = (item) => {
-    showToast(`Opening ${item} `);
-  };
+  const fetchedRef = useRef(false);
 
   const handleBack = () => {
     if (selectedBooking) {
       setSelectedBooking(null);
     } else if (onBack) {
       onBack();
+    } else {
+      navigate('/account');
     }
   };
 
@@ -52,30 +51,34 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
       const active = [];
       const history = [];
 
-      // Process current bookings
-      if (Array.isArray(currentRes?.result)) {
-        currentRes.result.forEach(booking => {
-          const statusLower = (booking.status || '').toLowerCase();
-          const isActiveStatus = ['pending', 'searching', 'scheduled', 'in progress', 'assigned', 'accepted'].some(s => statusLower.includes(s));
-          // If it's explicitly an active status, push to active.
-          if (isActiveStatus) {
-            active.push(booking);
-          }
-        });
-      }
+      // Unified status check logic
+      const processBookings = (res, targetArray, isHistory) => {
+        if (Array.isArray(res?.result)) {
+          res.result.forEach(booking => {
+            const statusUpper = (booking.status || '').toUpperCase();
+            const isHistoryStatus = ['COMPLETED', 'CANCELLED', 'EXPIRED'].includes(statusUpper);
 
-      // Process history bookings
-      if (Array.isArray(historyRes?.result)) {
-        historyRes.result.forEach((booking) => {
-          const statusLower = (booking.status || '').toLowerCase();
-          const isHistoryStatus = ['completed', 'cancelled', 'expired'].some(s => statusLower.includes(s));
-          if (isHistoryStatus) {
-            history.push(booking);
-          }
-        });
-      }
+            if (isHistory && isHistoryStatus) {
+              targetArray.push(booking);
+            } else if (!isHistory && !isHistoryStatus) {
+              active.push(booking);
+            }
+          });
+        }
+      };
 
-      setActiveBookingsList(active);
+      processBookings(currentRes, active, false);
+      processBookings(historyRes, history, true);
+
+      // Filter out duplicates if any overlap
+      const seenIds = new Set();
+      const filteredActive = active.filter(b => {
+        if (seenIds.has(b._id)) return false;
+        seenIds.add(b._id);
+        return true;
+      });
+
+      setActiveBookingsList(filteredActive);
       setBookingsHistory(history);
 
     } catch (err) {
@@ -84,12 +87,16 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Removing showToast from dependencies prevents infinite API loop since showToast is not stable
+  }, [showToast]);
 
   useEffect(() => {
-    if (isActive) {
+    if (isActive && !fetchedRef.current) {
       fetchMyBookings();
+      fetchedRef.current = true;
+    }
+    // Deep reset if inactive for a while? No, keep it for now.
+    if (!isActive) {
+      fetchedRef.current = false; // Allow refetch on reactivation
     }
   }, [isActive, fetchMyBookings]);
 
@@ -104,119 +111,119 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, onNaviga
     );
   }
 
-  // Otherwise show the main bookings page
-  return (
-    <section className={`page ${isActive ? '' : 'hidden'} `} id="page-bookings">
-      {/* Mobile Header with Logo, Search, Cart */}
-      <div className="bookings-mobile-header mobile-only">
-        <div className="mobile-header-left">
-          <img src={logo} alt="RightTouch" className="mobile-header-logo" />
-          <span className="mobile-header-title">RightTouch</span>
-        </div>
-        <div className="mobile-header-right">
-          <div className="mobile-search-bar">
-            <MdSearch className="mobile-search-icon" />
-            <input type="text" placeholder="Search..." />
+  const renderBookingCard = (booking) => {
+    const serviceName = booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking';
+    const status = (booking.status || 'PENDING').toUpperCase();
+    const date = booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }) : (booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'No date');
+
+    const getStatusClass = (status) => {
+      if (['COMPLETED', 'ASSIGNED', 'ACCEPTED', 'IN PROGRESS'].includes(status)) return 'status-success';
+      if (['CANCELLED', 'EXPIRED'].includes(status)) return 'status-error';
+      return 'status-warning';
+    };
+
+    return (
+      <div
+        key={booking._id}
+        className="booking-card-premium"
+        onClick={() => handleBookingClick(booking)}
+      >
+        <div className="booking-card-header">
+          <div className="booking-icon-wrapper">
+            <MdShoppingCart className="booking-card-icon" />
           </div>
-          <button className="mobile-cart-btn" onClick={handleCartClick}>
-            <MdShoppingCart className="mobile-cart-icon" />
-            {cartItemCount > 0 && <span className="mobile-cart-badge">{cartItemCount}</span>}
+          <div className="booking-title-group">
+            <h4 className="booking-service-name">{serviceName}</h4>
+            <p className="booking-id-text">ID: #{booking._id?.slice(-6).toUpperCase()}</p>
+          </div>
+          <div className={`status-badge-vibrant ${getStatusClass(status)}`}>
+            {status}
+          </div>
+        </div>
+
+        <div className="booking-card-body">
+          <div className="booking-info-row">
+            <span className="info-label">Scheduled Date</span>
+            <span className="info-value">{date}</span>
+          </div>
+          <div className="booking-info-row">
+            <span className="info-label">Total Amount</span>
+            <span className="info-value-price">₹{booking.totalPrice || booking.baseAmount || 0}</span>
+          </div>
+        </div>
+
+        <div className="booking-card-footer">
+          <span className="view-details-text">View Details</span>
+          <MdOutlineChevronRight className="arrow-icon-premium" />
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <section className={`bookings-page-premium ${isActive ? '' : 'hidden'}`}>
+      {/* Header Section - Desktop Only */}
+      <div className="bookings-premium-header desktop-only">
+        <div className="header-top">
+          <button className="back-btn-premium" onClick={handleBack}>
+            <MdOutlineChevronRight className="back-icon-premium" />
           </button>
+          <h2 className="page-title-premium">My Bookings</h2>
         </div>
       </div>
 
-      {/* Desktop Header Section */}
-      <div className="bookings-header desktop-only">
-        <button className="back-btn" onClick={handleBack}>
-          <MdOutlineChevronRight className="back-icon" />
-        </button>
-        <h2 className="bookings-title">My Bookings</h2>
-        <button className="help-btn" onClick={() => handleMenuItemClick('Help')}>
-          <MdHelpOutline className="help-icon" />
-          <span>Help</span>
-        </button>
+      {/* Tab Navigation - Visible on all screens */}
+      <div className="bookings-tabs-premium-fixed">
+        <div className="bookings-tabs-premium">
+          <button
+            className={`tab-btn-premium ${activeTab === 'active' ? 'active' : ''}`}
+            onClick={() => setActiveTab('active')}
+          >
+            Active & Upcoming
+          </button>
+          <button
+            className={`tab-btn-premium ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            Past Bookings
+          </button>
+        </div>
       </div>
 
       {/* Content Section */}
-      <div className="bookings-content">
-        {/* Tab Navigation */}
-        <div className="bookings-tabs">
-          <button
-            className={`tab - btn ${activeTab === 'active' ? 'active' : ''} `}
-            onClick={() => setActiveTab('active')}
-          >
-            Active
-          </button>
-          <button
-            className={`tab - btn ${activeTab === 'history' ? 'active' : ''} `}
-            onClick={() => setActiveTab('history')}
-          >
-            History
-          </button>
-        </div>
-
-        {/* Active & Upcoming Section */}
-        {activeTab === 'active' && (
-          <div className="active-section">
-            <h3 className="section-subheading">Active</h3>
-            {isLoading ? (
-              <p className="empty-message">Loading active bookings...</p>
-            ) : activeBookingsList.length > 0 ? (
-              <div className="bookings-list">
-                {activeBookingsList.map((booking, index) => (
-                  <div
-                    key={index}
-                    className="booking-item"
-                    onClick={() => handleBookingClick(booking)}
-                  >
-                    <div className="booking-details">
-                      <h4 className="booking-service">
-                        {booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking'}
-                      </h4>
-                      <p className="booking-status">
-                        <span className="status-dot status-active"></span>
-                        {booking.status} · {booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleDateString() : (booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'No date')}
-                      </p>
-                    </div>
-                    <MdOutlineChevronRight className="booking-arrow" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="empty-message">You have no upcoming bookings</p>
-            )}
+      <div className="bookings-container-premium">
+        {isLoading ? (
+          <div className="loading-state-premium">
+            <div className="shimmer-card"></div>
+            <div className="shimmer-card"></div>
           </div>
-        )}
-
-        {/* History Section */}
-        {activeTab === 'history' && (
-          <div className="history-section">
-            <h3 className="section-subheading">History</h3>
-            {isLoading ? (
-              <p className="empty-message">Loading booking history...</p>
-            ) : bookingsHistory.length > 0 ? (
-              <div className="bookings-list">
-                {bookingsHistory.map((booking, index) => (
-                  <div
-                    key={index}
-                    className="booking-item"
-                    onClick={() => handleBookingClick(booking)}
-                  >
-                    <div className="booking-details">
-                      <h4 className="booking-service">
-                        {booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking'}
-                      </h4>
-                      <p className="booking-status">
-                        <span className="status-dot"></span>
-                        {booking.status} · {booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleDateString() : (booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'No date')}
-                      </p>
-                    </div>
-                    <MdOutlineChevronRight className="booking-arrow" />
-                  </div>
-                ))}
-              </div>
+        ) : (
+          <div className="bookings-list-premium">
+            {activeTab === 'active' ? (
+              activeBookingsList.length > 0 ? (
+                activeBookingsList.map(booking => renderBookingCard(booking))
+              ) : (
+                <div className="empty-state-premium">
+                  <div className="empty-icon-wrapper">📅</div>
+                  <h3>No active bookings</h3>
+                  <p>You haven't booked any services yet.</p>
+                  <button className="book-now-btn" onClick={() => navigate('/')}>Book Now</button>
+                </div>
+              )
             ) : (
-              <p className="empty-message">No booking history</p>
+              bookingsHistory.length > 0 ? (
+                bookingsHistory.map(booking => renderBookingCard(booking))
+              ) : (
+                <div className="empty-state-premium">
+                  <div className="empty-icon-wrapper">⌛</div>
+                  <h3>No history found</h3>
+                  <p>Your past bookings will appear here.</p>
+                </div>
+              )
             )}
           </div>
         )}

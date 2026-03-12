@@ -17,7 +17,8 @@
   border-radius: var(--radius-xl);
   padding: 40px;
   margin-bottom: 24px;
-  text-align: center;
+  text-align: left;
+  /* Aligned left for professionalism */
 }
 
 body.dark .services-hero {
@@ -38,6 +39,65 @@ body.dark .services-hero {
 
 .accent {
   color: var(--green);
+}
+
+/* Category ribbon across the top of services */
+.category-ribbon {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 20px;
+  margin: 0 -20px 10px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 60px;
+  /* Below the header search pill */
+  z-index: 90;
+}
+
+@media (min-width: 768px) {
+  .category-ribbon {
+    margin: 0 0 20px 0;
+    padding: 10px 0;
+    position: static;
+    border-bottom: none;
+    background: transparent;
+  }
+}
+
+.category-ribbon::-webkit-scrollbar {
+  display: none;
+}
+
+.ribbon-item {
+  white-space: nowrap;
+  padding: 8px 18px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.ribbon-item:hover {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-bg);
+}
+
+.ribbon-item.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+  transform: scale(1.02);
 }
 
 .service-grid {
@@ -524,6 +584,7 @@ body.dark .services-hero {
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -906,9 +967,37 @@ body.dark .services-hero {
 }
 
 .massive-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  border-color: var(--green);
+  transform: translateY(-6px);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.05),
+    0 10px 10px -5px rgba(0, 0, 0, 0.02),
+    0 0 0 1px var(--green-light);
+  border-color: transparent;
+}
+
+/* Premium Badges */
+.premium-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.badge-popular {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: white;
+}
+
+.badge-recommended {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
 }
 
 .massive-card-content {
@@ -1041,29 +1130,204 @@ body.dark .services-hero {
 .massive-add-btn:hover {
   background: var(--green);
   color: white;
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 8px 15px rgba(34, 197, 94, 0.3);
+  transform: translateY(-2px);
+}
+
+.massive-add-btn:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 640px) {
   .massive-card {
-    padding: 18px;
-    gap: 15px;
+    padding: 16px;
+    gap: 12px;
   }
 
   .massive-card-right {
-    width: 120px;
+    width: 100px;
   }
 
   .massive-card-image {
-    width: 120px;
-    height: 100px;
+    width: 100px;
+    height: 90px;
+    border-radius: 10px;
   }
 
   .massive-card-title {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .massive-card-price {
-    font-size: 19px;
+    font-size: 18px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   COMPACT MOBILE UI (Matches Screenshot)
+   ═══════════════════════════════════════════════════════ */
+
+.services-mobile-container {
+  padding: 10px 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-page-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+}
+
+.search-pill-container {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.search-pill-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+}
+
+.search-pill-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 16px 0 48px;
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  font-size: 15px;
+  color: #1e293b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.search-pill-input::placeholder {
+  color: #94a3b8;
+}
+
+.compact-service-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 4px;
+}
+
+.compact-service-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  /* Stack for more room */
+  justify-content: space-between;
+  min-height: 110px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.compact-service-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, transparent 50%, #f1f5f9 50%);
+  opacity: 0.5;
+}
+
+.compact-service-card:hover {
+  border-color: var(--green-light);
+  box-shadow: 0 12px 20px rgba(34, 197, 94, 0.08);
+  transform: translateY(-4px);
+}
+
+.compact-service-card:active {
+  transform: scale(0.95);
+}
+
+.compact-info {
+  flex: 1;
+  padding-right: 0;
+  margin-top: 8px;
+}
+
+.compact-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: 0.2px;
+}
+
+.compact-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.compact-image-box {
+  width: 100%;
+  height: 80px;
+  background: #f8fafc;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--green);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+}
+
+.compact-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.compact-service-card:hover .compact-image-box {
+  background: var(--green-bg);
+}
+
+.compact-service-card:hover .compact-img {
+  transform: scale(1.05);
+}
+
+/* Hide hero and ribbon on small screens if we want to match screenshot exactly */
+@media (max-width: 480px) {
+
+  .services-hero {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .services-mobile-container {
+    padding: 0;
+  }
+
+  .mobile-page-title,
+  .search-pill-container {
+    display: none;
+  }
+
+  .compact-service-grid {
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 20px;
   }
 }

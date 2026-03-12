@@ -12,8 +12,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Auth Dialog */
@@ -31,8 +36,15 @@
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-close-btn {
@@ -283,8 +295,13 @@
   }
 
   @keyframes slideUpMobile {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+    from {
+      transform: translateY(100%);
+    }
+
+    to {
+      transform: translateY(0);
+    }
   }
 
   .auth-dialog-overlay {
@@ -355,30 +372,43 @@
   border-color: #d1d5db;
 }
 
-/* Checkbox Styles */
+/* Improved Checkbox Styles */
 .checkbox-group {
   margin-bottom: 4px;
 }
 
-.checkbox-label {
+.checkbox-row {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #374151;
-  line-height: 1.4;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
 }
 
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin-top: 2px;
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
   accent-color: #22c55e;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.checkbox-label span {
-  flex: 1;
+.checkbox-label-text {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  user-select: none;
+  /* Prevents the blue highlight selection from the screenshot */
+  cursor: default;
 }
 
+.legal-link {
+  color: #111827;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.legal-link:hover {
+  color: #22c55e;
+  text-decoration: underline;
+}

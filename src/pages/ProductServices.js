@@ -26,7 +26,8 @@ const ProductServices = ({
   addToCart,
   removeFromCart,
   isInCart,
-  showToast
+  showToast,
+  allServices = []
 }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -75,9 +76,21 @@ const ProductServices = ({
 
   useEffect(() => {
     const fetchServiceDetails = async () => {
-      if (!serviceId) {
-        setLoading(false);
+      if (!serviceId || !isActive) {
+        if (!serviceId) setLoading(false);
         return;
+      }
+
+      // Cache-first: try to find in global services
+      if (allServices.length > 0) {
+        const cached = allServices.find(s => s._id === serviceId);
+        if (cached) {
+          setService(cached);
+          setLoading(false);
+          // Optional: Still fetch in background to get full details if needed
+          // but for now, this is production-level caching
+          return;
+        }
       }
 
       try {
@@ -150,12 +163,25 @@ const ProductServices = ({
         <button className="back-btn-simple" onClick={handleBack} style={{ marginBottom: '15px' }}>
           <ChevronLeft size={20} /> Back
         </button>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+        <div className="service-detail-hero-content" style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
+          {/* Service Image Section */}
+          <div className="service-detail-image-wrap">
+            {service.serviceImages?.[0] ? (
+              <img src={service.serviceImages[0]} alt={service.serviceName} className="service-main-img" />
+            ) : (
+              <div className="service-img-placeholder-large">
+                <Hammer size={60} />
+              </div>
+            )}
+            <div className="service-badges-overlay">
+              {service.isPopular && <span className="premium-badge badge-popular">Popular</span>}
+              {service.isRecommended && <span className="premium-badge badge-recommended">Recommended</span>}
+            </div>
+          </div>
+
           <div style={{ flex: 1, minWidth: '300px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <h1 style={{ fontSize: '28px', margin: 0 }}>{service.serviceName}</h1>
-              {service.isPopular && <span className="badge" style={{ background: '#fef3c7', color: '#92400e', fontSize: '10px' }}>POPULAR</span>}
-              {service.isRecommended && <span className="badge" style={{ background: '#e0e7ff', color: '#3730a3', fontSize: '10px' }}>RECOMMENDED</span>}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '12px' }}>
@@ -353,65 +379,65 @@ const ProductServices = ({
         <h2 style={{ marginBottom: '24px', fontSize: '24px' }}>Frequently Asked <span className="accent">Questions</span></h2>
         <div style={{ maxWidth: '800px' }}>
           {customFAQs.length > 0 ? customFAQs.map((faq, idx) => (
-              <div key={idx} style={{ 
-                marginBottom: '12px', 
-                border: '1px solid var(--border)', 
-                borderRadius: '12px', 
-                overflow: 'hidden',
-                background: 'var(--bg-card)'
-              }}>
-                <button
-                  style={{
-                    width: '100%',
-                    padding: '16px 18px',
-                    background: openFaqIndex === idx ? 'var(--green-bg)' : 'transparent',
-                    border: 'none',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    color: 'var(--text-primary)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
-                >
-                  <span style={{ flex: 1, paddingRight: '10px' }}>{faq.question}</span>
-                  <span style={{ 
-                    color: 'var(--green)', 
-                    fontSize: '22px',
-                    fontWeight: '400',
-                    lineHeight: '1',
-                    transform: openFaqIndex === idx ? 'rotate(0deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s ease'
-                  }}>
-                    {openFaqIndex === idx ? '−' : '+'}
-                  </span>
-                </button>
-                {openFaqIndex === idx && (
-                  <div style={{
-                    padding: '16px 18px',
-                    background: 'var(--bg-input)',
-                    borderTop: '1px solid var(--border)',
-                    fontSize: '14px',
-                    color: 'var(--text-secondary)',
-                    lineHeight: '1.7'
-                  }}>
-                    {faq.answer}
-                  </div>
-                )}
-              </div>
-            )) : service.frequentlyAskedQuestions?.map((faq, idx) => {
+            <div key={idx} style={{
+              marginBottom: '12px',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: 'var(--bg-card)'
+            }}>
+              <button
+                style={{
+                  width: '100%',
+                  padding: '16px 18px',
+                  background: openFaqIndex === idx ? 'var(--green-bg)' : 'transparent',
+                  border: 'none',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: 'var(--text-primary)',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+              >
+                <span style={{ flex: 1, paddingRight: '10px' }}>{faq.question}</span>
+                <span style={{
+                  color: 'var(--green)',
+                  fontSize: '22px',
+                  fontWeight: '400',
+                  lineHeight: '1',
+                  transform: openFaqIndex === idx ? 'rotate(0deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease'
+                }}>
+                  {openFaqIndex === idx ? '−' : '+'}
+                </span>
+              </button>
+              {openFaqIndex === idx && (
+                <div style={{
+                  padding: '16px 18px',
+                  background: 'var(--bg-input)',
+                  borderTop: '1px solid var(--border)',
+                  fontSize: '14px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: '1.7'
+                }}>
+                  {faq.answer}
+                </div>
+              )}
+            </div>
+          )) : service.frequentlyAskedQuestions?.map((faq, idx) => {
             const q = typeof faq === 'string' ? faq : faq.question;
             const a = typeof faq === 'string' ? "Please contact support for details." : faq.answer;
 
             return (
-              <div key={idx} style={{ 
-                marginBottom: '12px', 
-                border: '1px solid var(--border)', 
-                borderRadius: '12px', 
+              <div key={idx} style={{
+                marginBottom: '12px',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
                 overflow: 'hidden',
                 background: 'var(--bg-card)'
               }}>
@@ -434,8 +460,8 @@ const ProductServices = ({
                   onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
                 >
                   <span style={{ flex: 1, paddingRight: '10px' }}>{q}</span>
-                  <span style={{ 
-                    color: 'var(--green)', 
+                  <span style={{
+                    color: 'var(--green)',
                     fontSize: '22px',
                     fontWeight: '400',
                     lineHeight: '1'

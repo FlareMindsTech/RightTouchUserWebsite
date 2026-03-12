@@ -25,7 +25,7 @@
 @media (max-width: 767px) {
   .mobile-only {
     display: flex;
-    
+
   }
 
   .desktop-only {
@@ -58,51 +58,58 @@
   }
 
   .gmh-logo {
-    width: calc(75px * 2.3);
-    height: calc(46px * 2.3);
+    width: auto;
+    height: 48px;
+    max-width: 120px;
+    object-fit: contain;
+  }
+
+  .gmh-logo-mini {
+    height: 42px;
   }
 
   .gmh-title {
-    font-size: calc(20px * 1.8);
+    font-size: 18px;
+    font-weight: 700;
   }
 
   .gmh-right {
-    gap: 16px;
+    gap: 12px;
   }
 
   .gmh-search {
-    padding: 10px 16px;
-    gap: 10px;
+    padding: 8px 14px;
+    gap: 6px;
   }
 
   .gmh-search-icon {
-    font-size: calc(18px * 2.1);
+    font-size: 18px;
   }
 
   .gmh-search input {
-    width: calc(120px * 2.0);
-    font-size: calc(14px * 2.0);
+    width: 120px;
+    font-size: 14px;
   }
 
   .gmh-cart-btn {
-    padding: 8px;
+    padding: 6px;
   }
 
   .gmh-cart-icon {
-    font-size: calc(24px * 2.2);
+    font-size: 24px;
   }
 
   .gmh-cart-badge {
-    width: 22px;
-    height: 22px;
-    font-size: 12px;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
   }
 
   .page-wrapper {
     padding-top: 0;
     padding-bottom: calc(var(--bottom-nav-height) + 20px);
-    padding-left: 1px;
-    padding-right: 1px;
+    padding-left: 8px;
+    padding-right: 8px;
     max-width: 100%;
     min-height: calc(100vh - 70px);
   }

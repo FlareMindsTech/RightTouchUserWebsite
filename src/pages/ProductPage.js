@@ -14,15 +14,31 @@ import { getAllCategories } from '../services/categoryService';
 import { getAllProducts } from '../services/productService';
 import '../styles/services.css';
 
-const ProductPage = ({ isActive, addToCart, isInCart, cartItems, removeFromCart }) => {
+const ProductPage = ({
+    isActive,
+    addToCart,
+    isInCart,
+    cartItems,
+    removeFromCart,
+    productCategories: initialCategories = [],
+    allProducts: initialAllProducts = [],
+    dataLoading: isGlobalLoading
+}) => {
     const navigate = useNavigate();
-    const [categories, setCategories] = useState([]);
-    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState(initialCategories);
+    const [products, setProducts] = useState(initialAllProducts);
     const [view, setView] = useState('categories'); // 'categories' or 'products'
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(isGlobalLoading);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Sync with global props
+    useEffect(() => {
+        setCategories(initialCategories);
+        setProducts(initialAllProducts);
+        setLoading(isGlobalLoading);
+    }, [initialCategories, initialAllProducts, isGlobalLoading]);
 
     // Icon Map for Product Categories
     const iconMap = {
@@ -34,41 +50,6 @@ const ProductPage = ({ isActive, addToCart, isInCart, cartItems, removeFromCart 
         'default': <Package size={32} />
     };
 
-    useEffect(() => {
-        const fetchProductData = async () => {
-            if (!isActive) return;
-
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Fetch product categories and all products
-                const [catRes, prodRes] = await Promise.all([
-                    getAllCategories({ categoryType: 'product' }),
-                    getAllProducts()
-                ]);
-
-                const cats = catRes?.result || catRes?.data || catRes;
-                if (Array.isArray(cats)) {
-                    setCategories(cats);
-                }
-
-                const prods = prodRes?.result || prodRes?.data || prodRes?.products || prodRes;
-                if (Array.isArray(prods)) {
-                    setProducts(prods);
-                } else if (prodRes?.result?.products) {
-                    setProducts(prodRes.result.products);
-                }
-            } catch (err) {
-                console.error("Error fetching product data:", err);
-                setError("Failed to load products. Please check your connection.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProductData();
-    }, [isActive]);
 
     const handleCategoryClick = (category) => {
         setSelectedCategory(category);

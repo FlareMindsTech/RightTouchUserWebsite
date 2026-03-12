@@ -7,7 +7,6 @@ const AuthDialog = ({
   onClose,
   onLoginSuccess,
   onNavigateToRegister,
-  onNavigateToForgotPassword,
   onShowToast
 }) => {
   const [identifier, setIdentifier] = useState('');
@@ -42,10 +41,13 @@ const AuthDialog = ({
         setOtpSent(true);
         onShowToast?.('OTP sent to your phone number');
       } else {
-        setErrors({ identifier: 'Login failed. Please try again.' });
+        const errorMsg = response?.message || response?.error?.message || response?.data?.message || 'Login failed. Please try again.';
+        setErrors({ identifier: errorMsg });
       }
     } catch (error) {
-      setErrors({ identifier: 'Login failed. Please try again.' });
+      console.error("Login error:", error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Login failed. Please try again.';
+      setErrors({ identifier: errorMsg });
     }
     setIsLoading(false);
   };

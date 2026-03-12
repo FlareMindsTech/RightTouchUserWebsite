@@ -157,7 +157,7 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
         : []
     };
   };
-
+  console.log(booking)
   const details = getBookingDetails();
 
   return (

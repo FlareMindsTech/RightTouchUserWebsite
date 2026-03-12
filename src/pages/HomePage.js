@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wind,
@@ -63,12 +63,28 @@ const filterBySearch = (items, query) => {
   });
 };
 
-const HomePage = ({ isActive, showToast, searchQuery }) => {
+const HomePage = ({
+  isActive,
+  showToast,
+  searchQuery,
+  serviceCategories: initialServiceCategories = [],
+  productCategories: initialProductCategories = [],
+  services: initialServices = [],
+  loading: isGlobalLoading
+}) => {
   const navigate = useNavigate();
-  const [serviceCategories, setServiceCategories] = useState([]);
-  const [productCategories, setProductCategories] = useState([]);
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [serviceCategories, setServiceCategories] = useState(initialServiceCategories);
+  const [productCategories, setProductCategories] = useState(initialProductCategories);
+  const [services, setServices] = useState(initialServices);
+  const [loading, setLoading] = useState(isGlobalLoading);
+
+  // Keep local state in sync with global props
+  useEffect(() => {
+    setServiceCategories(initialServiceCategories);
+    setProductCategories(initialProductCategories);
+    setServices(initialServices);
+    setLoading(isGlobalLoading);
+  }, [initialServiceCategories, initialProductCategories, initialServices, isGlobalLoading]);
 
   // Filtered data based on search query
   const filteredServiceCategories = filterBySearch(serviceCategories, searchQuery);
@@ -76,40 +92,15 @@ const HomePage = ({ isActive, showToast, searchQuery }) => {
   const filteredServices = filterBySearch(services, searchQuery);
 
   // Check if any results found
-  const hasSearchResults = searchQuery && searchQuery.trim() !== '' && 
+  const hasSearchResults = searchQuery && searchQuery.trim() !== '' &&
     (filteredServiceCategories.length > 0 || filteredProductCategories.length > 0 || filteredServices.length > 0);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!isActive) return;
-      try {
-        setLoading(true);
-        const [servCatRes, prodCatRes, servRes] = await Promise.all([
-          getAllCategories({ categoryType: 'service' }),
-          getAllCategories({ categoryType: 'product' }),
-          getAllServices({ limit: 10 })
-        ]);
-
-        const servCats = servCatRes?.result || servCatRes?.data || servCatRes;
-        if (Array.isArray(servCats)) setServiceCategories(servCats);
-
-        const prodCats = prodCatRes?.result || prodCatRes?.data || prodCatRes;
-        if (Array.isArray(prodCats)) setProductCategories(prodCats);
-
-        const servs = servRes?.result?.services || servRes?.data || servRes;
-        if (Array.isArray(servs)) setServices(servs);
-      } catch (err) {
-        console.error("Error fetching home data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [isActive]);
-
   const handleCategoryClick = (category, type) => {
-    navigate(type === 'product' ? `/products` : `/services`);
+    if (type === 'product') {
+      navigate(`/products`);
+    } else {
+      navigate(`/services?category=${category._id}`);
+    }
     showToast(`Opening ${category.category} ${type}s`);
   };
 
@@ -127,7 +118,7 @@ const HomePage = ({ isActive, showToast, searchQuery }) => {
 
   // If searching, show filtered results
   const isSearching = searchQuery && searchQuery.trim() !== '';
-  
+
   return (
     <section className="page" id="page-home">
       {/* Location Bar */}
@@ -154,7 +145,7 @@ const HomePage = ({ isActive, showToast, searchQuery }) => {
       {isSearching ? (
         <div className="section-wrap">
           <h2 className="section-title">Search <span className="accent">Results</span></h2>
-          
+
           {/* Filtered Service Categories */}
           {filteredServiceCategories.length > 0 && (
             <div className="section-wrap" style={{ paddingTop: 0 }}>
@@ -281,24 +272,32 @@ const HomePage = ({ isActive, showToast, searchQuery }) => {
           {/* Appliance Repair Section */}
           <div className="section-wrap">
             <h2 className="section-title">Appliance repair &amp; Services</h2>
-            <div className="carousel-track">
+            <div className="carousel-track" id="applianceCarousel">
               {loading ? (
                 Array(4).fill(0).map((_, i) => (
-                  <div key={i} className="appliance-card skeleton" style={{ minWidth: '120px', height: '140px', background: '#f1f5f9' }}></div>
+                  <div key={i} className="appliance-card-premium skeleton" style={{ width: '160px', height: '180px', background: '#f1f5f9' }}></div>
                 ))
               ) : (
                 services.map(service => (
-                  <div key={service._id} className="appliance-card" onClick={() => handleServiceClick(service)}>
-                    <div className="appliance-img-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green-dark)' }}>
+                  <div key={service._id} className="appliance-card-premium" onClick={() => handleServiceClick(service)}>
+                    <div className="appliance-img-wrap-premium">
                       {service.serviceImages?.[0] ? (
-                        <img src={service.serviceImages[0]} alt={service.serviceName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        <img src={service.serviceImages[0]} alt={service.serviceName} />
                       ) : (
                         <Wrench size={32} />
                       )}
                     </div>
-                    <span style={{ fontSize: '12px', textAlign: 'center', display: 'block', marginTop: '8px', fontWeight: '600' }}>
-                      {service.serviceName}
-                    </span>
+                    <div className="appliance-info-premium">
+                      <span className="appliance-name-premium">
+                        {service.serviceName}
+                      </span>
+                      <div className="appliance-price-wrap">
+                        <span className="appliance-price">₹{service.discountedPrice || service.serviceCost}</span>
+                        {service.serviceCost > (service.discountedPrice || 0) && (
+                          <span className="appliance-old-price">₹{service.serviceCost}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))
               )}

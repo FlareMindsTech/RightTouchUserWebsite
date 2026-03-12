@@ -1,5 +1,4 @@
-// App.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
 // Import components
@@ -12,16 +11,19 @@ import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
 import BookingsPage from './pages/BookingsPage';
 import ServiceSheet from './components/ServiceSheet';
-import ChatWindow from './components/ChatWindow';
+// import ChatWindow from './components/ChatWindow';
 import AuthDialog from './components/AuthDialog';
 import RegisterDialog from './components/RegisterDialog';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import Footer from './components/Footer';
 import ProductPage from './pages/ProductPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import PaymentMethodsPage from './pages/PaymentMethodsPage';
 import SettingsPage from './pages/SettingsPage';
 import { MdSearch, MdShoppingCart } from 'react-icons/md';
 import logo from './assets/logo.png';
+import { getAllCategories } from './services/categoryService';
+import { getAllServices } from './services/serviceService';
+import { getAllProducts } from './services/productService';
 import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
 
 function App() {
@@ -31,8 +33,6 @@ function App() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [showServiceSheet, setShowServiceSheet] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
-  const [showChatWindow, setShowChatWindow] = useState(false);
-  const [selectedChat, setSelectedChat] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [cartItems, setCartItems] = useState([]);
@@ -44,6 +44,14 @@ function App() {
 
   // Search state
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+
+  // Global Data Store (Production-Level Caching)
+  const [serviceCategories, setServiceCategories] = useState([]);
+  const [productCategories, setProductCategories] = useState([]);
+  const [allServices, setAllServices] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const dataFetchedRef = useRef(false);
 
   // Get current page from URL path
   const getCurrentPageFromPath = () => {
@@ -63,18 +71,14 @@ function App() {
     const savedUser = localStorage.getItem('currentUser');
     const savedToken = localStorage.getItem('token');
 
-    if (savedUser && savedToken) {
-      try {
-        setCurrentUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error('Failed to parse saved user:', e);
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('token');
+    try {
+      const parsed = JSON.parse(savedUser);
+      if (parsed && parsed._id) {
+        setCurrentUser(parsed);
       }
-    } else if (savedUser || savedToken) {
-      // Clear inconsistent state
+    } catch (e) {
+      console.error('Failed to parse saved user:', e);
       localStorage.removeItem('currentUser');
-      localStorage.removeItem('token');
     }
 
     // Check for dark mode preference
@@ -86,8 +90,15 @@ function App() {
     // Listen for custom events
     const handleLogoutEvent = () => setCurrentUser(null);
     const handleProfileUpdateEvent = () => {
-      const savedUser = localStorage.getItem('currentUser');
-      if (savedUser) setCurrentUser(JSON.parse(savedUser));
+      const savedUserStr = localStorage.getItem('currentUser');
+      if (savedUserStr) {
+        const parsedUser = JSON.parse(savedUserStr);
+        setCurrentUser(prev => {
+          // Only update state if data actually changed to prevent infinite loops
+          if (JSON.stringify(prev) === savedUserStr) return prev;
+          return parsedUser;
+        });
+      }
     };
 
     window.addEventListener('userLoggedOut', handleLogoutEvent);
@@ -96,6 +107,42 @@ function App() {
     if (savedUser && savedToken) {
       fetchCart();
     }
+
+    // Global data fetching
+    const fetchGlobalData = async () => {
+      if (dataFetchedRef.current) return;
+      try {
+        const [servCatRes, prodCatRes, servRes, prodRes] = await Promise.all([
+          getAllCategories({ categoryType: 'service' }),
+          getAllCategories({ categoryType: 'product' }),
+          getAllServices(),
+          getAllProducts()
+        ]);
+
+        const servCats = servCatRes?.result || servCatRes?.data || servCatRes;
+        if (Array.isArray(servCats)) setServiceCategories(servCats);
+
+        const prodCats = prodCatRes?.result || prodCatRes?.data || prodCatRes;
+        if (Array.isArray(prodCats)) setProductCategories(prodCats);
+
+        const servs = Array.isArray(servRes?.result) ? servRes.result : (servRes?.result?.services || servRes?.data || servRes);
+        if (Array.isArray(servs)) setAllServices(servs);
+
+        const prods = prodRes?.result || prodRes?.data || prodRes?.products || prodRes;
+        if (Array.isArray(prods)) {
+          setAllProducts(prods);
+        } else if (prodRes?.result?.products) {
+          setAllProducts(prodRes.result.products);
+        }
+
+        setIsDataLoaded(true);
+        dataFetchedRef.current = true;
+      } catch (err) {
+        console.error("Error fetching global data:", err);
+      }
+    };
+
+    fetchGlobalData();
 
     return () => {
       window.removeEventListener('userLoggedOut', handleLogoutEvent);
@@ -128,7 +175,7 @@ function App() {
     }
   };
 
-  const handleNavigate = (page, element = null) => {
+  const handleNavigate = useCallback((page, element = null) => {
     // If element is a string, treat it as service type
     if (typeof element === 'string') {
       setSelectedServiceType(element);
@@ -144,7 +191,7 @@ function App() {
       });
       element.classList.add('active');
     }
-  };
+  }, [navigate]);
 
   // Cart functions
   const addToCart = async (itemData) => {
@@ -208,10 +255,10 @@ function App() {
     return cartItems.some(item => (item.itemId?._id || item.originalId) === targetId);
   };
 
-  const showToast = (message) => {
+  const showToast = useCallback((message) => {
     setToast({ show: true, message });
     setTimeout(() => setToast({ show: false, message: '' }), 3000);
-  };
+  }, []);
 
   const openServiceSheet = (service) => {
     setSelectedService(service);
@@ -222,11 +269,6 @@ function App() {
   const closeServiceSheet = () => {
     setShowServiceSheet(false);
     document.body.style.overflow = 'auto';
-  };
-
-  const closeChat = () => {
-    setShowChatWindow(false);
-    setSelectedChat(null);
   };
 
   const toggleDarkMode = () => {
@@ -288,19 +330,27 @@ function App() {
       {/* Global Mobile Header - shows on all pages */}
       <div className="global-mobile-header mobile-only">
         <div className="gmh-left">
-          <img src={logo} alt="RightTouch" className="gmh-logo" />
-          {/* <span className="gmh-title">RightTouch</span> */}
+          {currentPage !== 'home' && (
+            <img src={logo} alt="RightTouch" className="gmh-logo gmh-logo-mini" />
+          )}
+          {['bookings', 'cart', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) ? (
+            <h1 className="gmh-title">{currentPage.charAt(0).toUpperCase() + currentPage.slice(1).replace('-', ' ')}</h1>
+          ) : currentPage === 'home' ? (
+            <img src={logo} alt="RightTouch" className="gmh-logo" />
+          ) : null}
         </div>
         <div className="gmh-right">
-          <div className="gmh-search">
-            <MdSearch className="gmh-search-icon" />
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              value={globalSearchQuery}
-              onChange={(e) => setGlobalSearchQuery(e.target.value)}
-            />
-          </div>
+          {!['bookings', 'cart', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) && (
+            <div className="gmh-search">
+              <MdSearch className="gmh-search-icon" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={globalSearchQuery}
+                onChange={(e) => setGlobalSearchQuery(e.target.value)}
+              />
+            </div>
+          )}
           <button className="gmh-cart-btn" onClick={handleCartClick}>
             <MdShoppingCart className="gmh-cart-icon" />
             {cartItems.length > 0 && <span className="gmh-cart-badge">{cartItems.length}</span>}
@@ -317,6 +367,10 @@ function App() {
               onOpenService={openServiceSheet}
               showToast={showToast}
               searchQuery={globalSearchQuery}
+              serviceCategories={serviceCategories}
+              productCategories={productCategories}
+              services={allServices}
+              loading={!isDataLoaded}
             />
           } />
           <Route path="/home" element={
@@ -326,6 +380,10 @@ function App() {
               onOpenService={openServiceSheet}
               showToast={showToast}
               searchQuery={globalSearchQuery}
+              serviceCategories={serviceCategories}
+              productCategories={productCategories}
+              services={allServices}
+              loading={!isDataLoaded}
             />
           } />
           <Route path="/services" element={
@@ -338,6 +396,9 @@ function App() {
               removeFromCart={removeFromCart}
               cartItems={cartItems}
               searchQuery={globalSearchQuery}
+              categories={serviceCategories}
+              allServices={allServices}
+              dataLoading={!isDataLoaded}
             />
           } />
           <Route path="/product-services" element={
@@ -351,6 +412,7 @@ function App() {
               removeFromCart={removeFromCart}
               isInCart={isInCart}
               showToast={showToast}
+              allServices={allServices}
             />
           } />
           <Route path="/account" element={
@@ -406,14 +468,9 @@ function App() {
               isInCart={isInCart}
               removeFromCart={removeFromCart}
               cartItems={cartItems}
-            />
-          } />
-          <Route path="/forgot-password" element={
-            <ForgotPasswordPage
-              onBackToLogin={() => {
-                navigate('/');
-                setShowLoginDialog(true);
-              }}
+              productCategories={productCategories}
+              allProducts={allProducts}
+              dataLoading={!isDataLoaded}
             />
           } />
           <Route path="/settings" element={
@@ -427,6 +484,8 @@ function App() {
         </Routes>
       </main>
 
+      <Footer />
+
       <BottomNav currentPage={currentPage} onNavigate={handleNavigate} currentUser={currentUser} />
 
       {showServiceSheet && (
@@ -434,13 +493,6 @@ function App() {
           service={selectedService}
           onClose={closeServiceSheet}
           showToast={showToast}
-        />
-      )}
-
-      {showChatWindow && (
-        <ChatWindow
-          chatName={selectedChat}
-          onClose={closeChat}
         />
       )}
 

@@ -42,9 +42,6 @@ const RegisterDialog = ({
     } else if (!/^\d{10}$/.test(formData.identifier)) {
       newErrors.identifier = 'Please enter a valid 10-digit phone number';
     }
-    if (!formData.role) {
-      newErrors.role = 'Please select a role';
-    }
     if (!formData.termsAndServices) {
       newErrors.termsAndServices = 'You must accept terms and services';
     }
@@ -72,10 +69,13 @@ const RegisterDialog = ({
         setOtpSent(true);
         onShowToast?.('OTP sent to your phone number');
       } else {
-        setErrors({ identifier: 'Registration failed. Please try again.' });
+        const errorMsg = response?.message || response?.error?.message || response?.data?.message || 'Registration failed. Please try again.';
+        setErrors({ identifier: errorMsg });
       }
     } catch (error) {
-      setErrors({ identifier: 'Registration failed. Please try again.' });
+      console.error("Signup error:", error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Registration failed. Please try again.';
+      setErrors({ identifier: errorMsg });
     }
     setIsLoading(false);
   };
@@ -183,43 +183,37 @@ const RegisterDialog = ({
               {errors.identifier && <span className="error-text">{errors.identifier}</span>}
             </div>
 
-            <div className="auth-input-group">
-              <label>Role</label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className={errors.role ? 'error' : ''}
-              >
-                <option value="Customer">Customer</option>
-                <option value="Technician">Technician</option>
-              </select>
-              {errors.role && <span className="error-text">{errors.role}</span>}
-            </div>
-
             <div className="auth-input-group checkbox-group">
-              <label className="checkbox-label">
+              <div className="checkbox-row">
                 <input
                   type="checkbox"
+                  id="termsAndServices"
                   name="termsAndServices"
                   checked={formData.termsAndServices}
                   onChange={handleChange}
+                  className="custom-checkbox"
                 />
-                <span>I agree to the Terms and Services</span>
-              </label>
+                <label className="checkbox-label-text">
+                  I agree to the <span className="legal-link">Terms and Services</span>
+                </label>
+              </div>
               {errors.termsAndServices && <span className="error-text">{errors.termsAndServices}</span>}
             </div>
 
             <div className="auth-input-group checkbox-group">
-              <label className="checkbox-label">
+              <div className="checkbox-row">
                 <input
                   type="checkbox"
+                  id="privacyPolicy"
                   name="privacyPolicy"
                   checked={formData.privacyPolicy}
                   onChange={handleChange}
+                  className="custom-checkbox"
                 />
-                <span>I agree to the Privacy Policy</span>
-              </label>
+                <label className="checkbox-label-text">
+                  I agree to the <span className="legal-link">Privacy Policy</span>
+                </label>
+              </div>
               {errors.privacyPolicy && <span className="error-text">{errors.privacyPolicy}</span>}
             </div>
 

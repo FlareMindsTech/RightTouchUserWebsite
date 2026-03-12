@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ShieldCheck,
   Building2,
@@ -7,9 +7,10 @@ import {
   Sun,
   Car,
   Wrench,
-  Search
+  Search,
+  Hammer
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAllServices } from '../services/serviceService';
 import { getAllCategories } from '../services/categoryService';
 import '../styles/services.css';
@@ -26,80 +27,89 @@ const filterBySearch = (items, query) => {
   });
 };
 
-const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart, searchQuery }) => {
+const ServicesPage = ({
+  isActive,
+  onNavigate,
+  onOpenServiceDetail,
+  addToCart,
+  searchQuery,
+  categories: initialCategories = [],
+  allServices: initialAllServices = [],
+  dataLoading: isGlobalLoading
+}) => {
   const navigate = useNavigate();
-  const [categories, setCategories] = useState([]);
-  const [allServices, setAllServices] = useState([]);
+  const [searchParams] = useSearchParams();
+  const categoryIdFromUrl = searchParams.get('category');
+
+  const [categories, setCategories] = useState(initialCategories);
+  const [allServices, setAllServices] = useState(initialAllServices);
   const [filteredServices, setFilteredServices] = useState([]);
-  const [view, setView] = useState('categories'); // 'categories' or 'services'
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
+  const [view, setView] = useState('services'); // Default to 'services' to show all
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isGlobalLoading);
   const [error, setError] = useState(null);
 
-  // Filter categories by search
-  const filteredCategories = filterBySearch(categories, searchQuery);
-  
-  // Filter all services by search (when in categories view)
-  const searchedServices = filterBySearch(allServices, searchQuery);
-
-  // Map category names to icons
-  const categoryIconMap = {
-    'Commercial': <Building2 size={32} />,
-    'Solar': <Sun size={32} />,
-    'Security': <ShieldCheck size={32} />,
-    'Ev Services': <Car size={32} />,
-    'default': <Wrench size={32} />
-  };
-
+  // Sync with global props
   useEffect(() => {
-    const fetchData = async () => {
-      if (!isActive) return;
+    setCategories(initialCategories);
+    setAllServices(initialAllServices);
+    setLoading(isGlobalLoading);
+  }, [initialCategories, initialAllServices, isGlobalLoading]);
 
-      try {
-        setLoading(true);
-        setError(null);
+  // Unify search queries: favor global search if active, otherwise use local
+  const effectiveSearchQuery = (searchQuery || localSearchQuery || '').trim().toLowerCase();
 
-        // Fetch categories and services in parallel
-        const [catRes, servRes] = await Promise.all([
-          getAllCategories({ categoryType: 'service' }),
-          getAllServices()
-        ]);
+  // Unified filtering logic
+  useEffect(() => {
+    let result = allServices;
 
-        console.log("Categories Response:", catRes);
-        console.log("Services Response:", servRes);
+    // 1. Filter by category
+    if (selectedCategory) {
+      result = result.filter(s => {
+        const sCatId = s.categoryId?._id || s.categoryId;
+        return sCatId === selectedCategory._id;
+      });
+    }
 
-        // Map categories (flexible response handling)
-        let cats = catRes?.result || catRes?.data || catRes;
-        if (Array.isArray(cats)) {
-          setCategories(cats);
+    // 2. Filter by search query
+    if (effectiveSearchQuery) {
+      result = result.filter(item => {
+        const name = (item.serviceName || '').toLowerCase();
+        const description = (item.description || '').toLowerCase();
+        const category = (item.categoryId?.category || '').toLowerCase();
+        return name.includes(effectiveSearchQuery) ||
+          description.includes(effectiveSearchQuery) ||
+          category.includes(effectiveSearchQuery);
+      });
+    }
+
+    setFilteredServices(result);
+  }, [selectedCategory, allServices, effectiveSearchQuery]);
+
+
+
+  // Sync state with URL category
+  useEffect(() => {
+    if (categories.length > 0) {
+      if (categoryIdFromUrl) {
+        const category = categories.find(c => c._id === categoryIdFromUrl);
+        if (category) {
+          setSelectedCategory(category);
         }
-
-        // Map services (flexible response handling)
-        let servs = servRes?.result?.services || servRes?.data || servRes;
-        if (Array.isArray(servs)) {
-          setAllServices(servs);
-        }
-
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Failed to load services. Please try again.");
-      } finally {
-        setLoading(false);
+      } else {
+        setSelectedCategory(null);
       }
-    };
+    }
+  }, [categoryIdFromUrl, categories]);
 
-    fetchData();
-  }, [isActive]);
-
-  // Handle category selection
+  // Handle category selection via URL
   const handleCategoryClick = (category) => {
-    setSelectedCategory(category);
-    const filtered = allServices.filter(s => {
-      const sCatId = s.categoryId?._id || s.categoryId;
-      return sCatId === category._id;
-    });
-    setFilteredServices(filtered);
-    setView('services');
+    if (!category) {
+      navigate('/services'); // Reset to all
+    } else {
+      navigate(`/services?category=${category._id}`);
+    }
   };
 
   // Handle service click
@@ -108,11 +118,6 @@ const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart, se
     navigate(`/product-services?type=${encodeURIComponent(categoryName)}&serviceId=${service._id}`);
   };
 
-  // Go back to categories
-  const handleBackToCategories = () => {
-    setView('categories');
-    setSelectedCategory(null);
-  };
 
   if (loading && isActive) {
     return (
@@ -147,187 +152,154 @@ const ServicesPage = ({ isActive, onNavigate, onOpenServiceDetail, addToCart, se
   }
 
   // Check if searching
-  const isSearching = searchQuery && searchQuery.trim() !== '';
-  
+  const isSearching = effectiveSearchQuery !== '';
+
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
       {/* Page Header */}
-      <div className="services-hero">
-        {view === 'services' && selectedCategory ? (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-              <button className="back-btn-simple" onClick={handleBackToCategories}>
-                <ChevronLeft size={20} /> Back to Categories
-              </button>
-            </div>
-            <h1>{selectedCategory.category} <span className="accent">Services</span></h1>
-          </>
-        ) : (
-          <>
-            <h1>Our <span className="accent">Categories</span></h1>
-            <p>Choose a category to find specialized services</p>
-          </>
-        )}
+      <div className="services-hero desktop-only" style={{ textAlign: 'left' }}>
+        <h1>{selectedCategory ? selectedCategory.category : 'Our'} <span className="accent">Services</span></h1>
+        <p>{selectedCategory ? `Specialized ${selectedCategory.category} services for you` : 'Browse all our premium home services'}</p>
+      </div>
+
+      {/* Mobile Top Section */}
+      <div className="services-mobile-container mobile-only">
+        <h2 className="mobile-page-title">Home Services</h2>
+        <div className="search-pill-container">
+          <Search className="search-pill-icon" size={20} />
+          <input
+            type="text"
+            className="search-pill-input"
+            placeholder="Search for services"
+            value={localSearchQuery}
+            onChange={(e) => setLocalSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="section-wrap" style={{ paddingBottom: 0 }}>
+        {/* Category Ribbon */}
+        <div className="category-ribbon">
+          <button
+            className={`ribbon-item ${!selectedCategory ? 'active' : ''}`}
+            onClick={() => handleCategoryClick(null)}
+          >
+            All Services
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat._id}
+              className={`ribbon-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+              onClick={() => handleCategoryClick(cat)}
+            >
+              {cat.category}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="section-wrap">
-        {/* Show search results if searching */}
-        {isSearching ? (
-          <>
-            {searchedServices.length > 0 ? (
-              <div className="massive-list">
-                {searchedServices.map(service => (
-                  <div key={service._id} className="massive-section-wrap">
-                    <div className="massive-card">
-                      <div className="massive-card-content">
-                        <h3 className="massive-card-title">{service.serviceName}</h3>
-
-                        <div className="massive-card-rating">
-                          <Star size={16} className="star-icon" />
-                          <span>
-                            {service.ratingSummary?.averageRating || 0.0} ({service.ratingSummary?.totalRatings || 0} reviews)
-                          </span>
-                        </div>
-
-                        <div className="massive-card-price">
-                          ₹{service.discountedPrice || service.serviceCost} •
-                        </div>
-
-                        <ul className="massive-card-description">
-                          {(service.description?.split(',') || []).slice(0, 3).map((item, idx) => (
-                            <li key={idx}>{item.trim()}</li>
-                          ))}
-                        </ul>
-
-                        <div
-                          className="massive-card-link"
-                          onClick={() => handleServiceClick(service)}
-                        >
-                          View details
-                        </div>
+        {filteredServices.length > 0 ? (
+          <div className="services-results-container">
+            {/* Desktop View (Massive Cards) */}
+            <div className="massive-list desktop-only">
+              {filteredServices.map(service => (
+                <div key={service._id} className="massive-section-wrap">
+                  <div className="massive-card">
+                    {service.isPopular && <span className="premium-badge badge-popular">Popular</span>}
+                    {service.isRecommended && <span className="premium-badge badge-recommended">Recommended</span>}
+                    <div className="massive-card-content">
+                      <h3 className="massive-card-title">{service.serviceName}</h3>
+                      <div className="massive-card-rating">
+                        <Star size={16} className="star-icon" />
+                        <span>
+                          {service.ratingSummary?.averageRating || 0.0} ({service.ratingSummary?.totalRatings || 0} reviews)
+                        </span>
                       </div>
-
-                      <div className="massive-card-right">
-                        <div className="massive-card-image">
-                          {service.serviceImages?.[0] ? (
-                            <img src={service.serviceImages[0]} alt={service.serviceName} />
-                          ) : (
-                            <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
-                              <Wrench size={40} />
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          className="massive-add-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            addToCart({ ...service, itemType: 'service' });
-                          }}
-                        >
-                          Add
-                        </button>
+                      <div className="massive-card-price">
+                        ₹{service.discountedPrice || service.serviceCost} •
+                      </div>
+                      <ul className="massive-card-description">
+                        {(service.description?.split(',') || []).slice(0, 3).map((item, idx) => (
+                          <li key={idx}>{item.trim()}</li>
+                        ))}
+                      </ul>
+                      <div className="massive-card-link" onClick={() => handleServiceClick(service)}>
+                        View details
                       </div>
                     </div>
+                    <div className="massive-card-right">
+                      <div className="massive-card-image">
+                        {service.serviceImages?.[0] ? (
+                          <img src={service.serviceImages[0]} alt={service.serviceName} />
+                        ) : (
+                          <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
+                            <Wrench size={40} />
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        className="massive-add-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart({ ...service, itemType: 'service' });
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="no-services-message" style={{ textAlign: 'center', padding: '40px' }}>
-                <Search size={48} style={{ color: '#ccc', marginBottom: '16px' }} />
-                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>No results found</h3>
-                <p style={{ fontSize: '14px', color: '#666' }}>Try different keywords or browse categories</p>
-              </div>
-            )}
-          </>
-        ) : view === 'categories' ? (
-          /* Category Grid */
-          <div className="service-grid">
-            {categories.map(cat => (
-              <div
-                key={cat._id}
-                className="service-card category-card-new"
-                onClick={() => handleCategoryClick(cat)}
-              >
-                <div className="service-icon category-icon-large">
-                  {categoryIconMap[cat.category] || categoryIconMap['default']}
                 </div>
-                <span className="category-name-text">{cat.category}</span>
-                <p className="category-desc-small">{cat.description}</p>
-              </div>
-            ))}
-            {categories.length === 0 && (
-              <div className="no-services-message" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
-                <p>No categories available at the moment.</p>
-              </div>
-            )}
+              ))}
+            </div>
+
+            {/* Mobile View (Compact Cards) */}
+            <div className="compact-service-grid mobile-only">
+              {filteredServices.map(service => (
+                <div
+                  key={service._id}
+                  className="compact-service-card"
+                  onClick={() => handleServiceClick(service)}
+                >
+                  <div className="compact-image-box">
+                    {service.serviceImages?.[0] ? (
+                      <img src={service.serviceImages[0]} alt={service.serviceName} className="compact-img" />
+                    ) : (
+                      <Hammer size={18} />
+                    )}
+                  </div>
+                  <div className="compact-info">
+                    <h4 className="compact-name">{service.serviceName}</h4>
+                    {service.serviceCost && (
+                      <p className="compact-subtitle">₹{service.serviceCost}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
-          /* Service Grid (Filtered by category) */
-          <>
-            {filteredServices.length === 0 ? (
-              <div className="no-services-message" style={{ textAlign: 'center', padding: '40px' }}>
-                <p>No services found in this category.</p>
-                <button className="view-details-link" onClick={handleBackToCategories}>View All Categories</button>
-              </div>
-            ) : (
-              <div className="massive-list">
-                {filteredServices.map(service => (
-                  <div key={service._id} className="massive-section-wrap">
-                    <div className="massive-card">
-                      <div className="massive-card-content">
-                        <h3 className="massive-card-title">{service.serviceName}</h3>
-
-                        <div className="massive-card-rating">
-                          <Star size={16} className="star-icon" />
-                          <span>
-                            {service.ratingSummary?.averageRating || 0.0} ({service.ratingSummary?.totalRatings || 0} reviews)
-                          </span>
-                        </div>
-
-                        <div className="massive-card-price">
-                          ₹{service.discountedPrice || service.serviceCost} •
-                        </div>
-
-                        <ul className="massive-card-description">
-                          {(service.description?.split(',') || []).slice(0, 3).map((item, idx) => (
-                            <li key={idx}>{item.trim()}</li>
-                          ))}
-                        </ul>
-
-                        <div
-                          className="massive-card-link"
-                          onClick={() => handleServiceClick(service)}
-                        >
-                          View details
-                        </div>
-                      </div>
-
-                      <div className="massive-card-right">
-                        <div className="massive-card-image">
-                          {service.serviceImages?.[0] ? (
-                            <img src={service.serviceImages[0]} alt={service.serviceName} />
-                          ) : (
-                            <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
-                              <Wrench size={40} />
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          className="massive-add-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            addToCart({ ...service, itemType: 'service' });
-                          }}
-                        >
-                          Add
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="no-services-message" style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <Search size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px', opacity: 0.5 }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              No services found
+            </h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+              {isSearching ? `We couldn't find anything for "${effectiveSearchQuery}"` : "This category is empty for now."}
+            </p>
+            {isSearching && (
+              <button
+                className="view-details-link"
+                style={{ marginTop: '16px' }}
+                onClick={() => {
+                  setLocalSearchQuery('');
+                  onNavigate('services'); // This might clear global search if App handles it
+                }}
+              >
+                Clear Search
+              </button>
             )}
-          </>
+          </div>
         )}
       </div>
     </section>

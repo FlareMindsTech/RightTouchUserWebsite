@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MdEdit,
   MdOutlineChevronRight,
-  MdOutlineAccountBalanceWallet,
-  MdOutlineStarOutline,
   MdOutlineLocationOn,
   MdOutlinePayments,
   MdOutlineSettings,
@@ -12,25 +10,40 @@ import {
   MdStarOutline,
   MdDeleteOutline,
   MdCheck,
-  MdLogin
+  MdLogin,
+  MdOutlineStarOutline,
+  MdArrowBack,
+  MdPlace
 } from 'react-icons/md';
 import {
   LuClipboardList,
   LuHeadphones,
   LuBookOpen,
-  LuBookmark,
   LuPlus,
   LuLogOut
 } from 'react-icons/lu';
 import './AccountPage.css';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import {
+  getMyAddresses,
+  createAddress,
+  updateAddress,
+  deleteAddress
+} from '../services/addressService';
 import { getMyProfile, updateProfile } from '../services/userService';
 
 const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClick }) => {
+  const location = useLocation();
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAddingAddr, setIsAddingAddr] = useState(false);
+  const [editingAddr, setEditingAddr] = useState(null);
   const [profileData, setProfileData] = useState(currentUser || {});
   const [loading, setLoading] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const fetchedRef = useRef(false);
+
   const [editFormData, setEditFormData] = useState({
     fname: '',
     lname: '',
@@ -38,11 +51,38 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     gender: ''
   });
 
+  const [addrFormData, setAddrFormData] = useState({
+    name: '',
+    mobileNumber: '',
+    type: 'Home',
+    address: '',
+    isDefault: false
+  });
+
+  // Handle URL parameters for auto-editing
   useEffect(() => {
-    if (currentUser && isActive) {
-      fetchProfile();
+    if (isActive) {
+      const searchParams = new URLSearchParams(location.search);
+      const editType = searchParams.get('edit');
+
+      if (editType === 'profile') {
+        setIsEditing(true);
+      } else if (editType === 'address') {
+        setShowAddressModal(true);
+      }
     }
-  }, [currentUser, isActive]);
+  }, [location.search, isActive]);
+
+  useEffect(() => {
+    if (currentUser?._id && isActive && !fetchedRef.current) {
+      fetchProfile();
+      fetchAddresses();
+      fetchedRef.current = true;
+    }
+    if (!isActive) {
+      fetchedRef.current = false;
+    }
+  }, [currentUser?._id, isActive]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -54,7 +94,8 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           fname: response.result.fname || '',
           lname: response.result.lname || '',
           email: response.result.email || '',
-          gender: response.result.gender || ''
+          gender: response.result.gender || '',
+          mobileNumber: response.result.mobileNumber || response.result.identifier || ''
         });
         localStorage.setItem('currentUser', JSON.stringify(response.result));
         window.dispatchEvent(new Event('userProfileUpdated'));
@@ -63,6 +104,18 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       console.error('Failed to fetch profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAddresses = async () => {
+    try {
+      const response = await getMyAddresses();
+      const addrList = response?.result || response?.data || response || [];
+      if (Array.isArray(addrList)) {
+        setAddresses(addrList);
+      }
+    } catch (err) {
+      console.error("Failed to fetch addresses:", err);
     }
   };
 
@@ -85,60 +138,92 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
-  // Sample addresses data
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      name: 'Home',
-      address: '123, Anna Nagar, Chennai - 600040',
-      isDefault: true
-    },
-    {
-      id: 2,
-      name: 'Office',
-      address: '45, T Nagar, Chennai - 600017',
-      isDefault: false
-    },
-    {
-      id: 3,
-      name: 'Other',
-      address: '78, Marina Beach Road, Chennai - 600005',
-      isDefault: false
-    }
-  ]);
+  const handleSaveAddress = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      let response;
+      if (editingAddr) {
+        response = await updateAddress({ ...addrFormData, id: editingAddr._id });
+      } else {
+        response = await createAddress(addrFormData);
+      }
 
-  const handleMenuItemClick = (item) => {
-    if (item === 'My bookings') {
-      onNavigate('bookings');
-    } else if (item === 'Manage address') {
-      setShowAddressModal(true);
-    } else if (item === 'Manage payment methods') {
-      onNavigate('payment-methods');
-    } else if (item === 'Settings') {
-      onNavigate('settings');
-    } else {
-      showToast(`Opening ${item}`);
+      if (response?.success) {
+        showToast(editingAddr ? 'Address updated' : 'Address added');
+        setIsAddingAddr(false);
+        setEditingAddr(null);
+        fetchAddresses();
+      } else {
+        showToast(response?.message || 'Failed to save address');
+      }
+    } catch (err) {
+      showToast('Error saving address');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSetDefault = (id) => {
-    setAddresses(addresses.map(addr => ({
-      ...addr,
-      isDefault: addr.id === id
-    })));
-    setActiveDropdown(null);
-    showToast('Default address updated');
+  const handleSetDefault = async (id) => {
+    setLoading(true);
+    try {
+      // Find the address and update it with isDefault: true
+      const addr = addresses.find(a => a._id === id);
+      if (addr) {
+        const response = await updateAddress({ ...addr, id, isDefault: true });
+        if (response?.success) {
+          showToast('Default address updated');
+          fetchAddresses();
+        }
+      }
+    } catch (err) {
+      showToast('Failed to set default address');
+    } finally {
+      setLoading(false);
+      setActiveDropdown(null);
+    }
   };
 
-  const handleDelete = (id) => {
-    setAddresses(addresses.filter(addr => addr.id !== id));
-    setActiveDropdown(null);
-    showToast('Address deleted');
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this address?')) return;
+    setLoading(true);
+    try {
+      const response = await deleteAddress({ id });
+      if (response?.success) {
+        showToast('Address deleted');
+        fetchAddresses();
+      }
+    } catch (err) {
+      showToast('Failed to delete address');
+    } finally {
+      setLoading(false);
+      setActiveDropdown(null);
+    }
   };
 
-  const handleEdit = (id) => {
+  const handleEdit = (address) => {
+    setEditingAddr(address);
+    setAddrFormData({
+      name: address.name || '',
+      mobileNumber: address.mobileNumber || '',
+      type: address.type || 'Home',
+      address: address.address || '',
+      isDefault: address.isDefault || false
+    });
+    setIsAddingAddr(true);
     setActiveDropdown(null);
-    showToast('Edit address');
+  };
+
+  const openAddModal = () => {
+    setEditingAddr(null);
+    setAddrFormData({
+      name: '',
+      mobileNumber: '',
+      type: 'Home',
+      address: '',
+      isDefault: addresses.length === 0
+    });
+    setIsAddingAddr(true);
   };
 
   const handleLoginClick = () => {
@@ -157,28 +242,248 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     window.dispatchEvent(new Event('userLoggedOut'));
   };
 
+  const handleMenuItemClick = (menuItem) => {
+    switch (menuItem) {
+      case 'My bookings':
+        onNavigate('bookings');
+        break;
+      case 'Manage address':
+        setShowAddressModal(true);
+        break;
+      case 'Manage payment methods':
+        onNavigate('payment-methods');
+        break;
+      case 'Settings':
+        onNavigate('settings');
+        break;
+      // Ratings and Help can be added here later if pages exist
+      default:
+        showToast(`${menuItem} coming soon!`);
+    }
+  };
+
   return (
-    <section className={`page-wrapper content-a page ${isActive ? '' : 'hidden'}`} id="page-account">
-      {/* Header Section */}
-      <div className="account-header">
-        <div className="user-info">
-          {currentUser ? (
-            <>
-              <h2 className="account-name">
-                {profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser.name || currentUser.fname || 'User')}
-              </h2>
-              <p className="account-email">{profileData.email || 'Complete your profile'}</p>
-              <p className="account-phone">+91 {profileData.identifier || currentUser.identifier || currentUser.phone || ''}</p>
-            </>
-          ) : (
-            <>
-              <h2 className="account-name">Welcome</h2>
-              <p className="account-phone">Login to access your account</p>
-            </>
+    <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
+      <div className="account-container-simple">
+        {/* User Profile Header */}
+        <div className="account-profile-header-simple">
+          <div className="avatar-simple">
+            {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
+          </div>
+          <div className="profile-info-simple">
+            <h2>{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
+            <p className="email">{profileData.email || 'Complete your profile'}</p>
+            <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
+          </div>
+          {currentUser && (
+            <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
+              <MdEdit size={18} /> Edit Profile
+            </button>
           )}
         </div>
-        {currentUser && <MdEdit className="edit-icon" onClick={() => setIsEditing(true)} />}
+
+        {/* Action List */}
+        <div className="account-menu-simple">
+          <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
+            <div className="menu-left-simple">
+              <LuClipboardList className="icon" />
+              <span>My Bookings</span>
+            </div>
+            <MdOutlineChevronRight className="arrow" />
+          </div>
+
+          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
+            <div className="menu-left-simple">
+              <MdOutlineLocationOn className="icon" />
+              <span>Manage Addresses</span>
+            </div>
+            <MdOutlineChevronRight className="arrow" />
+          </div>
+
+          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage payment methods')}>
+            <div className="menu-left-simple">
+              <MdOutlinePayments className="icon" />
+              <span>Payment Methods</span>
+            </div>
+            <MdOutlineChevronRight className="arrow" />
+          </div>
+
+          <div className="menu-item-simple" onClick={() => handleMenuItemClick('My rating')}>
+            <div className="menu-left-simple">
+              <MdOutlineStarOutline className="icon" />
+              <span>My Ratings</span>
+            </div>
+            <MdOutlineChevronRight className="arrow" />
+          </div>
+
+          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Settings')}>
+            <div className="menu-left-simple">
+              <MdOutlineSettings className="icon" />
+              <span>Settings</span>
+            </div>
+            <MdOutlineChevronRight className="arrow" />
+          </div>
+
+          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
+            <div className="menu-left-simple">
+              <LuHeadphones className="icon" />
+              <span>Help & Support</span>
+            </div>
+            <MdOutlineChevronRight className="arrow" />
+          </div>
+        </div>
+
+        {/* Logout/Login Button */}
+        <div className="account-footer-simple">
+          {currentUser ? (
+            <button className="logout-button-simple" onClick={handleLogout}>
+              <LuLogOut size={20} /> Logout
+            </button>
+          ) : (
+            <button className="login-button-simple" onClick={handleLoginClick}>
+              <MdLogin size={20} /> Login
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Address Management Modal */}
+      {showAddressModal && (
+        <div className="modal-backdrop" onClick={() => { setShowAddressModal(false); setIsAddingAddr(false); setActiveDropdown(null); }}>
+          <div className="address-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="address-modal-header">
+              <h2>{isAddingAddr ? (editingAddr ? 'Edit Address' : 'Add New Address') : 'Manage Address'}</h2>
+              <button className="modal-close" onClick={() => {
+                if (isAddingAddr) setIsAddingAddr(false);
+                else setShowAddressModal(false);
+                setActiveDropdown(null);
+              }}>
+                {isAddingAddr ? <MdArrowBack /> : <MdClose />}
+              </button>
+            </div>
+
+            {isAddingAddr ? (
+              <form onSubmit={handleSaveAddress} className="address-form-premium">
+                <div className="input-group">
+                  <label>Full Name</label>
+                  <input
+                    type="text"
+                    value={addrFormData.name}
+                    onChange={(e) => setAddrFormData({ ...addrFormData, name: e.target.value })}
+                    placeholder="e.g. John Doe"
+                    required
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Mobile Number (Optional)</label>
+                  <input
+                    type="tel"
+                    value={addrFormData.mobileNumber}
+                    onChange={(e) => setAddrFormData({ ...addrFormData, mobileNumber: e.target.value })}
+                    placeholder="10-digit mobile number"
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Address Type</label>
+                  <div className="type-selector">
+                    {['Home', 'Office', 'Other'].map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        className={`type-btn ${addrFormData.type === type ? 'active' : ''}`}
+                        onClick={() => setAddrFormData({ ...addrFormData, type })}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="input-group">
+                  <label>Complete Address</label>
+                  <textarea
+                    value={addrFormData.address}
+                    onChange={(e) => setAddrFormData({ ...addrFormData, address: e.target.value })}
+                    placeholder="House No, Building Name, Area, etc."
+                    required
+                  />
+                </div>
+                <button type="submit" className="save-addr-btn" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Address'}
+                </button>
+              </form>
+            ) : (
+              <>
+                <button className="add-address-btn" onClick={openAddModal}>
+                  <LuPlus className="add-icon" />
+                  Add New Address
+                </button>
+
+                <div className="address-list">
+                  {addresses.length === 0 ? (
+                    <div className="empty-addresses">
+                      <MdOutlineLocationOn size={48} />
+                      <p>No addresses saved yet</p>
+                    </div>
+                  ) : (
+                    addresses.map((address) => (
+                      <div key={address._id} className={`address-card ${address.isDefault ? 'is-default' : ''}`}>
+                        <div className="address-card-header">
+                          <div className="address-badge">
+                            <MdPlace className="badge-icon" />
+                            <span>{address.type || 'Home'}</span>
+                          </div>
+                          {address.isDefault && (
+                            <span className="default-tag">
+                              <MdCheck /> Default
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="address-content">
+                          <h4 className="addr-name">{address.name || 'User'}</h4>
+                          <p className="addr-text">{address.address}</p>
+                          {address.mobileNumber && <p className="addr-phone">{address.mobileNumber}</p>}
+                        </div>
+
+                        <div className="address-card-actions">
+                          <button
+                            className="three-dots-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdown(activeDropdown === address._id ? null : address._id);
+                            }}
+                          >
+                            <MdMoreVert />
+                          </button>
+
+                          {activeDropdown === address._id && (
+                            <div className="dropdown-menu">
+                              {!address.isDefault && (
+                                <button className="dropdown-item" onClick={() => handleSetDefault(address._id)}>
+                                  <MdStarOutline className="dropdown-icon" />
+                                  <span>Set as Default</span>
+                                </button>
+                              )}
+                              <button className="dropdown-item" onClick={() => handleEdit(address)}>
+                                <MdEdit className="dropdown-icon" />
+                                <span>Edit</span>
+                              </button>
+                              <button className="dropdown-item delete" onClick={() => handleDelete(address._id)}>
+                                <MdDeleteOutline className="dropdown-icon" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Profile Edit Modal */}
       {isEditing && (
@@ -240,152 +545,8 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           </div>
         </div>
       )}
-
-      {/* Top Quick Cards */}
-      <div className="quick-cards">
-        <div className="quick-card" onClick={() => handleMenuItemClick('My bookings')}>
-          <LuClipboardList className="card-icon" />
-          <p>My bookings</p>
-        </div>
-        <div className="quick-card" onClick={() => handleMenuItemClick('Help & Support')}>
-          <LuHeadphones className="card-icon" />
-          <p>Help &<br />Support</p>
-        </div>
-      </div>
-
-      {/* Menu List */}
-      <div className="menu-list">
-        {/* <div className="menu-item" onClick={() => handleMenuItemClick('My plans')}>
-          <LuBookOpen className="menu-icon" />
-          <span className="menu-text">My plans</span>
-          <MdOutlineChevronRight className="menu-arrow" />
-        </div>
-        <div className="menu-item" onClick={() => handleMenuItemClick('Wallet')}>
-          <MdOutlineAccountBalanceWallet className="menu-icon" />
-          <span className="menu-text">Wallet</span>
-          <MdOutlineChevronRight className="menu-arrow" />
-        </div>
-        <div className="menu-item" onClick={() => handleMenuItemClick('Plus membership')}>
-          <LuBookmark className="menu-icon" />
-          <span className="menu-text">Plus membership</span>
-          <MdOutlineChevronRight className="menu-arrow" />
-        </div> */}
-        <div className="menu-item" onClick={() => handleMenuItemClick('My rating')}>
-          <MdOutlineStarOutline className="menu-icon" />
-          <span className="menu-text">My rating</span>
-          <MdOutlineChevronRight className="menu-arrow" />
-        </div>
-        <div className="menu-item" onClick={() => handleMenuItemClick('Manage address')}>
-          <MdOutlineLocationOn className="menu-icon" />
-          <span className="menu-text">Manage address</span>
-          <MdOutlineChevronRight className="menu-arrow" />
-        </div>
-        <div className="menu-item" onClick={() => handleMenuItemClick('Manage payment methods')}>
-          <MdOutlinePayments className="menu-icon" />
-          <span className="menu-text">Manage payment methods</span>
-          <MdOutlineChevronRight className="menu-arrow" />
-        </div>
-        <div className="menu-item" onClick={() => handleMenuItemClick('Settings')}>
-          <MdOutlineSettings className="menu-icon" />
-          <span className="menu-text">Settings</span>
-          <MdOutlineChevronRight className="menu-arrow" />
-        </div>
-      </div>
-
-      {/* Login/Logout Button */}
-      {currentUser ? (
-        <button className="logout-btn" onClick={handleLogout}>
-          <LuLogOut className="btn-icon" />
-          Logout
-        </button>
-      ) : (
-        <button className="login-btn" onClick={handleLoginClick}>
-          <MdLogin className="btn-icon" />
-          Login
-        </button>
-      )}
-
-      {/* Address Modal */}
-      {showAddressModal && (
-        <div className="modal-backdrop" onClick={(e) => { setShowAddressModal(false); setActiveDropdown(null); }}>
-          <div className="address-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="address-modal-header">
-              <h2>Manage Address</h2>
-              <button className="modal-close" onClick={() => { setShowAddressModal(false); setActiveDropdown(null); }}>
-                <MdClose />
-              </button>
-            </div>
-
-            <button className="add-address-btn">
-              <LuPlus className="add-icon" />
-              Add New Address
-            </button>
-
-            <div className="address-list">
-              {addresses.map((address) => (
-                <div key={address.id} className="address-card">
-                  <div className="address-card-header">
-                    <div className="address-badge">
-                      <MdOutlineLocationOn className="badge-icon" />
-                      <span>{address.name}</span>
-                    </div>
-                    {address.isDefault && (
-                      <span className="default-badge">
-                        <MdCheck className="check-icon" /> Default
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="address-text">{address.address}</p>
-
-                  <div className="address-card-actions">
-                    <button
-                      className="three-dots-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveDropdown(activeDropdown === address.id ? null : address.id);
-                      }}
-                    >
-                      <MdMoreVert />
-                    </button>
-
-                    {activeDropdown === address.id && (
-                      <div className="dropdown-menu">
-                        {!address.isDefault && (
-                          <button
-                            className="dropdown-item"
-                            onClick={() => handleSetDefault(address.id)}
-                          >
-                            <MdStarOutline className="dropdown-icon" />
-                            <span>Set as Default</span>
-                          </button>
-                        )}
-                        <button
-                          className="dropdown-item"
-                          onClick={() => handleEdit(address.id)}
-                        >
-                          <MdEdit className="dropdown-icon" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          className="dropdown-item delete"
-                          onClick={() => handleDelete(address.id)}
-                        >
-                          <MdDeleteOutline className="dropdown-icon" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 };
 
 export default AccountPage;
-

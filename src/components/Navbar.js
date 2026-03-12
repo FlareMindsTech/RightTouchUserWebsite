@@ -6,7 +6,7 @@ import logo from '../assets/logo.png';
 
 const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLoginClick, onLogout, searchQuery, onSearchChange }) => {
   const location = useLocation();
-  
+
   // Determine active state based on current path
   const isActive = (path) => {
     if (path === 'home') {
@@ -23,39 +23,38 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLog
             <div className="brand-icon">
               <img src={logo} alt="RightTouch Logo" className="brand-logo" />
             </div>
-            <span className="brand-name">RightTouch</span>
           </Link>
         </div>
-        
+
         <nav className="nav-links">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className={`nav-link ${isActive('home') ? 'active' : ''}`}
           >
             <span className="nav-icon"><Home size={18} /></span> Home
           </Link>
-          <Link 
-            to="/services" 
+          <Link
+            to="/services"
             className={`nav-link ${isActive('services') ? 'active' : ''}`}
           >
             <span className="nav-icon"><Wrench size={18} /></span> Services
           </Link>
-          <Link 
-            to="/account" 
+          <Link
+            to="/account"
             className={`nav-link ${isActive('account') ? 'active' : ''}`}
           >
             <span className="nav-icon"><User size={18} /></span> {currentUser?.name || currentUser?.identifier || 'Account'}
           </Link>
         </nav>
 
-        <div className="nav-search desktop-only" style={{display:'flex', flexDirection:'row', alignItems:'center'}}>
+        <div className="nav-search desktop-only" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
           <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
           </svg>
-          <input 
-            type="text" 
-            className="search-input" 
+          <input
+            type="text"
+            className="search-input"
             placeholder="Search services..."
             value={searchQuery || ''}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
@@ -63,8 +62,8 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLog
         </div>
 
         <div className="nav-actions desktop-only">
-          <Link 
-            to="/cart" 
+          <Link
+            to="/cart"
             className="cart-icon-btn"
             title="Shopping Cart"
           >
@@ -76,6 +75,6 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLog
     </header>
   );
 };
-  
+
 export default Navbar;
 
