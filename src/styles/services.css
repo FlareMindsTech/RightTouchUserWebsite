@@ -1,14 +1,14 @@
-/* ═══════════════════════════════════════════════════════
-   SERVICES PAGE
-═══════════════════════════════════════════════════════ */
-.page-header-mobile {
-  padding: 16px 0 8px;
+/* Detail Cards - Added padding */
+.detail-card-new {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  transition: var(--transition);
 }
 
-.page-title-mobile {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--text-primary);
+.detail-card-new:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .services-hero {
@@ -17,8 +17,10 @@
   border-radius: var(--radius-xl);
   padding: 40px;
   margin-bottom: 24px;
-  text-align: left;
-  /* Aligned left for professionalism */
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  /* Responsive center layout */
 }
 
 body.dark-mode .services-hero {
@@ -1218,6 +1220,36 @@ body.dark-mode .services-hero {
 }
 
 /* ═══════════════════════════════════════════════════════
+   SERVICE DETAIL IMAGE WRAP - LIMITED SIZE & FIT
+   ═══════════════════════════════════════════════════════ */
+
+.service-detail-image-wrap {
+  position: relative;
+  max-width: 300px;
+  max-height: 250px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+}
+
+.service-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.service-img-placeholder-large {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: #94a3b8;
+  font-size: 60px;
+}
+
+/* ═══════════════════════════════════════════════════════
    COMPACT MOBILE UI (Matches Screenshot)
    ═══════════════════════════════════════════════════════ */
 
@@ -1225,6 +1257,19 @@ body.dark-mode .services-hero {
   padding: 10px 16px;
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.services-mobile-container .mobile-page-title {
+  margin-bottom: 20px;
+}
+
+.services-mobile-container .search-pill-container {
+  max-width: 90%;
+  margin-bottom: 24px;
 }
 
 .mobile-page-title {
@@ -1422,7 +1467,29 @@ body.dark-mode .services-hero {
 @media (max-width: 480px) {
 
   .services-hero {
-    display: none !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 20px 16px !important;
+    gap: 20px !important;
+  }
+
+  .service-detail-hero-content {
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 20px !important;
+    justify-content: center !important;
+  }
+
+  .service-detail-image-wrap {
+    max-width: 280px !important;
+    max-height: 220px !important;
+  }
+
+  .price-card-sticky {
+    width: 100% !important;
+    max-width: 350px !important;
   }
 }
 
