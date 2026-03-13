@@ -51,7 +51,7 @@
   border: 1px solid var(--border);
 }
 
-body.dark .desktop-hero {
+body.dark-mode .desktop-hero {
   background: linear-gradient(135deg, #0f2d1a 0%, #1e293b 50%, #0f1b2d 100%);
 }
 
