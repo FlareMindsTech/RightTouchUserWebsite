@@ -1,0 +1,24 @@
+.app-toast-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.app-toast-success-title,
+.app-toast-success-icon {
+  color: #166534;
+}
+
+.app-toast-error-title,
+.app-toast-error-icon {
+  color: #b91c1c;
+}
+
+body.dark-mode .app-toast-success-title,
+body.dark-mode .app-toast-success-icon {
+  color: #86efac;
+}
+
+body.dark-mode .app-toast-error-title,
+body.dark-mode .app-toast-error-icon {
+  color: #fca5a5;
+}

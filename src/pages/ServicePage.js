@@ -33,8 +33,10 @@ const ServicesPage = ({
   onOpenServiceDetail,
   addToCart,
   removeFromCart,
+  updateQuantity,
   isInCart,
   cartItems,
+  showToast,
   searchQuery,
   categories: initialCategories = [],
   allServices: initialAllServices = [],
@@ -52,6 +54,7 @@ const ServicesPage = ({
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(isGlobalLoading);
   const [error, setError] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, service: null });
 
   // Sync with global props
   useEffect(() => {
@@ -119,6 +122,68 @@ const ServicesPage = ({
   const handleServiceClick = (service) => {
     const categoryName = service.categoryId?.category || selectedCategory?.category || 'AC';
     navigate(`/product-services?type=${encodeURIComponent(categoryName)}&serviceId=${service._id}`);
+  };
+
+  const getCartItemForService = (serviceId) => {
+    if (!Array.isArray(cartItems)) return null;
+    return cartItems.find(item => (item.itemId?._id || item.originalId) === serviceId) || null;
+  };
+
+  const getServiceQuantity = (serviceId) => {
+    const cartItem = getCartItemForService(serviceId);
+    return Number(cartItem?.quantity || 0);
+  };
+
+  const confirmAndRemoveService = (service) => {
+    const cartItem = getCartItemForService(service._id);
+    if (!cartItem || !removeFromCart) return;
+    setConfirmDialog({ open: true, service });
+  };
+
+  const handleConfirmRemove = async () => {
+    const { service } = confirmDialog;
+    setConfirmDialog({ open: false, service: null });
+    if (!service) return;
+    const cartItem = getCartItemForService(service._id);
+    if (!cartItem || !removeFromCart) return;
+    await removeFromCart(cartItem.id);
+  };
+
+  const handleCancelRemove = () => {
+    setConfirmDialog({ open: false, service: null });
+  };
+
+  const handleIncrementService = async (service) => {
+    const cartItem = getCartItemForService(service._id);
+
+    if (!cartItem) {
+      if (addToCart) {
+        await addToCart({ ...service, itemType: 'service', quantity: 1 });
+      }
+      return;
+    }
+
+    const currentQuantity = Number(cartItem.quantity || 1);
+    if (updateQuantity) {
+      await updateQuantity(cartItem.originalId || cartItem.itemId?._id, cartItem.itemType || 'service', currentQuantity + 1);
+      if (showToast) showToast(`${service.serviceName} quantity updated`);
+    }
+  };
+
+  const handleDecrementService = async (service) => {
+    const cartItem = getCartItemForService(service._id);
+    if (!cartItem) return;
+
+    const currentQuantity = Number(cartItem.quantity || 1);
+    if (currentQuantity <= 1) {
+      await confirmAndRemoveService(service);
+      return;
+    }
+
+    if (updateQuantity) {
+      await updateQuantity(cartItem.originalId || cartItem.itemId?._id, cartItem.itemType || 'service', currentQuantity - 1);
+      if (showToast) showToast(`${service.serviceName} quantity updated`);
+    }
   };
 
 
@@ -242,23 +307,37 @@ const ServicesPage = ({
                         )}
                       </div>
                       {isInCart && isInCart(service._id) ? (
-                        <button
-                          className="massive-add-btn"
-                          style={{ background: '#ef4444', color: 'white', borderColor: '#ef4444' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const cartItem = cartItems?.find(item => (item.itemId?._id || item.originalId) === service._id);
-                            if (cartItem && removeFromCart) removeFromCart(cartItem.itemId?._id || cartItem.originalId);
-                          }}
-                        >
-                          Remove
-                        </button>
+                        <div className="massive-cart-controls" onClick={(e) => e.stopPropagation()}>
+                          <div className="massive-quantity-container">
+                            <button
+                              className="massive-qty-btn"
+                              onClick={() => handleDecrementService(service)}
+                              aria-label={`Decrease quantity for ${service.serviceName}`}
+                            >
+                              -
+                            </button>
+                            <span className="massive-qty-value">{getServiceQuantity(service._id)}</span>
+                            <button
+                              className="massive-qty-btn"
+                              onClick={() => handleIncrementService(service)}
+                              aria-label={`Increase quantity for ${service.serviceName}`}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            className="massive-add-btn massive-remove-btn"
+                            onClick={() => confirmAndRemoveService(service)}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       ) : (
                         <button
                           className="massive-add-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            addToCart({ ...service, itemType: 'service' });
+                            handleIncrementService(service);
                           }}
                         >
                           Add
@@ -291,6 +370,42 @@ const ServicesPage = ({
                       <p className="compact-subtitle">₹{service.serviceCost}</p>
                     )}
                   </div>
+                  <div className="compact-card-actions" onClick={(e) => e.stopPropagation()}>
+                    {isInCart && isInCart(service._id) ? (
+                      <>
+                        <div className="compact-quantity-container">
+                          <button
+                            className="compact-qty-btn"
+                            onClick={() => handleDecrementService(service)}
+                            aria-label={`Decrease quantity for ${service.serviceName}`}
+                          >
+                            -
+                          </button>
+                          <span className="compact-qty-value">{getServiceQuantity(service._id)}</span>
+                          <button
+                            className="compact-qty-btn"
+                            onClick={() => handleIncrementService(service)}
+                            aria-label={`Increase quantity for ${service.serviceName}`}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <button
+                          className="compact-remove-btn"
+                          onClick={() => confirmAndRemoveService(service)}
+                        >
+                          Remove
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="compact-add-btn"
+                        onClick={() => handleIncrementService(service)}
+                      >
+                        Add
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -319,6 +434,35 @@ const ServicesPage = ({
           </div>
         )}
       </div>
+
+      {/* Custom Confirm Dialog */}
+      {confirmDialog.open && (
+        <div className="confirm-overlay" onClick={handleCancelRemove}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4h6v2" />
+              </svg>
+            </div>
+            <h3 className="confirm-title">Remove from Cart?</h3>
+            <p className="confirm-message">
+              <strong>{confirmDialog.service?.serviceName}</strong> will be removed from your cart.
+            </p>
+            <div className="confirm-actions">
+              <button className="confirm-btn confirm-cancel" onClick={handleCancelRemove}>
+                Keep It
+              </button>
+              <button className="confirm-btn confirm-remove" onClick={handleConfirmRemove}>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
+import './styles/gmh-cart-pill.css';
+import './styles/toast-theme.css';
 // Import components
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
@@ -26,12 +28,13 @@ import { getAllCategories } from './services/categoryService';
 import { getAllServices } from './services/serviceService';
 import { getAllProducts } from './services/productService';
 import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
+import { GooeyToaster, gooeyToast } from 'goey-toast';
+import 'goey-toast/styles.css';
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [toast, setToast] = useState({ show: false, message: '' });
   const [showServiceSheet, setShowServiceSheet] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -259,8 +262,29 @@ function App() {
   };
 
   const showToast = useCallback((message) => {
-    setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: '' }), 3000);
+    const normalizedMessage = String(message || '').toLowerCase();
+    const isErrorToast = [
+      'error',
+      'failed',
+      'invalid',
+      'unable',
+      'denied',
+      'cancelled'
+    ].some(keyword => normalizedMessage.includes(keyword));
+
+    const toastMethod = isErrorToast ? gooeyToast.error : gooeyToast.success;
+
+    toastMethod(message, {
+      duration: 2800,
+      preset: 'smooth',
+      fillColor: isErrorToast ? '#fef2f2' : '#ecfdf5',
+      borderColor: isErrorToast ? '#ef4444' : '#22c55e',
+      borderWidth: 1.5,
+      classNames: {
+        title: `app-toast-title ${isErrorToast ? 'app-toast-error-title' : 'app-toast-success-title'}`,
+        icon: isErrorToast ? 'app-toast-error-icon' : 'app-toast-success-icon'
+      }
+    });
   }, []);
 
   const openServiceSheet = (service) => {
@@ -319,12 +343,14 @@ function App() {
     setShowRegisterDialog(true);
   };
 
+  const cartTotalQuantity = cartItems.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
+
   return (
     <div className="App">
       <Navbar
         currentPage={currentPage}
         onNavigate={handleNavigate}
-        cartItemCount={cartItems.length}
+          cartItemCount={cartTotalQuantity}
         currentUser={currentUser}
         onLoginClick={() => setShowLoginDialog(true)}
         onLogout={handleLogout}
@@ -344,6 +370,12 @@ function App() {
             <img src={logo} alt="RightTouch" className="gmh-logo" />
           ) : null}
         </div>
+        {cartTotalQuantity > 0 && !['cart', 'checkout'].includes(currentPage) && (
+          <button className="gmh-cart-pill" onClick={handleCartClick}>
+            <MdShoppingCart size={14} />
+            <span>{cartTotalQuantity} {cartTotalQuantity === 1 ? 'item' : 'items'} in cart</span>
+          </button>
+        )}
         <div className="gmh-right">
 
           {!['bookings', 'cart', 'checkout', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) && (
@@ -359,7 +391,7 @@ function App() {
           )}
           <button className="gmh-cart-btn" onClick={handleCartClick}>
             <MdShoppingCart className="gmh-cart-icon" />
-            {cartItems.length > 0 && <span className="gmh-cart-badge">{cartItems.length}</span>}
+            {cartTotalQuantity > 0 && <span className="gmh-cart-badge">{cartTotalQuantity}</span>}
           </button>
         </div>
       </div>
@@ -537,7 +569,15 @@ function App() {
         onShowToast={showToast}
       />
 
-      {toast.show && <div className="toast">{toast.message}</div>}
+      <GooeyToaster
+        position="top-center"
+        offset="84px"
+        theme={isDarkMode ? 'dark' : 'light'}
+        closeOnEscape
+        swipeToDismiss
+        showProgress
+        gap={12}
+      />
     </div>
   );
 }

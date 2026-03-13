@@ -531,7 +531,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       updateQuantity(item.originalId, item.itemType, currentQty - 1);
       showToast(`Removed one ${item.name}`);
     } else {
-      removeFromCart(item.itemId?._id || item.originalId);
+      removeFromCart(item.id);
       showToast(`${item.name} removed from cart`);
     }
   };
