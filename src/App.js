@@ -460,6 +460,7 @@ function App() {
               cartItems={cartItems}
               addToCart={addToCart}
               removeFromCart={removeFromCart}
+              updateQuantity={updateQuantity}
               isInCart={isInCart}
               showToast={showToast}
               allServices={allServices}

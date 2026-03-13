@@ -63,7 +63,7 @@ const ServicesPage = ({
     setLoading(isGlobalLoading);
   }, [initialCategories, initialAllServices, isGlobalLoading]);
 
-  // Unify search queries: favor global search if active, otherwise use local
+// Prioritize navbar/global searchQuery for services page filtering
   const effectiveSearchQuery = (searchQuery || localSearchQuery || '').trim().toLowerCase();
 
   // Unified filtering logic
@@ -414,10 +414,10 @@ const ServicesPage = ({
           <div className="no-services-message" style={{ textAlign: 'center', padding: '60px 20px' }}>
             <Search size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px', opacity: 0.5 }} />
             <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
-              No services found
+              {isSearching ? 'No matches found' : 'No services found'}
             </h3>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-              {isSearching ? `We couldn't find anything for "${effectiveSearchQuery}"` : "This category is empty for now."}
+              {isSearching ? `No services match "${effectiveSearchQuery}"` : "This category is empty for now."}
             </p>
             {isSearching && (
               <button

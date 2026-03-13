@@ -25,6 +25,7 @@ const ProductServices = ({
   cartItems,
   addToCart,
   removeFromCart,
+  updateQuantity,
   isInCart,
   showToast,
   allServices = []
@@ -37,6 +38,7 @@ const ProductServices = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, service: null });
 
   // Custom FAQ content
   const customFAQs = [
@@ -121,19 +123,65 @@ const ProductServices = ({
     navigate('/services');
   };
 
-  const handleAddToCart = () => {
-    if (!service) return;
-    addToCart({
-      ...service,
-      itemType: 'service'
-    });
+  const getCartItemForService = (serviceId) => {
+    if (!Array.isArray(cartItems)) return null;
+    return cartItems.find(item => (item.itemId?._id || item.originalId) === serviceId) || null;
   };
 
-  const handleRemoveFromCart = () => {
+  const getServiceQuantity = (serviceId) => {
+    const cartItem = getCartItemForService(serviceId);
+    return Number(cartItem?.quantity || 0);
+  };
+
+  const confirmAndRemoveService = (service) => {
+    const cartItem = getCartItemForService(service._id);
+    if (!cartItem || !removeFromCart) return;
+    setConfirmDialog({ open: true, service });
+  };
+
+  const handleConfirmRemove = async () => {
+    const { service } = confirmDialog;
+    setConfirmDialog({ open: false, service: null });
     if (!service) return;
-    const cartItem = cartItems.find(item => (item.itemId?._id || item.originalId) === service._id);
-    if (cartItem) {
-      removeFromCart(cartItem.id);
+    const cartItem = getCartItemForService(service._id);
+    if (!cartItem || !removeFromCart) return;
+    await removeFromCart(cartItem.id);
+  };
+
+  const handleCancelRemove = () => {
+    setConfirmDialog({ open: false, service: null });
+  };
+
+  const handleIncrementService = async (service) => {
+    const cartItem = getCartItemForService(service._id);
+
+    if (!cartItem) {
+      if (addToCart) {
+        await addToCart({ ...service, itemType: 'service', quantity: 1 });
+      }
+      return;
+    }
+
+    const currentQuantity = Number(cartItem.quantity || 1);
+    if (updateQuantity) {
+      await updateQuantity(cartItem.originalId || cartItem.itemId?._id, cartItem.itemType || 'service', currentQuantity + 1);
+      if (showToast) showToast(`${service.serviceName} quantity updated`);
+    }
+  };
+
+  const handleDecrementService = async (service) => {
+    const cartItem = getCartItemForService(service._id);
+    if (!cartItem) return;
+
+    const currentQuantity = Number(cartItem.quantity || 1);
+    if (currentQuantity <= 1) {
+      await confirmAndRemoveService(service);
+      return;
+    }
+
+    if (updateQuantity) {
+      await updateQuantity(cartItem.originalId || cartItem.itemId?._id, cartItem.itemType || 'service', currentQuantity - 1);
+      if (showToast) showToast(`${service.serviceName} quantity updated`);
     }
   };
 
@@ -157,15 +205,45 @@ const ProductServices = ({
   }
 
   return (
-    <section className={`page ${isActive ? '' : 'hidden'}`} id="page-product-services">
-      {/* Detail Header */}
-      <div className="services-hero" style={{ textAlign: 'left', padding: '30px 20px' }}>
-        <button className="back-btn-simple" onClick={handleBack} style={{ marginBottom: '15px' }}>
-          <ChevronLeft size={20} /> Back
-        </button>
-        <div className="service-detail-hero-content" style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
+    <>
+      {/* Custom Confirm Dialog */}
+      {confirmDialog.open && (
+        <div className="confirm-overlay" onClick={handleCancelRemove}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4h6v2" />
+              </svg>
+            </div>
+            <h3 className="confirm-title">Remove from Cart?</h3>
+            <p className="confirm-message">
+              <strong>{confirmDialog.service?.serviceName}</strong> will be removed from your cart.
+            </p>
+            <div className="confirm-actions">
+              <button className="confirm-btn confirm-cancel" onClick={handleCancelRemove}>
+                Keep It
+              </button>
+              <button className="confirm-btn confirm-remove" onClick={handleConfirmRemove}>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <section className={`page ${isActive ? '' : 'hidden'}`} id="page-product-services"> 
+        {/* Detail Header */}
+        <div className="services-hero" style={{ textAlign: 'left' }}>
+          <button className="back-btn-simple" onClick={handleBack} style={{ marginBottom: '15px' }}>
+            <ChevronLeft size={20} /> Back
+          </button>
+        <div className="service-detail-hero-content" style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}> 
           {/* Service Image Section */}
-          <div className="service-detail-image-wrap">
+<div className="service-detail-image-wrap">
             {service.serviceImages?.[0] ? (
               <img src={service.serviceImages[0]} alt={service.serviceName} className="service-main-img" />
             ) : (
@@ -235,12 +313,39 @@ const ProductServices = ({
             </div>
 
             {isInCart(service._id) ? (
-              <button className="cart-btn remove-from-cart" onClick={handleRemoveFromCart} style={{ width: '100%', height: '48px' }}>
-                Remove from Cart
-              </button>
+              <div className="massive-cart-controls" onClick={(e) => e.stopPropagation()}>
+                <div className="massive-quantity-container">
+                  <button
+                    className="massive-qty-btn"
+                    onClick={() => handleDecrementService(service)}
+                    aria-label={`Decrease quantity for ${service.serviceName}`}
+                  >
+                    -
+                  </button>
+                  <span className="massive-qty-value">{getServiceQuantity(service._id)}</span>
+                  <button
+                    className="massive-qty-btn"
+                    onClick={() => handleIncrementService(service)}
+                    aria-label={`Increase quantity for ${service.serviceName}`}
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  className="massive-add-btn massive-remove-btn"
+                  onClick={() => confirmAndRemoveService(service)}
+                >
+                  Remove
+                </button>
+              </div>
             ) : (
-              <button className="cart-btn add-to-cart" onClick={handleAddToCart} style={{ width: '100%', height: '48px' }}>
-                Add to Cart
+              <button
+                className="massive-add-btn"
+                onClick={() => {
+                  handleIncrementService(service);
+                }}
+              >
+                Add
               </button>
             )}
 
@@ -487,6 +592,7 @@ const ProductServices = ({
         </div>
       </div>
     </section>
+    </>
   );
 };
 
