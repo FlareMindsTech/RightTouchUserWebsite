@@ -21,7 +21,7 @@
   /* Aligned left for professionalism */
 }
 
-body.dark .services-hero {
+body.dark-mode .services-hero {
   background: linear-gradient(135deg, #0f2d1a, #0f1b2d);
 }
 
