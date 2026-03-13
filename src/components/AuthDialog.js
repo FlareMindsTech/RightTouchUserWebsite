@@ -79,13 +79,15 @@ const AuthDialog = ({
       const resUser = response?.user || response?.result?.user || response?.result;
 
       if (response?.success || resToken) {
-        if (resToken) {
-          localStorage.setItem('token', resToken);
-        }
-
-        const userToSave = resUser && typeof resUser === 'object' ? resUser : {
-          identifier: identifier,
-          role: 'Customer'
+        const userToSave = {
+          _id: resUser?._id || resUser?.userId || response?.userId || response?.result?.userId,
+          fname: resUser?.fname || '',
+          lname: resUser?.lname || '',
+          name: resUser?.name || (resUser?.fname ? `${resUser.fname} ${resUser.lname || ''}`.trim() : ''),
+          mobileNumber: resUser?.mobileNumber || resUser?.identifier || identifier,
+          identifier: resUser?.identifier || resUser?.mobileNumber || identifier,
+          role: resUser?.role || 'Customer',
+          profileComplete: resUser?.profileComplete || false
         };
 
         localStorage.setItem('currentUser', JSON.stringify(userToSave));

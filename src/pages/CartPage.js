@@ -48,6 +48,8 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     city: '',
     state: '',
     landmark: '',
+    latitude: '',
+    longitude: '',
     isDefault: false
   });
 
@@ -124,7 +126,9 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       address: composedAddress || suggestion?.display_name || prev.address,
       city: addressMeta.city || addressMeta.town || addressMeta.village || prev.city,
       state: addressMeta.state || prev.state,
-      landmark: addressMeta.amenity || addressMeta.building || prev.landmark
+      landmark: addressMeta.amenity || addressMeta.building || prev.landmark,
+      latitude: suggestion?.lat || prev.latitude,
+      longitude: suggestion?.lon || prev.longitude
     }));
     setLocationSearch(suggestion?.display_name || '');
     setLocationSuggestions([]);
@@ -187,7 +191,27 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           );
           if (!response.ok) throw new Error('Reverse geocoding failed');
           const data = await response.json();
-          applyLocationToAddressForm(data);
+          const addressMeta = data?.address || {};
+          const composedAddress = [
+            addressMeta.house_number,
+            addressMeta.road,
+            addressMeta.neighbourhood,
+            addressMeta.suburb,
+            addressMeta.city_district
+          ].filter(Boolean).join(', ');
+
+          setNewAddressForm((prev) => ({
+            ...prev,
+            address: composedAddress || data?.display_name || prev.address,
+            city: addressMeta.city || addressMeta.town || addressMeta.village || prev.city,
+            state: addressMeta.state || prev.state,
+            landmark: addressMeta.amenity || addressMeta.building || prev.landmark,
+            latitude: latitude.toString(),
+            longitude: longitude.toString()
+          }));
+          setLocationSearch(data?.display_name || '');
+          setShowAddAddressForm(true);
+          showToast('Current location detected!');
         } catch (geoError) {
           console.error('Reverse geocoding error:', geoError);
           setShowAddAddressForm(true);
@@ -268,6 +292,8 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
         ...newAddressForm,
         name: newAddressForm.name.trim() || contactDetails.name || 'User',
         mobileNumber: newAddressForm.mobileNumber.trim(),
+        latitude: newAddressForm.latitude,
+        longitude: newAddressForm.longitude,
         isDefault: addresses.length === 0 || newAddressForm.isDefault
       };
       const response = await createAddress(payload);
@@ -769,6 +795,23 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                       placeholder="State"
                       value={newAddressForm.state}
                       onChange={(e) => setNewAddressForm((prev) => ({ ...prev, state: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="new-address-grid">
+                    <input
+                      type="text"
+                      className="address-form-input"
+                      placeholder="Latitude (e.g. 11.0123)"
+                      value={newAddressForm.latitude}
+                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, latitude: e.target.value }))}
+                    />
+                    <input
+                      type="text"
+                      className="address-form-input"
+                      placeholder="Longitude (e.g. 77.0456)"
+                      value={newAddressForm.longitude}
+                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, longitude: e.target.value }))}
                     />
                   </div>
                   <textarea

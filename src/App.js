@@ -73,7 +73,9 @@ function App() {
 
     try {
       const parsed = JSON.parse(savedUser);
-      if (parsed && parsed._id) {
+      if (parsed && (parsed._id || parsed.userId)) {
+        // Ensure _id is present for consistency
+        if (!parsed._id && parsed.userId) parsed._id = parsed.userId;
         setCurrentUser(parsed);
       }
     } catch (e) {
@@ -290,12 +292,14 @@ function App() {
   // Auth handlers
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
-    showToast(`Welcome back, ${user.name || 'User'}!`);
+    const displayName = user.name || user.fname || user.identifier || 'User';
+    showToast(`Welcome back, ${displayName}!`);
   };
 
   const handleRegisterSuccess = (user) => {
     setCurrentUser(user);
-    showToast(`Welcome, ${user.name}!`);
+    const displayName = user.name || user.fname || user.identifier || 'User';
+    showToast(`Welcome, ${displayName}!`);
   };
 
   const handleLogout = () => {
