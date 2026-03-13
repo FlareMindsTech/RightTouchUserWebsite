@@ -135,13 +135,11 @@ const HomePage = ({
     } else {
       navigate(`/services?category=${category._id}`);
     }
-    showToast(`Opening ${category.category} ${type}s`);
   };
 
   const handleServiceClick = (service) => {
     const categoryName = service.categoryId?.category || 'Service';
     navigate(`/product-services?type=${encodeURIComponent(categoryName)}&serviceId=${service._id}`);
-    showToast(`Opening ${service.serviceName}`);
   };
 
   const handleBookNow = (offer) => {

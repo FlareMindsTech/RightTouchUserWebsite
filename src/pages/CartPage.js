@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdOutlineLocationOn,
   MdEdit,
@@ -53,7 +54,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     isDefault: false
   });
 
-  // Separate Contact state (optional)
+  // Separate Contact state
   const [contactDetails, setContactDetails] = useState({
     name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : '',
     phone: currentUser?.mobileNumber || currentUser?.identifier || ''
@@ -180,7 +181,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     }
 
     setIsLocating(true);
-    showToast('Fetching your current location...');
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -211,7 +211,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           }));
           setLocationSearch(data?.display_name || '');
           setShowAddAddressForm(true);
-          showToast('Current location detected!');
         } catch (geoError) {
           console.error('Reverse geocoding error:', geoError);
           setShowAddAddressForm(true);
@@ -522,17 +521,21 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   const handleIncreaseQty = (item) => {
     const currentQty = item.quantity || 1;
     updateQuantity(item.originalId, item.itemType, currentQty + 1);
-    showToast(`Added another ${item.name}`);
   };
+
+  const removeConfirmShownRef = useRef(false);
+  const [removeConfirm, setRemoveConfirm] = useState({ open: false, item: null });
 
   const handleDecreaseQty = (item) => {
     const currentQty = item.quantity || 1;
     if (currentQty > 1) {
       updateQuantity(item.originalId, item.itemType, currentQty - 1);
-      showToast(`Removed one ${item.name}`);
     } else {
-      removeFromCart(item.id);
-      showToast(`${item.name} removed from cart`);
+      if (removeConfirmShownRef.current) {
+        removeFromCart(item.id);
+        return;
+      }
+      setRemoveConfirm({ open: true, item });
     }
   };
 
@@ -547,6 +550,23 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
   return (
     <div className="cart-page">
+      <ConfirmModal
+        isOpen={removeConfirm.open}
+        icon="🗑️"
+        iconBg="#fee2e2"
+        iconColor="#ef4444"
+        title="Remove from Cart?"
+        desc={removeConfirm.item ? <><strong>{removeConfirm.item.name}</strong> will be removed from your cart.</> : ''}
+        confirmLabel="Remove"
+        cancelLabel="Keep It"
+        confirmClass="cm-confirm-danger"
+        onConfirm={() => {
+          removeConfirmShownRef.current = true;
+          removeFromCart(removeConfirm.item.id);
+          setRemoveConfirm({ open: false, item: null });
+        }}
+        onCancel={() => setRemoveConfirm({ open: false, item: null })}
+      />
       <div className="cart-container">
         {/* Address Section */}
         <div className="address-section">
