@@ -233,6 +233,31 @@
   color: #dc2626;
 }
 
+.booking-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.payment-status-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.payment-status-badge.paid {
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.payment-status-badge.unpaid {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
 .booking-card-body {
   padding: 16px 0;
   border-top: 1px solid #f1f5f9;

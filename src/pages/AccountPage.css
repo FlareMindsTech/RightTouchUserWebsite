@@ -148,6 +148,118 @@
   border-color: #fecdd3;
 }
 
+.delete-account-button-simple {
+  width: 100%;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  background-color: #fff;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-account-button-simple:hover {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.delete-account-button-simple:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.account-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  padding: 20px;
+}
+
+.account-confirm-modal {
+  width: min(420px, 100%);
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px 22px;
+  text-align: center;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.28);
+}
+
+.account-confirm-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.account-confirm-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.account-confirm-message {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.account-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.account-confirm-btn {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.account-confirm-cancel {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.account-confirm-logout {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.account-confirm-delete {
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+.account-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .login-button-simple {
   width: 100%;
   display: flex;

@@ -77,6 +77,8 @@ const HomePage = ({
   const [productCategories, setProductCategories] = useState(initialProductCategories);
   const [services, setServices] = useState(initialServices);
   const [loading, setLoading] = useState(isGlobalLoading);
+  const [userAddress, setUserAddress] = useState('');
+  const [locationLoading, setLocationLoading] = useState(true);
 
   // Keep local state in sync with global props
   useEffect(() => {
@@ -85,6 +87,38 @@ const HomePage = ({
     setServices(initialServices);
     setLoading(isGlobalLoading);
   }, [initialServiceCategories, initialProductCategories, initialServices, isGlobalLoading]);
+
+  // Detect real user location
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setUserAddress('Location unavailable');
+      setLocationLoading(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          const addr = data.address || {};
+          const area = addr.suburb || addr.neighbourhood || addr.village || addr.town || addr.city_district || '';
+          const city = addr.city || addr.town || addr.state_district || addr.state || '';
+          setUserAddress(area && city ? `${area}, ${city}` : area || city || 'Unknown area');
+        } catch {
+          setUserAddress('Location unavailable');
+        }
+        setLocationLoading(false);
+      },
+      () => {
+        setUserAddress('Enable location access');
+        setLocationLoading(false);
+      },
+      { timeout: 10000, maximumAge: 300000 }
+    );
+  }, []);
 
   // Filtered data based on search query
   const filteredServiceCategories = filterBySearch(serviceCategories, searchQuery);
@@ -127,7 +161,10 @@ const HomePage = ({
           <MapPin size={20} className="location-pin" />
           <div className="location-text">
             <strong>Current Location</strong>
-            <span>Detecting address... <ChevronDown size={14} className="chevron" /></span>
+            <span>
+              {locationLoading ? 'Detecting...' : userAddress}
+              <ChevronDown size={14} className="chevron" />
+            </span>
           </div>
         </div>
       </div>

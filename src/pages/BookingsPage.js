@@ -79,6 +79,15 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
         return true;
       });
 
+      const getBookingTimestamp = (booking) => {
+        const dt = booking?.updatedAt || booking?.scheduledAt || booking?.createdAt;
+        const ts = dt ? new Date(dt).getTime() : 0;
+        return Number.isNaN(ts) ? 0 : ts;
+      };
+
+      filteredActive.sort((a, b) => getBookingTimestamp(b) - getBookingTimestamp(a));
+      history.sort((a, b) => getBookingTimestamp(b) - getBookingTimestamp(a));
+
       setActiveBookingsList(filteredActive);
       setBookingsHistory(history);
 
@@ -116,7 +125,9 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   const renderBookingCard = (booking) => {
     const serviceName = booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking';
     const status = (booking.status || 'PENDING').toUpperCase();
-    const isPaymentPending = booking?.paymentStatus && booking.paymentStatus !== 'paid';
+    const paymentStatus = (booking?.paymentStatus || '').toUpperCase();
+    const isPaymentPending = status === 'COMPLETED' && paymentStatus !== 'PAID';
+    const paymentLabel = paymentStatus === 'PAID' ? 'PAID' : 'UNPAID';
     const date = booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
@@ -143,8 +154,13 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
             <h4 className="booking-service-name">{serviceName}</h4>
             <p className="booking-id-text">ID: #{booking._id?.slice(-6).toUpperCase()}</p>
           </div>
-          <div className={`status-badge-vibrant ${getStatusClass(status)}`}>
-            {status}
+          <div className="booking-badges">
+            <div className={`status-badge-vibrant ${getStatusClass(status)}`}>
+              {status}
+            </div>
+            <div className={`payment-status-badge ${paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
+              {paymentLabel}
+            </div>
           </div>
         </div>
 

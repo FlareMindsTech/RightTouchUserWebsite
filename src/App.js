@@ -316,13 +316,23 @@ function App() {
 
   // Auth handlers
   const handleLoginSuccess = (user) => {
+    if (user?.token) {
+      localStorage.setItem('token', user.token);
+    }
+    localStorage.setItem('currentUser', JSON.stringify(user));
     setCurrentUser(user);
+    fetchCart();
     const displayName = user.name || user.fname || user.identifier || 'User';
     showToast(`Welcome back, ${displayName}!`);
   };
 
   const handleRegisterSuccess = (user) => {
+    if (user?.token) {
+      localStorage.setItem('token', user.token);
+    }
+    localStorage.setItem('currentUser', JSON.stringify(user));
     setCurrentUser(user);
+    fetchCart();
     const displayName = user.name || user.fname || user.identifier || 'User';
     showToast(`Welcome, ${displayName}!`);
   };

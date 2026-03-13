@@ -4,7 +4,6 @@ import {
   MdOutlineChevronRight,
   MdOutlineLocationOn,
   MdOutlinePayments,
-  MdOutlineSettings,
   MdClose,
   MdMoreVert,
   MdStarOutline,
@@ -30,7 +29,7 @@ import {
   updateAddress,
   deleteAddress
 } from '../services/addressService';
-import { getMyProfile, updateProfile } from '../services/userService';
+import { getMyProfile, updateProfile, deleteMyAccount } from '../services/userService';
 
 const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClick }) => {
   const location = useLocation();
@@ -42,6 +41,10 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const [profileData, setProfileData] = useState(currentUser || {});
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    action: null
+  });
   const fetchedRef = useRef(false);
 
   const [editFormData, setEditFormData] = useState({
@@ -232,7 +235,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
-  const handleLogout = () => {
+  const performLogout = () => {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('token');
     showToast('Logged out successfully');
@@ -240,6 +243,56 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       onNavigate('home');
     }
     window.dispatchEvent(new Event('userLoggedOut'));
+  };
+
+  const openLogoutConfirm = () => {
+    setConfirmDialog({ open: true, action: 'logout' });
+  };
+
+  const performDeleteAccount = async () => {
+    if (!currentUser) return;
+
+    setLoading(true);
+    try {
+      const response = await deleteMyAccount();
+      if (response?.success) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+        showToast('Your account has been deleted');
+        if (onNavigate) onNavigate('home');
+        window.dispatchEvent(new Event('userLoggedOut'));
+      } else {
+        showToast(response?.message || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      showToast('Error deleting account');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openDeleteAccountConfirm = () => {
+    if (!currentUser) return;
+    setConfirmDialog({ open: true, action: 'delete-account' });
+  };
+
+  const closeConfirmDialog = () => {
+    if (loading) return;
+    setConfirmDialog({ open: false, action: null });
+  };
+
+  const handleConfirmAction = async () => {
+    if (confirmDialog.action === 'logout') {
+      performLogout();
+      closeConfirmDialog();
+      return;
+    }
+
+    if (confirmDialog.action === 'delete-account') {
+      await performDeleteAccount();
+      closeConfirmDialog();
+    }
   };
 
   const handleMenuItemClick = (menuItem) => {
@@ -252,9 +305,6 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         break;
       case 'Manage payment methods':
         onNavigate('payment-methods');
-        break;
-      case 'Settings':
-        onNavigate('settings');
         break;
       // Ratings and Help can be added here later if pages exist
       default:
@@ -316,14 +366,6 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
             <MdOutlineChevronRight className="arrow" />
           </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Settings')}>
-            <div className="menu-left-simple">
-              <MdOutlineSettings className="icon" />
-              <span>Settings</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
-
           <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
             <div className="menu-left-simple">
               <LuHeadphones className="icon" />
@@ -336,9 +378,14 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         {/* Logout/Login Button */}
         <div className="account-footer-simple">
           {currentUser ? (
-            <button className="logout-button-simple" onClick={handleLogout}>
-              <LuLogOut size={20} /> Logout
-            </button>
+            <>
+              <button className="logout-button-simple" onClick={openLogoutConfirm}>
+                <LuLogOut size={20} /> Logout
+              </button>
+              <button className="delete-account-button-simple" onClick={openDeleteAccountConfirm} disabled={loading}>
+                <MdDeleteOutline size={20} /> {loading ? 'Deleting...' : 'Delete Account'}
+              </button>
+            </>
           ) : (
             <button className="login-button-simple" onClick={handleLoginClick}>
               <MdLogin size={20} /> Login
@@ -481,6 +528,38 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {confirmDialog.open && (
+        <div className="account-confirm-overlay" onClick={closeConfirmDialog}>
+          <div className="account-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="account-confirm-icon">⚠</div>
+            <h3 className="account-confirm-title">
+              {confirmDialog.action === 'logout' ? 'Confirm Logout' : 'Delete Account'}
+            </h3>
+            <p className="account-confirm-message">
+              {confirmDialog.action === 'logout'
+                ? 'Are you sure you want to logout now?'
+                : 'Are you sure you want to delete your account permanently? This cannot be undone.'}
+            </p>
+            <div className="account-confirm-actions">
+              <button
+                className="account-confirm-btn account-confirm-cancel"
+                onClick={closeConfirmDialog}
+                disabled={loading}
+              >
+                Keep It
+              </button>
+              <button
+                className={`account-confirm-btn ${confirmDialog.action === 'logout' ? 'account-confirm-logout' : 'account-confirm-delete'}`}
+                onClick={handleConfirmAction}
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : (confirmDialog.action === 'logout' ? 'Logout' : 'Delete')}
+              </button>
+            </div>
           </div>
         </div>
       )}

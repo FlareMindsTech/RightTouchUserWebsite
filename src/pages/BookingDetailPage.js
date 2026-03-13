@@ -11,7 +11,11 @@ import {
   MdCall,
   MdStarOutline
 } from 'react-icons/md';
+import { useNavigate } from 'react-router-dom';
 import { createPaymentOrder, verifyPayment } from '../services/paymentService';
+import { addToCart } from '../services/cartService';
+import { createRating } from '../services/ratingService';
+import InvoiceModal from '../components/InvoiceModal';
 import './BookingDetailPage.css';
 
 const loadRazorpaySDK = () => {
@@ -25,7 +29,12 @@ const loadRazorpaySDK = () => {
 };
 
 const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
+  const navigate = useNavigate();
   const [paymentLoading, setPaymentLoading] = React.useState(false);
+  const [showInvoice, setShowInvoice] = React.useState(false);
+  const [showRatingModal, setShowRatingModal] = React.useState(false);
+  const [ratingLoading, setRatingLoading] = React.useState(false);
+  const [ratingForm, setRatingForm] = React.useState({ rates: 0, comment: '' });
 
   const handleAction = (action) => {
     showToast(`${action} clicked for ${booking.service}`);
@@ -125,7 +134,7 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
     const professionalName = booking?.technicianSnapshot?.name ||
       (booking?.technicianId?.userId?.fname ? `${booking.technicianId.userId.fname} ${booking.technicianId.userId.lname || ''}`.trim() : null) ||
       booking?.assignedTechnician?.name ||
-      (booking?.status === 'SEARCHING' ? 'Searching...' : 'Not assigned');
+      (booking?.status === 'SEARCHING' ? 'Searching...' : 'Awaiting technician assignment');
 
     const professionalMobile = booking?.technicianSnapshot?.mobile ||
       booking?.technicianId?.userId?.mobileNumber ||
@@ -171,13 +180,123 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
       total: `₹${totalAmount}`,
       status: booking?.status || 'Pending',
       serviceName: serviceName,
+      technicianId:
+        booking?.technicianId?._id ||
+        booking?.technicianSnapshot?._id ||
+        booking?.assignedTechnician?._id ||
+        null,
+      serviceId: booking?.serviceId?._id || booking?.serviceId || null,
       images: booking?.workImages?.beforeImage || booking?.workImages?.afterImage
         ? [booking.workImages.beforeImage, booking.workImages.afterImage].filter(Boolean)
         : []
     };
   };
-  console.log(booking)
   const details = getBookingDetails();
+  const bookingStatusUpper = (booking?.status || '').toUpperCase();
+  const paymentStatusUpper = (booking?.paymentStatus || '').toUpperCase();
+  const isExpiredBooking = ['EXPIRED', 'CANCELLED'].includes(bookingStatusUpper);
+  const isCompletedBooking = bookingStatusUpper === 'COMPLETED';
+  const isPaidBooking = paymentStatusUpper === 'PAID';
+  const hasTechnician = Boolean(details.technicianId || booking?.technicianId);
+  const canRateTechnician = hasTechnician && ['ACCEPTED', 'IN PROGRESS', 'COMPLETED'].includes(bookingStatusUpper);
+  const canShowPayNow = isCompletedBooking && !isPaidBooking && !isExpiredBooking;
+
+  const handlePayButtonClick = () => {
+    if (paymentLoading) return;
+    if (canShowPayNow) {
+      handlePayment();
+      return;
+    }
+
+    if (isPaidBooking) {
+      showToast('Payment already completed for this booking');
+      return;
+    }
+
+    if (isExpiredBooking) {
+      showToast('Payment is disabled for expired or cancelled bookings');
+      return;
+    }
+
+    showToast('Pay option will be enabled once technician completes the work');
+  };
+
+  const handleRebook = async () => {
+    try {
+      const firstCartItem = booking?.cartId?.items?.[0] || null;
+      const itemId =
+        booking?.serviceId?._id ||
+        booking?.productId?._id ||
+        firstCartItem?.itemId?._id ||
+        firstCartItem?.item?._id ||
+        firstCartItem?.itemId ||
+        booking?.itemId?._id ||
+        booking?.itemId;
+
+      const itemType =
+        firstCartItem?.itemType ||
+        (booking?.serviceId ? 'service' : (booking?.productId ? 'product' : 'service'));
+
+      if (!itemId) {
+        showToast('Unable to rebook this item right now');
+        return;
+      }
+
+      const response = await addToCart({
+        itemId,
+        itemType,
+        quantity: 1
+      });
+
+      if (response?.success) {
+        showToast('Booking added to cart again');
+        navigate('/cart');
+      } else {
+        showToast(response?.message || 'Failed to add booking to cart');
+      }
+    } catch (error) {
+      console.error('Rebook failed:', error);
+      showToast('Error while booking again');
+    }
+  };
+
+  const handleSubmitRating = async (e) => {
+    e.preventDefault();
+    if (!canRateTechnician) {
+      showToast('Rating is available once technician accepts your booking');
+      return;
+    }
+    if (!ratingForm.rates) {
+      showToast('Please select a star rating');
+      return;
+    }
+
+    setRatingLoading(true);
+    try {
+      const payload = {
+        bookingId: booking?._id,
+        bookingType: booking?.bookingType || (details.serviceId ? 'service' : 'product'),
+        rates: ratingForm.rates,
+        comment: ratingForm.comment,
+        technicianId: details.technicianId,
+        serviceId: details.serviceId
+      };
+
+      const response = await createRating(payload);
+      if (response?.success) {
+        showToast('Rating submitted successfully');
+        setShowRatingModal(false);
+        setRatingForm({ rates: 0, comment: '' });
+      } else {
+        showToast(response?.message || 'Failed to submit rating');
+      }
+    } catch (error) {
+      console.error('Rating submit failed:', error);
+      showToast('Error submitting rating');
+    } finally {
+      setRatingLoading(false);
+    }
+  };
 
   return (
     <section className="booking-detail-page">
@@ -296,17 +415,19 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
 
         <div className="payment-method">
           <MdPayment className="payment-icon" />
-          {booking?.paymentStatus !== 'paid'
+          {canShowPayNow
             ? <span className="payment-pending-tag">Payment Pending</span>
-            : <span>Paid via {details.paymentMethod}</span>
+            : <span>{paymentStatusUpper === 'PAID' ? `Paid via ${details.paymentMethod}` : 'Payment not available'}</span>
           }
         </div>
 
-        <button className="invoice-btn" onClick={() => handleAction('View Invoice')}>
-          <MdReceipt className="invoice-icon" />
-          View Invoice
-          <MdOutlineChevronRight className="arrow-icon" />
-        </button>
+        {paymentStatusUpper === 'PAID' && (
+          <button className="invoice-btn" onClick={() => setShowInvoice(true)}>
+            <MdReceipt className="invoice-icon" />
+            View Invoice
+            <MdOutlineChevronRight className="arrow-icon" />
+          </button>
+        )}
       </div>
 
       {/* Work Images */}
@@ -325,48 +446,97 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
 
       {/* Action Buttons */}
       <div className="action-buttons">
-        {booking?.paymentStatus !== 'paid' && booking?.paymentStatus ? (
-          <button
-            className="action-btn primary pay-now-btn"
-            onClick={handlePayment}
-            disabled={paymentLoading}
-            style={{ flex: 1, backgroundColor: paymentLoading ? '#9e9e9e' : '#22c55e' }}
-          >
-            <MdPayment className="action-icon" />
-            {paymentLoading ? 'Processing...' : `Pay Now (${details.total})`}
+        <button
+          className={`action-btn primary pay-now-btn ${canShowPayNow && !paymentLoading ? 'enabled' : 'disabled-state'}`}
+          onClick={handlePayButtonClick}
+          aria-disabled={!canShowPayNow || paymentLoading}
+        >
+          <MdPayment className="action-icon" />
+          {paymentLoading
+            ? 'Processing...'
+            : (isPaidBooking ? 'Paid' : `Pay Now (${details.total})`)}
+        </button>
+
+        <button className="action-btn secondary" onClick={() => {
+          if (details.professionalMobile && details.professionalMobile !== 'Not available') {
+            window.location.href = `tel:${details.professionalMobile}`;
+          } else {
+            showToast('Technician phone number not available yet');
+          }
+        }}>
+          <MdCall className="action-icon" />
+          Call
+        </button>
+
+        <button
+          className={`action-btn primary ${canRateTechnician ? 'rate-enabled' : 'rate-disabled'}`}
+          onClick={() => {
+            if (!canRateTechnician) {
+              showToast('Rating option is available once technician accepts your booking');
+              return;
+            }
+            setShowRatingModal(true);
+          }}
+        >
+            <MdStarOutline className="action-icon" />
+            Rate & Review
           </button>
-        ) : (
-          <>
-            <button className="action-btn secondary" onClick={() => handleAction('Message')}>
-              <MdMessage className="action-icon" />
-              Message
-            </button>
-            <button className="action-btn secondary" onClick={() => {
-              if (details.professionalMobile && details.professionalMobile !== 'Not available') {
-                window.location.href = `tel:${details.professionalMobile}`;
-              } else {
-                handleAction('Call');
-              }
-            }}>
-              <MdCall className="action-icon" />
-              Call
-            </button>
-            {details.status.toLowerCase() === 'completed' && (
-              <button className="action-btn primary" onClick={() => handleAction('Review')}>
-                <MdStarOutline className="action-icon" />
-                Rate & Review
-              </button>
-            )}
-          </>
-        )}
       </div>
 
       {/* Rebook Button */}
       <div className="rebook-section">
-        <button className="rebook-btn" onClick={() => handleAction('Rebook')}>
+        <button className="rebook-btn" onClick={handleRebook}>
           Book Again
         </button>
       </div>
+
+      {showRatingModal && (
+        <div className="rating-modal-overlay" onClick={() => !ratingLoading && setShowRatingModal(false)}>
+          <div className="rating-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Rate Your Technician</h3>
+            <p className="rating-note">Optional feedback after technician acceptance.</p>
+
+            <form onSubmit={handleSubmitRating}>
+              <div className="star-row">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    type="button"
+                    key={star}
+                    className={`star-btn ${ratingForm.rates >= star ? 'active' : ''}`}
+                    onClick={() => setRatingForm((prev) => ({ ...prev, rates: star }))}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={ratingForm.comment}
+                onChange={(e) => setRatingForm((prev) => ({ ...prev, comment: e.target.value }))}
+                placeholder="Share your experience (optional)"
+                rows={4}
+              />
+
+              <div className="rating-actions">
+                <button type="button" className="rating-cancel" onClick={() => setShowRatingModal(false)} disabled={ratingLoading}>
+                  Cancel
+                </button>
+                <button type="submit" className="rating-submit" disabled={ratingLoading}>
+                  {ratingLoading ? 'Submitting...' : 'Submit Rating'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <InvoiceModal
+        isOpen={showInvoice}
+        onClose={() => setShowInvoice(false)}
+        booking={booking}
+        details={details}
+        paymentStatusUpper={paymentStatusUpper}
+      />
     </section>
   );
 };
