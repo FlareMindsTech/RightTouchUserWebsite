@@ -3,7 +3,8 @@ import {
   MdOutlineChevronRight,
   MdHelpOutline,
   MdSearch,
-  MdShoppingCart
+  MdShoppingCart,
+  MdPayment
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
@@ -11,7 +12,7 @@ import BookingDetailPage from './BookingDetailPage';
 import { getCustomerBookings, getBookings } from '../services/bookingService';
 import './BookingsPage.css';
 
-const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
+const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentUser }) => {
   const navigate = useNavigate();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
@@ -107,6 +108,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
         booking={selectedBooking}
         onBack={handleBack}
         showToast={showToast}
+        currentUser={currentUser}
       />
     );
   }
@@ -114,6 +116,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
   const renderBookingCard = (booking) => {
     const serviceName = booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking';
     const status = (booking.status || 'PENDING').toUpperCase();
+    const isPaymentPending = booking?.paymentStatus && booking.paymentStatus !== 'paid';
     const date = booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
@@ -144,6 +147,13 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0 }) => {
             {status}
           </div>
         </div>
+
+        {isPaymentPending && (
+          <div className="payment-pending-banner">
+            <MdPayment style={{ marginRight: '6px', flexShrink: 0 }} />
+            Payment Pending - Tap to pay
+          </div>
+        )}
 
         <div className="booking-card-body">
           <div className="booking-info-row">

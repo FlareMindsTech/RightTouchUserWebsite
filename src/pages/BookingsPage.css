@@ -378,3 +378,17 @@
     padding: 16px;
   }
 }
+
+/* Payment Pending Banner inside booking card */
+.payment-pending-banner {
+  display: flex;
+  align-items: center;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #c2410c;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 8px;
+  margin: 8px 0 4px;
+}

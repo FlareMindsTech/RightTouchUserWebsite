@@ -9,8 +9,7 @@ import {
   MdReceipt,
   MdMessage,
   MdCall,
-  MdStarOutline,
-  MdCheckCircleOutline
+  MdStarOutline
 } from 'react-icons/md';
 import { createPaymentOrder, verifyPayment } from '../services/paymentService';
 import './BookingDetailPage.css';
@@ -25,38 +24,49 @@ const loadRazorpaySDK = () => {
   });
 };
 
-const BookingDetailPage = ({ booking, onBack, showToast }) => {
+const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
+  const [paymentLoading, setPaymentLoading] = React.useState(false);
+
   const handleAction = (action) => {
     showToast(`${action} clicked for ${booking.service}`);
   };
 
   const handlePayment = async () => {
+    if (paymentLoading) return;
+    setPaymentLoading(true);
     try {
       showToast('Initializing payment...');
       const res = await loadRazorpaySDK();
       if (!res) {
         showToast('Razorpay SDK failed to load. Are you online?');
+        setPaymentLoading(false);
         return;
       }
 
-      // Create Payment Order via backend wrapper
+      // Create Payment Order via backend
       const orderRes = await createPaymentOrder({
-        bookingId: booking._id,
-        amount: parseInt(details.total.replace('₹', ''))
+        bookingId: booking._id
       });
 
       if (!orderRes?.success) {
         showToast(orderRes?.message || 'Failed to initialize payment');
+        setPaymentLoading(false);
         return;
       }
 
+      const orderData = orderRes.result || orderRes;
+      const user = currentUser || (() => {
+        try { return JSON.parse(localStorage.getItem('currentUser') || '{}'); } catch { return {}; }
+      })();
+
       const options = {
-        key: orderRes.result?.key || orderRes.key,
-        amount: orderRes.result?.amount || orderRes.amount,
-        currency: "INR",
-        name: "Right Touch",
+        key: process.env.REACT_APP_RAZORPAY_KEY || orderData.key || orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'RightTouch Services',
         description: `Payment for Booking ${details.id}`,
-        order_id: orderRes.result?.orderId || orderRes.orderId,
+        image: '/logo.png',
+        order_id: orderData.orderId || orderData.id,
         handler: async function (paymentResponse) {
           try {
             const verification = await verifyPayment({
@@ -68,21 +78,29 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
 
             if (verification?.success) {
               showToast('Payment successful!');
-              // Refresh or Navigate back to update UI
-              setTimeout(() => onBack(), 1000);
+              setTimeout(() => onBack(), 1200);
             } else {
               showToast('Payment verification failed');
             }
           } catch (err) {
             console.error('Payment Verification error:', err);
-            showToast('Verification failed internally');
+            showToast('Error verifying payment');
+          } finally {
+            setPaymentLoading(false);
           }
         },
         prefill: {
-          name: "Customer",
-          contact: "9999999999" // Use actual customer object if available
+          name: user.name || `${user.fname || ''} ${user.lname || ''}`.trim() || 'Customer',
+          email: user.email || '',
+          contact: user.mobileNumber || user.phoneNumber || ''
         },
-        theme: { color: "#6c63ff" }
+        theme: { color: '#2ecc71' },
+        modal: {
+          ondismiss: () => {
+            showToast('Payment cancelled. Your booking is saved.');
+            setPaymentLoading(false);
+          }
+        }
       };
 
       const paymentObject = new window.Razorpay(options);
@@ -91,6 +109,7 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
     } catch (err) {
       console.error(err);
       showToast('Error launching payment');
+      setPaymentLoading(false);
     }
   };
 
@@ -277,7 +296,10 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
 
         <div className="payment-method">
           <MdPayment className="payment-icon" />
-          <span>Paid via {details.paymentMethod}</span>
+          {booking?.paymentStatus !== 'paid'
+            ? <span className="payment-pending-tag">Payment Pending</span>
+            : <span>Paid via {details.paymentMethod}</span>
+          }
         </div>
 
         <button className="invoice-btn" onClick={() => handleAction('View Invoice')}>
@@ -303,10 +325,15 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
 
       {/* Action Buttons */}
       <div className="action-buttons">
-        {(details.status.toLowerCase() === 'completed' && booking?.paymentStatus === 'pending') ? (
-          <button className="action-btn primary" onClick={handlePayment} style={{ flex: 1, backgroundColor: '#4CAF50' }}>
+        {booking?.paymentStatus !== 'paid' && booking?.paymentStatus ? (
+          <button
+            className="action-btn primary pay-now-btn"
+            onClick={handlePayment}
+            disabled={paymentLoading}
+            style={{ flex: 1, backgroundColor: paymentLoading ? '#9e9e9e' : '#22c55e' }}
+          >
             <MdPayment className="action-icon" />
-            Pay Now ({details.total})
+            {paymentLoading ? 'Processing...' : `Pay Now (${details.total})`}
           </button>
         ) : (
           <>
@@ -324,10 +351,12 @@ const BookingDetailPage = ({ booking, onBack, showToast }) => {
               <MdCall className="action-icon" />
               Call
             </button>
-            <button className="action-btn primary" onClick={() => handleAction('Review')}>
-              <MdStarOutline className="action-icon" />
-              Rate & Review
-            </button>
+            {details.status.toLowerCase() === 'completed' && (
+              <button className="action-btn primary" onClick={() => handleAction('Review')}>
+                <MdStarOutline className="action-icon" />
+                Rate & Review
+              </button>
+            )}
           </>
         )}
       </div>

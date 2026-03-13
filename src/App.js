@@ -477,6 +477,7 @@ function App() {
               isActive={currentPage === 'bookings'}
               showToast={showToast}
               cartItemCount={cartItems.length}
+              currentUser={currentUser}
             />
           } />
           <Route path="/cart" element={
