@@ -28,8 +28,7 @@ import { getAllCategories } from './services/categoryService';
 import { getAllServices } from './services/serviceService';
 import { getAllProducts } from './services/productService';
 import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
-import { GooeyToaster, gooeyToast } from 'goey-toast';
-import 'goey-toast/styles.css';
+// Toast system will be handled internally with state
 
 function App() {
   const navigate = useNavigate();
@@ -40,6 +39,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [toasts, setToasts] = useState([]);
 
   // Auth states
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -261,9 +261,10 @@ function App() {
     return cartItems.some(item => (item.itemId?._id || item.originalId) === targetId);
   };
 
-  const showToast = useCallback((message) => {
+  const showToast = useCallback((message, type = 'success') => {
+    const id = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
     const normalizedMessage = String(message || '').toLowerCase();
-    const isErrorToast = [
+    const isError = type === 'error' || [
       'error',
       'failed',
       'invalid',
@@ -272,19 +273,24 @@ function App() {
       'cancelled'
     ].some(keyword => normalizedMessage.includes(keyword));
 
-    const toastMethod = isErrorToast ? gooeyToast.error : gooeyToast.success;
+    const newToast = {
+      id,
+      message,
+      type: isError ? 'error' : 'success',
+      fadeOut: false
+    };
 
-    toastMethod(message, {
-      duration: 2800,
-      preset: 'smooth',
-      fillColor: isErrorToast ? '#fef2f2' : '#ecfdf5',
-      borderColor: isErrorToast ? '#ef4444' : '#22c55e',
-      borderWidth: 1.5,
-      classNames: {
-        title: `app-toast-title ${isErrorToast ? 'app-toast-error-title' : 'app-toast-success-title'}`,
-        icon: isErrorToast ? 'app-toast-error-icon' : 'app-toast-success-icon'
-      }
-    });
+    setToasts(prev => [...prev, newToast]);
+
+    // Start fade out
+    setTimeout(() => {
+      setToasts(prev => prev.map(t => t.id === id ? { ...t, fadeOut: true } : t));
+    }, 2700);
+
+    // Remove toast
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
   }, []);
 
   const openServiceSheet = (service) => {
@@ -569,15 +575,16 @@ function App() {
         onShowToast={showToast}
       />
 
-      <GooeyToaster
-        position="top-center"
-        offset="84px"
-        theme={isDarkMode ? 'dark' : 'light'}
-        closeOnEscape
-        swipeToDismiss
-        showProgress
-        gap={12}
-      />
+      <div className="toast-container">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`custom-toast ${toast.type} ${toast.fadeOut ? 'toast-exit' : ''}`}
+          >
+            {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
