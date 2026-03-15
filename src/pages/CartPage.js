@@ -10,7 +10,7 @@ import {
   MdArrowBack,
   MdPlace
 } from 'react-icons/md';
-import { createAddress, getMyAddresses } from '../services/addressService';
+import { createAddress, getMyAddresses, searchAddress, reverseAddress, updateAddress } from '../services/addressService';
 import { checkout, getMyCart } from '../services/cartService';
 import { loadRazorpayScript, createPaymentOrder, verifyPayment } from '../services/paymentService';
 import { useNavigate } from 'react-router-dom';
@@ -31,26 +31,28 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, item: null });
 
   // Addresses state
   const [addresses, setAddresses] = useState([]);
   const [addressForm, setAddressForm] = useState({
     name: '',
-    type: '',
-    address: 'No address added yet.',
+    label: '',
+    addressLine: 'No address added yet.',
     phone: '',
     id: null
   });
   const [newAddressForm, setNewAddressForm] = useState({
     name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : '',
     mobileNumber: currentUser?.mobileNumber || currentUser?.identifier || '',
-    type: 'Home',
-    address: '',
+    label: 'Home',
+    addressLine: '',
     city: '',
     state: '',
-    landmark: '',
+    pincode: '',
     latitude: '',
     longitude: '',
+    landmark: '',
     isDefault: false
   });
 
@@ -60,13 +62,22 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     phone: currentUser?.mobileNumber || currentUser?.identifier || ''
   });
 
-  const mapAddressToSelection = useCallback((addr) => ({
-    name: addr?.name || '',
-    type: addr?.type || 'Address',
-    address: `${addr?.landmark ? `${addr.landmark}, ` : ''}${addr?.address || ''}${addr?.city ? `, ${addr.city}` : ''}${addr?.state ? `, ${addr.state}` : ''}`.trim(),
-    phone: addr?.phone || addr?.mobileNumber || '',
-    id: addr?._id || null
-  }), []);
+  const mapAddressToSelection = useCallback((addr) => {
+    let displayAddress = addr?.addressLine || addr?.address || '';
+    if (!displayAddress || displayAddress.toLowerCase().includes('pinned location')) {
+      const parts = [addr?.city, addr?.state, addr?.pincode].filter(Boolean);
+      if (parts.length > 0) displayAddress = parts.join(', ');
+      else displayAddress = 'Pinned Location';
+    }
+
+    return {
+      name: addr?.name || '',
+      label: addr?.label || addr?.type || 'Address',
+      addressLine: displayAddress,
+      phone: addr?.phone || addr?.mobileNumber || '',
+      id: addr?._id || null
+    };
+  }, []);
 
   const fetchAddresses = useCallback(async () => {
     try {
@@ -80,8 +91,8 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       } else {
         setAddressForm({
           name: '',
-          type: '',
-          address: 'No address added yet.',
+          label: '',
+          addressLine: 'No address added yet.',
           phone: '',
           id: null
         });
@@ -124,10 +135,10 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
     setNewAddressForm((prev) => ({
       ...prev,
-      address: composedAddress || suggestion?.display_name || prev.address,
-      city: addressMeta.city || addressMeta.town || addressMeta.village || prev.city,
+      addressLine: suggestion?.display_name || composedAddress || prev.addressLine,
+      city: addressMeta.city || addressMeta.town || addressMeta.village || addressMeta.municipality || addressMeta.county || addressMeta.state_district || addressMeta.suburb || prev.city,
       state: addressMeta.state || prev.state,
-      landmark: addressMeta.amenity || addressMeta.building || prev.landmark,
+      pincode: addressMeta.postcode || prev.pincode,
       latitude: suggestion?.lat || prev.latitude,
       longitude: suggestion?.lon || prev.longitude
     }));
@@ -151,12 +162,8 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     const debounceId = setTimeout(async () => {
       setIsSearchingLocation(true);
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q=${encodeURIComponent(searchTerm)}`,
-          { signal: controller.signal }
-        );
-        if (!res.ok) throw new Error('Location search failed');
-        const data = await res.json();
+        const response = await searchAddress(searchTerm);
+        const data = response?.result;
         setLocationSuggestions(Array.isArray(data) ? data : []);
       } catch (error) {
         if (error.name !== 'AbortError') {
@@ -186,30 +193,56 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
         const { latitude, longitude } = position.coords;
 
         try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${latitude}&lon=${longitude}`
-          );
-          if (!response.ok) throw new Error('Reverse geocoding failed');
-          const data = await response.json();
-          const addressMeta = data?.address || {};
-          const composedAddress = [
-            addressMeta.house_number,
-            addressMeta.road,
-            addressMeta.neighbourhood,
-            addressMeta.suburb,
-            addressMeta.city_district
+          // Direct frontend call to Nominatim (as requested: only frontend)
+          const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`;
+          
+          const response = await fetch(nominatimUrl, {
+            headers: { 'User-Agent': 'RightTouchApp/1.0 (vigneshubi24@gmail.com)' }
+          });
+
+          if (!response.ok) {
+            throw new Error(`Nominatim error: ${response.status}`);
+          }
+
+          const result = await response.json();
+          console.log('[Geocoding] Frontend API Response:', result);
+          
+          const addr = result.address || {};
+          console.log('[Geocoding] Extracted Address Object:', addr);
+          
+          // Construct a human-readable address line
+          const details = [
+            addr.house_number,
+            addr.road,
+            addr.neighbourhood,
+            addr.suburb,
+            addr.city_district,
+            addr.town,
+            addr.village,
+            addr.municipality,
+            addr.county
           ].filter(Boolean).join(', ');
+
+          const finalAddressLine = result.display_name || details || 'Pinned Location';
+          console.log('[Geocoding] Calculated addressLine:', finalAddressLine);
+
+          const finalCity = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.state_district || addr.suburb || '';
+          const finalState = addr.state || addr.state_district || '';
+          const finalPincode = addr.postcode || '';
+
+          console.log('[Geocoding] Updating form with:', { city: finalCity, state: finalState, pincode: finalPincode });
 
           setNewAddressForm((prev) => ({
             ...prev,
-            address: composedAddress || data?.display_name || prev.address,
-            city: addressMeta.city || addressMeta.town || addressMeta.village || prev.city,
-            state: addressMeta.state || prev.state,
-            landmark: addressMeta.amenity || addressMeta.building || prev.landmark,
+            addressLine: finalAddressLine,
+            city: finalCity,
+            state: finalState,
+            pincode: finalPincode,
             latitude: latitude.toString(),
             longitude: longitude.toString()
           }));
-          setLocationSearch(data?.display_name || '');
+
+          setLocationSearch(result.display_name || finalAddressLine);
           setShowAddAddressForm(true);
         } catch (geoError) {
           console.error('Reverse geocoding error:', geoError);
@@ -275,25 +308,28 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   };
 
   const handleSaveNewAddress = async () => {
-    if (!newAddressForm.address.trim()) {
+    if (!newAddressForm.addressLine.trim()) {
       showToast('Please enter a valid address');
       return;
     }
 
-    if (!newAddressForm.mobileNumber.trim()) {
-      showToast('Please enter mobile number for this address');
-      return;
-    }
+    const finalAddressLine = newAddressForm.landmark.trim()
+      ? `${newAddressForm.addressLine.trim()} (Landmark: ${newAddressForm.landmark.trim()})`
+      : newAddressForm.addressLine.trim();
+
+    /* Name and mobile removed from form as per user request - will use profile details */
 
     setIsSavingAddress(true);
     try {
       const payload = {
         ...newAddressForm,
-        name: newAddressForm.name.trim() || contactDetails.name || 'User',
-        mobileNumber: newAddressForm.mobileNumber.trim(),
-        latitude: newAddressForm.latitude,
-        longitude: newAddressForm.longitude,
-        isDefault: addresses.length === 0 || newAddressForm.isDefault
+        addressLine: finalAddressLine,
+        label: newAddressForm.label.toLowerCase(),
+        name: currentUser.name || currentUser.fname || 'User',
+        mobileNumber: currentUser.mobileNumber || currentUser.identifier || '',
+        latitude: parseFloat(newAddressForm.latitude) || 0,
+        longitude: parseFloat(newAddressForm.longitude) || 0,
+        isDefault: true // Automatically set new addresses as default
       };
       const response = await createAddress(payload);
 
@@ -314,10 +350,14 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       setShowAddAddressForm(false);
       showToast('Address added successfully');
 
+      // Close modal if we're just adding/changing address, or proceed to checkout
       if (pendingCheckout) {
         setShowAddressPopup(false);
         setPendingCheckout(false);
         await startCheckout();
+      } else {
+        setShowAddressPopup(false);
+        setLocationSearch('');
       }
     } catch (error) {
       console.error('Failed to save new address:', error);
@@ -375,18 +415,42 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
         return;
       }
 
+      showToast('Booking created! Redirecting to payment...');
+
       // Extract bookingId from the response robustly
-      const bookingData = checkoutRes.result;
+      const bookingData = checkoutRes.result || checkoutRes;
       let bookingId = null;
 
       if (Array.isArray(bookingData)) {
         // If it's an array of created bookings, take the first one's ID
-        bookingId = bookingData[0]?._id;
+        bookingId = bookingData[0]?._id || bookingData[0];
       } else if (bookingData && typeof bookingData === 'object') {
-        bookingId = bookingData._id || bookingData.bookingId || bookingData.id || bookingData.booking?._id;
+        // Try direct IDs first
+        bookingId = bookingData._id || bookingData.bookingId || bookingData.id ||
+          bookingData.booking?._id || bookingData.data?._id || bookingData.data?.bookingId;
 
+        // Try 'bookings' array
         if (!bookingId && Array.isArray(bookingData.bookings) && bookingData.bookings.length > 0) {
-          bookingId = bookingData.bookings[0]?._id;
+          bookingId = bookingData.bookings[0]?._id || bookingData.bookings[0];
+        }
+
+        // Try serviceBookings or productBookings arrays (as seen in the console log payload)
+        if (!bookingId && Array.isArray(bookingData.serviceBookings) && bookingData.serviceBookings.length > 0) {
+           bookingId = bookingData.serviceBookings[0]?._id || bookingData.serviceBookings[0];
+        }
+        
+        if (!bookingId && Array.isArray(bookingData.productBookings) && bookingData.productBookings.length > 0) {
+           bookingId = bookingData.productBookings[0]?._id || bookingData.productBookings[0];
+        }
+
+        // Check if checkoutRes itself has bookingId (some APIs place it at top level)
+        if (!bookingId) {
+          bookingId = checkoutRes.bookingId || checkoutRes.id || checkoutRes._id;
+        }
+
+        // Additional fail-safe: Check nested booking objects inside properties 
+        if (!bookingId && bookingData.data && Array.isArray(bookingData.data.bookings) && bookingData.data.bookings.length > 0) {
+          bookingId = bookingData.data.bookings[0]?._id || bookingData.data.bookings[0];
         }
       }
 
@@ -395,89 +459,23 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       if (!bookingId) {
         // Display what we got so user/developer can see what's wrong if it fails
         const debugInfo = typeof bookingData === 'object' ? JSON.stringify(bookingData).substring(0, 50) : String(bookingData);
-        showToast(`Booking created, but ID missing in response (${debugInfo})`);
+        console.error(`ID missing in response (${debugInfo})`);
+        showToast('Booking created successfully, preparing payment...');
+        
+        // Refresh cart and redirect
+        fetchCart();
+        navigate('/bookings');
         setLoading(false);
         return;
       }
 
-      // 2. Load Razorpay Script
-      const isLoaded = await loadRazorpayScript();
-      if (!isLoaded) {
-        showToast('Razorpay SDK failed to load. Are you online?');
-        setLoading(false);
-        return;
-      }
-
-      // 3. Create Payment Order
-      const amount = getTotal();
-      const orderRes = await createPaymentOrder({
-        bookingId: bookingId,
-        amount: amount
-      });
-
-      if (!orderRes?.success) {
-        showToast(orderRes?.message || 'Failed to create payment order');
-        setLoading(false);
-        return;
-      }
-
-      const orderData = orderRes.result || orderRes;
-
-      // 4. Configure Razorpay Options
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY || orderData.key || 'rzp_test_YourKeyHere',
-        amount: orderData.amount,
-        currency: orderData.currency || 'INR',
-        name: 'RightTouch Services',
-        description: 'Appliance Repair & Services',
-        image: '/logo.png',
-        order_id: orderData.orderId || orderData.id,
-        handler: async (response) => {
-          try {
-            // 5. Verify Payment on Backend
-            const verificationData = {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              bookingId: bookingId
-            };
-
-            const verifyRes = await verifyPayment(verificationData);
-            if (verifyRes?.success) {
-              showToast('Payment successful and order placed!');
-              fetchCart();
-              navigate('/bookings');
-            } else {
-              showToast('Payment verification failed');
-            }
-          } catch (err) {
-            console.error('Verification Error:', err);
-            showToast('Error verifying payment');
-          } finally {
-            setLoading(false);
-          }
-        },
-        prefill: {
-          name: currentUser.name || `${currentUser.fname || ''} ${currentUser.lname || ''}`.trim() || '',
-          email: currentUser.email || '',
-          contact: currentUser.phoneNumber || currentUser.mobileNumber || ''
-        },
-        theme: {
-          color: '#2ecc71'
-        },
-        modal: {
-          ondismiss: () => {
-            showToast('Payment cancelled. Booking is saved.');
-            fetchCart();
-            // navigate to bookings since backend might have cleared the cart
-            navigate('/bookings');
-            setLoading(false);
-          }
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      // Payment Flow Removed as per user request
+      // We just log success, fetch the cart, and navigate to bookings.
+      showToast('Booking placed successfully!');
+      fetchCart();
+      navigate('/bookings');
+      setLoading(false);
+      return;
 
     } catch (error) {
       console.error('Checkout Error:', error);
@@ -492,6 +490,8 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   };
 
   const handleCheckout = async () => {
+    if (loading) return;
+
     // 1. Check Profile Completion (Mandatory: First Name & Phone)
     const hasFirstName = currentUser?.fname || profileData?.fname;
     const hasPhone = currentUser?.mobileNumber || currentUser?.identifier || profileData?.mobileNumber;
@@ -513,9 +513,15 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     }
 
     setPendingCheckout(true);
-    setShowAddressPopup(true);
-    setShowAddAddressForm(false);
-    setLocationSearch('');
+
+    // Auto-select default if available and proceed
+    if (addressForm.id) {
+      await startCheckout();
+    } else {
+      setShowAddressPopup(true);
+      setShowAddAddressForm(false);
+      setLocationSearch('');
+    }
   };
 
   const handleIncreaseQty = (item) => {
@@ -531,12 +537,20 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     if (currentQty > 1) {
       updateQuantity(item.originalId, item.itemType, currentQty - 1);
     } else {
-      if (removeConfirmShownRef.current) {
-        removeFromCart(item.id);
-        return;
-      }
-      setRemoveConfirm({ open: true, item });
+      setConfirmDialog({ open: true, item });
     }
+  };
+
+  const handleConfirmRemove = async () => {
+    const { item } = confirmDialog;
+    setConfirmDialog({ open: false, item: null });
+    if (!item) return;
+    await removeFromCart(item.id);
+    showToast(`${item.name} removed from cart`);
+  };
+
+  const handleCancelRemove = () => {
+    setConfirmDialog({ open: false, item: null });
   };
 
   const tipOptions = [
@@ -577,8 +591,8 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           <div className="address-details">
             {addressForm.id ? (
               <>
-                <p className="address-name">{addressForm.type}</p>
-                <p className="address-text">{addressForm.address}</p>
+                <p className="address-name">{addressForm.label}</p>
+                <p className="address-text">{addressForm.addressLine}</p>
               </>
             ) : (
               <p className="address-text">No address added yet.</p>
@@ -741,12 +755,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                   <MdMyLocation className="loc-icon-gps" />
                   <span>{isLocating ? 'Detecting location...' : 'Use current location'}</span>
                 </button>
-                <button
-                  className="add-new-inline-btn"
-                  onClick={() => setShowAddAddressForm((prev) => !prev)}
-                >
-                  {showAddAddressForm ? 'Hide new address form' : 'Add new address'}
-                </button>
               </div>
 
               {isSearchingLocation && (
@@ -770,37 +778,38 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
               {showAddAddressForm && (
                 <div className="new-address-form-box">
-                  <h4>Add New Address</h4>
+                  <h4 style={{ marginBottom: '16px' }}>Add New Address</h4>
                   <div className="new-address-grid">
-                    <input
-                      type="text"
-                      className="address-form-input"
-                      placeholder="Name"
-                      value={newAddressForm.name}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, name: e.target.value }))}
-                    />
-                    <input
-                      type="tel"
-                      className="address-form-input"
-                      placeholder="Mobile number"
-                      value={newAddressForm.mobileNumber}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, mobileNumber: e.target.value }))}
-                    />
                     <select
                       className="address-form-input"
-                      value={newAddressForm.type}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, type: e.target.value }))}
+                      value={newAddressForm.label}
+                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, label: e.target.value }))}
                     >
-                      <option value="Home">Home</option>
-                      <option value="Work">Work</option>
-                      <option value="Other">Other</option>
+                      <option value="home">Home</option>
+                      <option value="office">Office</option>
+                      <option value="other">Other</option>
                     </select>
                     <input
                       type="text"
                       className="address-form-input"
-                      placeholder="Landmark"
+                      placeholder="Pincode"
+                      value={newAddressForm.pincode}
+                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, pincode: e.target.value }))}
+                    />
+                    <input
+                      type="text"
+                      className="address-form-input"
+                      placeholder="Landmark (Optional)"
                       value={newAddressForm.landmark}
                       onChange={(e) => setNewAddressForm((prev) => ({ ...prev, landmark: e.target.value }))}
+                      style={{ gridColumn: 'span 2' }}
+                    />
+                    <textarea
+                      className="address-form-input"
+                      placeholder="Complete Address (House No, Street, Area, etc.)"
+                      value={newAddressForm.addressLine}
+                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, addressLine: e.target.value }))}
+                      style={{ gridColumn: 'span 2', minHeight: '80px' }}
                     />
                     <input
                       type="text"
@@ -818,41 +827,34 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                     />
                   </div>
 
-                  <div className="new-address-grid">
-                    <input
-                      type="text"
-                      className="address-form-input"
-                      placeholder="Latitude (e.g. 11.0123)"
-                      value={newAddressForm.latitude}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, latitude: e.target.value }))}
-                    />
-                    <input
-                      type="text"
-                      className="address-form-input"
-                      placeholder="Longitude (e.g. 77.0456)"
-                      value={newAddressForm.longitude}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, longitude: e.target.value }))}
-                    />
+                  <div className="checkbox-group" style={{ margin: '12px 0' }}>
+                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={newAddressForm.isDefault}
+                        onChange={(e) => setNewAddressForm((prev) => ({ ...prev, isDefault: e.target.checked }))}
+                      />
+                      <span style={{ fontSize: '14px' }}>Set as Default Address</span>
+                    </label>
                   </div>
-                  <textarea
-                    className="address-form-input address-form-textarea"
-                    placeholder="Complete address"
-                    value={newAddressForm.address}
-                    onChange={(e) => setNewAddressForm((prev) => ({ ...prev, address: e.target.value }))}
-                  />
 
-                  <label className="new-address-default">
-                    <input
-                      type="checkbox"
-                      checked={newAddressForm.isDefault}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, isDefault: e.target.checked }))}
-                    />
-                    <span>Set as default address</span>
-                  </label>
-
-                  <button className="address-save-btn" onClick={handleSaveNewAddress} disabled={isSavingAddress}>
-                    {isSavingAddress ? 'Saving address...' : 'Save address'}
-                  </button>
+                  <div className="address-popup-buttons" style={{ marginTop: '16px' }}>
+                    <button
+                      className="address-save-btn"
+                      onClick={handleSaveNewAddress}
+                      disabled={isSavingAddress}
+                      style={{ width: '100%' }}
+                    >
+                      {isSavingAddress ? 'Saving...' : 'Save Address'}
+                    </button>
+                    <button
+                      className="address-cancel-btn"
+                      onClick={() => setShowAddAddressForm(false)}
+                      style={{ width: '100%', marginTop: '8px', background: 'transparent', color: '#64748b', border: '1px solid #e2e8f0' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -867,17 +869,33 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                       <div
                         key={addr._id}
                         className={`location-item-premium ${addressForm.id === addr._id ? 'active' : ''}`}
-                        onClick={() => {
+                        onClick={async () => {
                           setAddressForm(mapAddressToSelection(addr));
-                          showToast('Address selected');
+                          try {
+                            // Automatically update the backend to make the selected address the default one
+                            const updatePayload = {
+                              id: addr._id,
+                              isDefault: true
+                            };
+                            await updateAddress(updatePayload);
+                            // Refresh list so UI moves it to 'Default Address' section instantly
+                            await fetchAddresses();
+                          } catch (err) {
+                            console.error('Failed to set address as default:', err);
+                          }
+                          showToast('Address selected as default');
                         }}
                       >
                         <div className="loc-item-icon">
                           <MdPlace />
                         </div>
                         <div className="loc-item-content">
-                          <h4 className="loc-item-title">{addr.name || 'Saved Address'} <span className="default-pill">Default</span></h4>
-                          <p className="loc-item-subtitle">{addr.address}{addr.city ? `, ${addr.city}` : ''}</p>
+                          <h4 className="loc-item-title">{addr.label || 'Saved Address'} <span className="default-pill">Default</span></h4>
+                          <p className="loc-item-subtitle">
+                            {(addr.addressLine && !addr.addressLine.toLowerCase().includes('pinned location'))
+                              ? addr.addressLine
+                              : [addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || 'Pinned Location'}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -889,17 +907,28 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                       <div
                         key={addr._id}
                         className={`location-item-premium ${addressForm.id === addr._id ? 'active' : ''}`}
-                        onClick={() => {
+                        onClick={async () => {
                           setAddressForm(mapAddressToSelection(addr));
-                          showToast('Address selected');
+                          try {
+                            const updatePayload = {
+                              id: addr._id,
+                              isDefault: true
+                            };
+                            await updateAddress(updatePayload);
+                            // Refresh list to instantly move this address under 'Default Address' heading
+                            await fetchAddresses();
+                          } catch (err) {
+                            console.error('Failed to set address as default:', err);
+                          }
+                          showToast('Address selected as default');
                         }}
                       >
                         <div className="loc-item-icon">
                           <MdPlace />
                         </div>
                         <div className="loc-item-content">
-                          <h4 className="loc-item-title">{addr.name || 'Saved Address'}</h4>
-                          <p className="loc-item-subtitle">{addr.address}{addr.city ? `, ${addr.city}` : ''}</p>
+                          <h4 className="loc-item-title">{addr.label || 'Saved Address'}</h4>
+                          <p className="loc-item-subtitle">{addr.addressLine || addr.address}</p>
                         </div>
                       </div>
                     ))}
@@ -912,22 +941,18 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                   </div>
                 )}
 
-                <button className="add-new-loc-btn-premium" onClick={() => setShowAddAddressForm(true)}>
-                  <div className="loc-item-icon add-icon-wrap">
-                    <span>+</span>
-                  </div>
-                  <div className="loc-item-content">
-                    <h4 className="loc-item-title">Add New Address</h4>
-                    <p className="loc-item-subtitle">Create address here and continue checkout</p>
-                  </div>
-                </button>
               </div>
 
               <div className="address-popup-footer">
                 <button
                   className="checkout-btn-premium"
-                  disabled={!addressForm.id || loading}
+                  disabled={loading || (showAddAddressForm ? !newAddressForm.addressLine.trim() : !addressForm.id)}
                   onClick={async () => {
+                    if (showAddAddressForm) {
+                      await handleSaveNewAddress();
+                      return;
+                    }
+
                     if (!addressForm.id) {
                       showToast('Please select a delivery address');
                       return;
@@ -942,7 +967,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                     resetAddressPopupState();
                   }}
                 >
-                  {pendingCheckout ? 'Continue to payment' : 'Use this address'}
+                  {showAddAddressForm ? 'Save & Use Address' : (pendingCheckout ? 'Continue to payment' : 'Use this address')}
                 </button>
               </div>
 
@@ -1038,15 +1063,34 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
               onClick={handleCheckout}
               disabled={cartItems.length === 0}
             >
-              {loading ? 'Processing...' : (
-                <>
-                  Proceed to Checkout • ₹{totalAmount}
-                </>
-              )}
+              {loading ? 'Processing...' : 'CHECKOUT'}
             </button>
           </div>
         )}
       </div>
+
+      {/* Removal Confirmation Dialog */}
+      {confirmDialog.open && (
+        <div className="confirm-overlay" onClick={handleCancelRemove}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-icon-wrap">
+              <span className="confirm-icon-inner">🗑️</span>
+            </div>
+            <h3 className="confirm-title">Remove from Cart?</h3>
+            <p className="confirm-message">
+              <strong>{confirmDialog.item?.name}</strong> will be removed from your cart.
+            </p>
+            <div className="confirm-actions">
+              <button className="confirm-btn confirm-cancel" onClick={handleCancelRemove}>
+                Keep It
+              </button>
+              <button className="confirm-btn confirm-remove" onClick={handleConfirmRemove}>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

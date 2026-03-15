@@ -41,6 +41,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [toasts, setToasts] = useState([]);
 
   // Auth states
   const [showLoginDialog, setShowLoginDialog] = useState(false);

@@ -39,7 +39,6 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingAddr, setIsAddingAddr] = useState(false);
-  const [editingAddr, setEditingAddr] = useState(null);
   const [profileData, setProfileData] = useState(currentUser || {});
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState([]);
@@ -59,8 +58,12 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const [addrFormData, setAddrFormData] = useState({
     name: '',
     mobileNumber: '',
-    type: 'Home',
-    address: '',
+    label: 'home',
+    addressLine: '',
+    city: '',
+    state: '',
+    pincode: '',
+    landmark: '',
     isDefault: false
   });
 
@@ -146,18 +149,19 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const handleSaveAddress = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const finalAddressLine = addrFormData.landmark.trim() 
+      ? `${addrFormData.addressLine.trim()} (Landmark: ${addrFormData.landmark.trim()})`
+      : addrFormData.addressLine.trim();
+
     try {
-      let response;
-      if (editingAddr) {
-        response = await updateAddress({ ...addrFormData, id: editingAddr._id });
-      } else {
-        response = await createAddress(addrFormData);
-      }
+      const response = await createAddress({
+        ...addrFormData,
+        addressLine: finalAddressLine
+      });
 
       if (response?.success) {
-        showToast(editingAddr ? 'Address updated' : 'Address added');
+        showToast('Address added');
         setIsAddingAddr(false);
-        setEditingAddr(null);
         fetchAddresses();
       } else {
         showToast(response?.message || 'Failed to save address');
@@ -206,29 +210,19 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
-  const handleEdit = (address) => {
-    setEditingAddr(address);
-    setAddrFormData({
-      name: address.name || '',
-      mobileNumber: address.mobileNumber || '',
-      type: address.type || 'Home',
-      address: address.address || '',
-      isDefault: address.isDefault || false
-    });
-    setIsAddingAddr(true);
-    setActiveDropdown(null);
-  };
-
   const openAddModal = () => {
-    setEditingAddr(null);
     setAddrFormData({
       name: '',
       mobileNumber: '',
-      type: 'Home',
-      address: '',
+      label: 'home',
+      addressLine: '',
+      city: '',
+      state: '',
+      pincode: '',
       isDefault: addresses.length === 0
     });
     setIsAddingAddr(true);
+    setActiveDropdown(null);
   };
 
   const handleLoginClick = () => {
@@ -417,7 +411,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         <div className="modal-backdrop" onClick={() => { setShowAddressModal(false); setIsAddingAddr(false); setActiveDropdown(null); }}>
           <div className="address-modal" onClick={(e) => e.stopPropagation()}>
             <div className="address-modal-header">
-              <h2>{isAddingAddr ? (editingAddr ? 'Edit Address' : 'Add New Address') : 'Manage Address'}</h2>
+              <h2>{isAddingAddr ? 'Add New Address' : 'Manage Address'}</h2>
               <button className="modal-close" onClick={() => {
                 if (isAddingAddr) setIsAddingAddr(false);
                 else setShowAddressModal(false);
@@ -451,23 +445,32 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                 <div className="input-group">
                   <label>Address Type</label>
                   <div className="type-selector">
-                    {['Home', 'Office', 'Other'].map(type => (
+                    {['home', 'office', 'other'].map(label => (
                       <button
-                        key={type}
+                        key={label}
                         type="button"
-                        className={`type-btn ${addrFormData.type === type ? 'active' : ''}`}
-                        onClick={() => setAddrFormData({ ...addrFormData, type })}
+                        className={`type-btn ${addrFormData.label === label ? 'active' : ''}`}
+                        onClick={() => setAddrFormData({ ...addrFormData, label })}
                       >
-                        {type}
+                        {label}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div className="input-group">
+                  <label>Landmark (Optional)</label>
+                  <input
+                    type="text"
+                    value={addrFormData.landmark}
+                    onChange={(e) => setAddrFormData({ ...addrFormData, landmark: e.target.value })}
+                    placeholder="E.g. Near Apollo Hospital"
+                  />
+                </div>
+                <div className="input-group">
                   <label>Complete Address</label>
                   <textarea
-                    value={addrFormData.address}
-                    onChange={(e) => setAddrFormData({ ...addrFormData, address: e.target.value })}
+                    value={addrFormData.addressLine}
+                    onChange={(e) => setAddrFormData({ ...addrFormData, addressLine: e.target.value })}
                     placeholder="House No, Building Name, Area, etc."
                     required
                   />
@@ -495,7 +498,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                         <div className="address-card-header">
                           <div className="address-badge">
                             <MdPlace className="badge-icon" />
-                            <span>{address.type || 'Home'}</span>
+                            <span>{address.label || 'home'}</span>
                           </div>
                           {address.isDefault && (
                             <span className="default-tag">
@@ -506,7 +509,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
 
                         <div className="address-content">
                           <h4 className="addr-name">{address.name || 'User'}</h4>
-                          <p className="addr-text">{address.address}</p>
+                          <p className="addr-text">{address.addressLine || address.address}</p>
                           {address.mobileNumber && <p className="addr-phone">{address.mobileNumber}</p>}
                         </div>
 
@@ -529,10 +532,6 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                                   <span>Set as Default</span>
                                 </button>
                               )}
-                              <button className="dropdown-item" onClick={() => handleEdit(address)}>
-                                <MdEdit className="dropdown-icon" />
-                                <span>Edit</span>
-                              </button>
                               <button className="dropdown-item delete" onClick={() => handleDelete(address._id)}>
                                 <MdDeleteOutline className="dropdown-icon" />
                                 <span>Delete</span>
