@@ -36,15 +36,12 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
   const [ratingLoading, setRatingLoading] = React.useState(false);
   const [ratingForm, setRatingForm] = React.useState({ rates: 0, comment: '' });
 
-  const handleAction = (action) => {
-    showToast(`${action} clicked for ${booking.service}`);
-  };
+  const handleAction = (action) => {};
 
   const handlePayment = async () => {
     if (paymentLoading) return;
     setPaymentLoading(true);
     try {
-      showToast('Initializing payment...');
       const res = await loadRazorpaySDK();
       if (!res) {
         showToast('Razorpay SDK failed to load. Are you online?');

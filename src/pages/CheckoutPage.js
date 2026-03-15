@@ -38,7 +38,6 @@ const CheckoutPage = ({
     setSelectedAddress(selectedAddress);
     setTotal(getSubtotal());
     setShowPaymentSection(true);
-    showToast('Proceeding to payment');
     // Scroll to payment section
     const paymentSection = document.querySelector('.payment-section-display');
     if (paymentSection) {
@@ -85,14 +84,13 @@ const CheckoutPage = ({
     fetchAddresses();
   }, [fetchAddresses]);
 
-  // Refetch cart when cartItems change (for UI consistency)
+  // Refetch cart when cartItems change
   useEffect(() => {
     // Cart items updated externally
   }, [cartItems]);
 
   const handleDeleteItem = (itemId) => {
     removeFromCart(itemId);
-    showToast('Item removed');
   };
 
   const getSubtotal = () => {
@@ -210,7 +208,6 @@ const CheckoutPage = ({
                                 try {
                                   await updateQuantity(item.originalId, item.itemType || 'service', qty - 1);
                                   await fetchCart();
-                                  showToast('Quantity decreased');
                                 } catch (error) {
                                   console.error('Failed to decrease quantity:', error);
                                   showToast('Failed to update quantity');

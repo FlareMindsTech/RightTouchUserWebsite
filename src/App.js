@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
 import './styles/gmh-cart-pill.css';
-import './styles/toast-theme.css';
 // Import components
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
@@ -22,14 +21,16 @@ import ProductPage from './pages/ProductPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import PaymentMethodsPage from './pages/PaymentMethodsPage';
 import SettingsPage from './pages/SettingsPage';
+import RatingsPage from './pages/RatingsPage';
+import ReportPage from './pages/ReportPage';
+import HelpSupportPage from './pages/HelpSupportPage';
 import { MdSearch, MdShoppingCart } from 'react-icons/md';
 import logo from './assets/logo.png';
 import { getAllCategories } from './services/categoryService';
 import { getAllServices } from './services/serviceService';
 import { getAllProducts } from './services/productService';
 import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
-import { GooeyToaster, gooeyToast } from 'goey-toast';
-import 'goey-toast/styles.css';
+import { RtAlertContainer, rtAlert } from './components/RtAlert';
 
 function App() {
   const navigate = useNavigate();
@@ -261,30 +262,15 @@ function App() {
     return cartItems.some(item => (item.itemId?._id || item.originalId) === targetId);
   };
 
-  const showToast = useCallback((message) => {
-    const normalizedMessage = String(message || '').toLowerCase();
-    const isErrorToast = [
-      'error',
-      'failed',
-      'invalid',
-      'unable',
-      'denied',
-      'cancelled'
-    ].some(keyword => normalizedMessage.includes(keyword));
-
-    const toastMethod = isErrorToast ? gooeyToast.error : gooeyToast.success;
-
-    toastMethod(message, {
-      duration: 2800,
-      preset: 'smooth',
-      fillColor: isErrorToast ? '#fef2f2' : '#ecfdf5',
-      borderColor: isErrorToast ? '#ef4444' : '#22c55e',
-      borderWidth: 1.5,
-      classNames: {
-        title: `app-toast-title ${isErrorToast ? 'app-toast-error-title' : 'app-toast-success-title'}`,
-        icon: isErrorToast ? 'app-toast-error-icon' : 'app-toast-success-icon'
-      }
-    });
+  const showToast = useCallback((message, type) => {
+    if (type) {
+      rtAlert(message, type);
+      return;
+    }
+    const msg = String(message || '').toLowerCase();
+    const isError   = ['error', 'failed', 'invalid', 'unable'].some(k => msg.includes(k));
+    const isWarning = ['cancelled', 'already', 'disabled', 'pending', 'option will be', 'not available'].some(k => msg.includes(k));
+    rtAlert(message, isError ? 'error' : isWarning ? 'warning' : 'success');
   }, []);
 
   const openServiceSheet = (service) => {
@@ -545,6 +531,9 @@ function App() {
               showToast={showToast}
             />
           } />
+          <Route path="/ratings" element={<RatingsPage showToast={showToast} />} />
+          <Route path="/report" element={<ReportPage showToast={showToast} />} />
+          <Route path="/help" element={<HelpSupportPage showToast={showToast} />} />
         </Routes>
       </main>
 
@@ -581,15 +570,7 @@ function App() {
         onShowToast={showToast}
       />
 
-      <GooeyToaster
-        position="top-center"
-        offset="84px"
-        theme={isDarkMode ? 'dark' : 'light'}
-        closeOnEscape
-        swipeToDismiss
-        showProgress
-        gap={12}
-      />
+      <RtAlertContainer />
     </div>
   );
 }

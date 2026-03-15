@@ -22,6 +22,7 @@ import {
   LuLogOut
 } from 'react-icons/lu';
 import './AccountPage.css';
+import ConfirmModal from '../components/ConfirmModal';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   getMyAddresses,
@@ -32,6 +33,7 @@ import {
 import { getMyProfile, updateProfile, deleteMyAccount } from '../services/userService';
 
 const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClick }) => {
+  const navigate = useNavigate();
   const location = useLocation();
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -306,7 +308,15 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       case 'Manage payment methods':
         onNavigate('payment-methods');
         break;
-      // Ratings and Help can be added here later if pages exist
+      case 'My rating':
+        navigate('/ratings');
+        break;
+      case 'Help & Support':
+        navigate('/help');
+        break;
+      case 'Report issue':
+        navigate('/report');
+        break;
       default:
         showToast(`${menuItem} coming soon!`);
     }
@@ -370,6 +380,14 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
             <div className="menu-left-simple">
               <LuHeadphones className="icon" />
               <span>Help & Support</span>
+            </div>
+            <MdOutlineChevronRight className="arrow" />
+          </div>
+
+          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
+            <div className="menu-left-simple">
+              <LuBookOpen className="icon" />
+              <span>Report Issue</span>
             </div>
             <MdOutlineChevronRight className="arrow" />
           </div>
@@ -533,35 +551,22 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       )}
 
       {confirmDialog.open && (
-        <div className="account-confirm-overlay" onClick={closeConfirmDialog}>
-          <div className="account-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="account-confirm-icon">⚠</div>
-            <h3 className="account-confirm-title">
-              {confirmDialog.action === 'logout' ? 'Confirm Logout' : 'Delete Account'}
-            </h3>
-            <p className="account-confirm-message">
-              {confirmDialog.action === 'logout'
-                ? 'Are you sure you want to logout now?'
-                : 'Are you sure you want to delete your account permanently? This cannot be undone.'}
-            </p>
-            <div className="account-confirm-actions">
-              <button
-                className="account-confirm-btn account-confirm-cancel"
-                onClick={closeConfirmDialog}
-                disabled={loading}
-              >
-                Keep It
-              </button>
-              <button
-                className={`account-confirm-btn ${confirmDialog.action === 'logout' ? 'account-confirm-logout' : 'account-confirm-delete'}`}
-                onClick={handleConfirmAction}
-                disabled={loading}
-              >
-                {loading ? 'Processing...' : (confirmDialog.action === 'logout' ? 'Logout' : 'Delete')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          isOpen={confirmDialog.open}
+          icon={confirmDialog.action === 'logout' ? '🚪' : '🗑️'}
+          iconBg={confirmDialog.action === 'logout' ? '#fff7ed' : '#fee2e2'}
+          iconColor={confirmDialog.action === 'logout' ? '#f59e0b' : '#ef4444'}
+          title={confirmDialog.action === 'logout' ? 'Confirm Logout' : 'Delete Account'}
+          desc={confirmDialog.action === 'logout'
+            ? 'Are you sure you want to logout now?'
+            : 'Are you sure you want to delete your account permanently? This cannot be undone.'}
+          confirmLabel={confirmDialog.action === 'logout' ? 'Logout' : 'Delete'}
+          cancelLabel="Keep It"
+          confirmClass={confirmDialog.action === 'logout' ? 'cm-confirm-warning' : 'cm-confirm-danger'}
+          onConfirm={handleConfirmAction}
+          onCancel={closeConfirmDialog}
+          loading={loading}
+        />
       )}
 
       {/* Profile Edit Modal */}
