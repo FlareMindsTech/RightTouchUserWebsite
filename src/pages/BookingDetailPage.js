@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPaymentOrder, verifyPayment } from '../services/paymentService';
 import { addToCart } from '../services/cartService';
 import { createRating } from '../services/ratingService';
+import { safeStorage } from '../utils/browserUtils';
 import InvoiceModal from '../components/InvoiceModal';
 import './BookingDetailPage.css';
 
@@ -62,7 +63,7 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
 
       const orderData = orderRes.result || orderRes;
       const user = currentUser || (() => {
-        try { return JSON.parse(localStorage.getItem('currentUser') || '{}'); } catch { return {}; }
+        try { return JSON.parse(safeStorage.getItem('currentUser') || '{}'); } catch { return {}; }
       })();
 
       const options = {
@@ -183,6 +184,8 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
         booking?.assignedTechnician?._id ||
         null,
       serviceId: booking?.serviceId?._id || booking?.serviceId || null,
+      productId: booking?.productId?._id || booking?.productId || null,
+      bookingType: booking?.serviceId ? 'service' : (booking?.productId ? 'product' : 'service'),
       images: booking?.workImages?.beforeImage || booking?.workImages?.afterImage
         ? [booking.workImages.beforeImage, booking.workImages.afterImage].filter(Boolean)
         : []
@@ -195,8 +198,11 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
   const isCompletedBooking = bookingStatusUpper === 'COMPLETED';
   const isPaidBooking = paymentStatusUpper === 'PAID';
   const hasTechnician = Boolean(details.technicianId || booking?.technicianId);
-  const canRateTechnician = hasTechnician && ['ACCEPTED', 'IN PROGRESS', 'COMPLETED'].includes(bookingStatusUpper);
-  const canShowPayNow = isCompletedBooking && !isPaidBooking && !isExpiredBooking;
+  const isService = details.bookingType === 'service';
+  const canRate = isService 
+    ? (hasTechnician && ['ACCEPTED', 'IN PROGRESS', 'COMPLETED'].includes(bookingStatusUpper))
+    : (isCompletedBooking);
+  const canShowPayNow = isService && isCompletedBooking && !isPaidBooking && !isExpiredBooking;
 
   const handlePayButtonClick = () => {
     if (paymentLoading) return;
@@ -259,8 +265,8 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
 
   const handleSubmitRating = async (e) => {
     e.preventDefault();
-    if (!canRateTechnician) {
-      showToast('Rating is available once technician accepts your booking');
+    if (!canRate) {
+      showToast(isService ? 'Rating is available once technician accepts your booking' : 'Rating is available once product booking is completed');
       return;
     }
     if (!ratingForm.rates) {
@@ -270,14 +276,20 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
 
     setRatingLoading(true);
     try {
+      const isServiceType = details.bookingType.toLowerCase() === 'service';
       const payload = {
         bookingId: booking?._id,
-        bookingType: booking?.bookingType || (details.serviceId ? 'service' : 'product'),
+        bookingType: details.bookingType.toLowerCase(),
         rates: ratingForm.rates,
-        comment: ratingForm.comment,
-        technicianId: details.technicianId,
-        serviceId: details.serviceId
+        comment: ratingForm.comment
       };
+
+      if (isServiceType) {
+        payload.technicianId = details.technicianId;
+        payload.serviceId = details.serviceId;
+      } else {
+        payload.productId = details.productId;
+      }
 
       const response = await createRating(payload);
       if (response?.success) {
@@ -466,10 +478,10 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
         </button>
 
         <button
-          className={`action-btn primary ${canRateTechnician ? 'rate-enabled' : 'rate-disabled'}`}
+          className={`action-btn primary ${canRate ? 'rate-enabled' : 'rate-disabled'}`}
           onClick={() => {
-            if (!canRateTechnician) {
-              showToast('Rating option is available once technician accepts your booking');
+            if (!canRate) {
+              showToast(isService ? 'Rating option is available once technician accepts your booking' : 'Rating option is available once order is completed');
               return;
             }
             setShowRatingModal(true);
@@ -490,8 +502,8 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
       {showRatingModal && (
         <div className="rating-modal-overlay" onClick={() => !ratingLoading && setShowRatingModal(false)}>
           <div className="rating-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Rate Your Technician</h3>
-            <p className="rating-note">Optional feedback after technician acceptance.</p>
+            <h3>Rate Your {isService ? 'Service' : 'Product'}</h3>
+            <p className="rating-note">Optional feedback after {isService ? 'technician' : 'product'} acceptance.</p>
 
             <form onSubmit={handleSubmitRating}>
               <div className="star-row">

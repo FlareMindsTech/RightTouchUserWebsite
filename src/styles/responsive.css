@@ -112,6 +112,7 @@
     padding-right: 8px;
     max-width: 100%;
     min-height: calc(100vh - 70px);
+    min-height: calc(100dvh - 70px);
   }
 
   /* Ensure content doesn't hide behind bottom navbar */
@@ -127,6 +128,7 @@
   .category-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+    margin-right: -10px; /* Fallback for older Safari which might ignore gap in some contexts */
   }
 
   .category-card {

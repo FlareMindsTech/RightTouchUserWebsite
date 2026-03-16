@@ -29,6 +29,7 @@
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.18);
   max-height: 92vh;
+  max-height: 92dvh;
   display: flex;
   flex-direction: column;
   transform: translateY(100%);
