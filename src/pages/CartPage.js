@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import ConfirmModal from '../components/ConfirmModal';
 import {
   MdOutlineLocationOn,
   MdEdit,
@@ -529,9 +528,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     updateQuantity(item.originalId, item.itemType, currentQty + 1);
   };
 
-  const removeConfirmShownRef = useRef(false);
-  const [removeConfirm, setRemoveConfirm] = useState({ open: false, item: null });
-
   const handleDecreaseQty = (item) => {
     const currentQty = item.quantity || 1;
     if (currentQty > 1) {
@@ -546,7 +542,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     setConfirmDialog({ open: false, item: null });
     if (!item) return;
     await removeFromCart(item.id);
-    showToast(`${item.name} removed from cart`);
   };
 
   const handleCancelRemove = () => {
@@ -564,23 +559,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
   return (
     <div className="cart-page">
-      <ConfirmModal
-        isOpen={removeConfirm.open}
-        icon="🗑️"
-        iconBg="#fee2e2"
-        iconColor="#ef4444"
-        title="Remove from Cart?"
-        desc={removeConfirm.item ? <><strong>{removeConfirm.item.name}</strong> will be removed from your cart.</> : ''}
-        confirmLabel="Remove"
-        cancelLabel="Keep It"
-        confirmClass="cm-confirm-danger"
-        onConfirm={() => {
-          removeConfirmShownRef.current = true;
-          removeFromCart(removeConfirm.item.id);
-          setRemoveConfirm({ open: false, item: null });
-        }}
-        onCancel={() => setRemoveConfirm({ open: false, item: null })}
-      />
       <div className="cart-container">
         {/* Address Section */}
         <div className="address-section">

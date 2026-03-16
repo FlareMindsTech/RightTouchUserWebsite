@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import './RtAlert.css';
 
 const TYPE_CONFIG = {
@@ -9,6 +9,11 @@ const TYPE_CONFIG = {
 };
 
 let _addToQueue = null;
+
+const getAlertKey = ({ type = 'success', title = '', desc = '', message = '' }) => {
+  const resolvedBody = desc || message || '';
+  return `${type}::${title}::${resolvedBody}`;
+};
 
 export function rtAlert(message, type = 'success') {
   if (_addToQueue) _addToQueue({ type, message });
@@ -57,16 +62,32 @@ const AlertItem = ({ data, onDismiss }) => {
 // ── Container – mount once in App root ───────────────────────────────────
 export const RtAlertContainer = () => {
   const [queue, setQueue] = useState([]);
+  const queueRef = useRef([]);
 
   const dismiss = useCallback((id) => {
-    setQueue(prev => prev.filter(a => a.id !== id));
+    setQueue(prev => {
+      const nextQueue = prev.filter(a => a.id !== id);
+      queueRef.current = nextQueue;
+      return nextQueue;
+    });
   }, []);
 
   const addToQueue = useCallback((data) => {
+    const alertKey = getAlertKey(data);
+    const alreadyVisible = queueRef.current.some(item => getAlertKey(item) === alertKey);
+    if (alreadyVisible) {
+      return;
+    }
+
     const id = Date.now() + Math.random();
-    setQueue(prev => [{ ...data, id }, ...prev].slice(0, 5));
+    setQueue(prev => {
+      const nextQueue = [{ ...data, id }, ...prev].slice(0, 5);
+      queueRef.current = nextQueue;
+      return nextQueue;
+    });
+
     if (data.type !== 'confirm') {
-      setTimeout(() => dismiss(id), 3500);
+      setTimeout(() => dismiss(id), 3000);
     }
   }, [dismiss]);
 

@@ -241,18 +241,21 @@
 /* ── Mobile – float above bottom nav ───────────────────────── */
 @media (max-width: 768px) {
   .rt-alert-container {
-    top: auto;
-    bottom: 75px;
-    right: 12px;
-    left: 12px;
-    width: auto;
-    max-width: 100%;
+    top: 12px;
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(calc(100vw - 24px), 420px);
+    max-width: calc(100vw - 24px);
     max-height: 60vh;
     overflow: hidden;
+    align-items: center;
   }
   .rt-alert {
     border-radius: 20px;
     padding-right: 40px;
+    width: 100%;
   }
   .rt-alert::before {
     border-radius: 15px;
