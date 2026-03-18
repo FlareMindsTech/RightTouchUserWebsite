@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
 import './styles/gmh-cart-pill.css';
+import { safeStorage } from './utils/browserUtils';
 // Import components
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
@@ -74,8 +75,8 @@ function App() {
 
   // Check for user login on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    const savedToken = localStorage.getItem('token');
+    const savedUser = safeStorage.getItem('currentUser');
+    const savedToken = safeStorage.getItem('token');
 
     try {
       const parsed = JSON.parse(savedUser);
@@ -86,11 +87,11 @@ function App() {
       }
     } catch (e) {
       console.error('Failed to parse saved user:', e);
-      localStorage.removeItem('currentUser');
+      safeStorage.removeItem('currentUser');
     }
 
     // Check for dark mode preference
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    const savedDarkMode = safeStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
     if (savedDarkMode) {
       document.body.classList.add('dark-mode');
@@ -98,7 +99,7 @@ function App() {
     // Listen for custom events
     const handleLogoutEvent = () => setCurrentUser(null);
     const handleProfileUpdateEvent = () => {
-      const savedUserStr = localStorage.getItem('currentUser');
+      const savedUserStr = safeStorage.getItem('currentUser');
       if (savedUserStr) {
         const parsedUser = JSON.parse(savedUserStr);
         setCurrentUser(prev => {
@@ -288,7 +289,7 @@ function App() {
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
+    safeStorage.setItem('darkMode', newDarkMode);
 
     if (newDarkMode) {
       document.body.classList.add('dark-mode');
@@ -304,9 +305,9 @@ function App() {
   // Auth handlers
   const handleLoginSuccess = (user) => {
     if (user?.token) {
-      localStorage.setItem('token', user.token);
+      safeStorage.setItem('token', user.token);
     }
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    safeStorage.setItem('currentUser', JSON.stringify(user));
     setCurrentUser(user);
     fetchCart();
     const displayName = user.name || user.fname || user.identifier || 'User';
@@ -315,9 +316,9 @@ function App() {
 
   const handleRegisterSuccess = (user) => {
     if (user?.token) {
-      localStorage.setItem('token', user.token);
+      safeStorage.setItem('token', user.token);
     }
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    safeStorage.setItem('currentUser', JSON.stringify(user));
     setCurrentUser(user);
     fetchCart();
     const displayName = user.name || user.fname || user.identifier || 'User';
@@ -325,7 +326,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
+    safeStorage.removeItem('currentUser');
     setCurrentUser(null);
     showToast('Logged out successfully');
   };

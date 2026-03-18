@@ -1,5 +1,6 @@
 import React from 'react';
 import { MdClose, MdReceiptLong } from 'react-icons/md';
+import { safeParseDate } from '../utils/browserUtils';
 import './InvoiceModal.css';
 
 const InvoiceModal = ({ isOpen, onClose, booking, details, paymentStatusUpper }) => {
@@ -35,11 +36,11 @@ const InvoiceModal = ({ isOpen, onClose, booking, details, paymentStatusUpper })
           </div>
           <div>
             <span>Issued On</span>
-            <strong>{new Date(issuedDate).toLocaleString()}</strong>
+            <strong>{safeParseDate(issuedDate).toLocaleString()}</strong>
           </div>
           <div>
             <span>Service Date</span>
-            <strong>{serviceDate ? new Date(serviceDate).toLocaleString() : 'N/A'}</strong>
+            <strong>{serviceDate ? safeParseDate(serviceDate).toLocaleString() : 'N/A'}</strong>
           </div>
         </div>
 

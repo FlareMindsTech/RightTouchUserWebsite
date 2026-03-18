@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import BookingDetailPage from './BookingDetailPage';
 import { getCustomerBookings, getBookings } from '../services/bookingService';
+import { safeParseDate } from '../utils/browserUtils';
 import './BookingsPage.css';
 
 const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentUser }) => {
@@ -81,7 +82,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
 
       const getBookingTimestamp = (booking) => {
         const dt = booking?.updatedAt || booking?.scheduledAt || booking?.createdAt;
-        const ts = dt ? new Date(dt).getTime() : 0;
+        const ts = dt ? safeParseDate(dt).getTime() : 0;
         return Number.isNaN(ts) ? 0 : ts;
       };
 
@@ -128,11 +129,11 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     const paymentStatus = (booking?.paymentStatus || '').toUpperCase();
     const isPaymentPending = status === 'COMPLETED' && paymentStatus !== 'PAID';
     const paymentLabel = paymentStatus === 'PAID' ? 'PAID' : 'UNPAID';
-    const date = booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleDateString('en-IN', {
+    const date = booking.scheduledAt ? safeParseDate(booking.scheduledAt).toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
-    }) : (booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'No date');
+    }) : (booking.createdAt ? safeParseDate(booking.createdAt).toLocaleDateString() : 'No date');
 
     const getStatusClass = (status) => {
       if (['COMPLETED', 'ASSIGNED', 'ACCEPTED', 'IN PROGRESS'].includes(status)) return 'status-success';

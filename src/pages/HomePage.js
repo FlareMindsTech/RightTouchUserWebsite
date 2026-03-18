@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wind,
@@ -89,36 +89,53 @@ const HomePage = ({
   }, [initialServiceCategories, initialProductCategories, initialServices, isGlobalLoading]);
 
   // Detect real user location
-  useEffect(() => {
+  const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setUserAddress('Location unavailable');
       setLocationLoading(false);
       return;
     }
+
+    setLocationLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
+          // Use a signal or timeout for fetch
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            { signal: controller.signal }
           );
+          clearTimeout(timeoutId);
           const data = await res.json();
           const addr = data.address || {};
           const area = addr.suburb || addr.neighbourhood || addr.village || addr.town || addr.city_district || '';
           const city = addr.city || addr.town || addr.state_district || addr.state || '';
-          setUserAddress(area && city ? `${area}, ${city}` : area || city || 'Unknown area');
-        } catch {
+          const fullAddr = area && city ? `${area}, ${city}` : area || city || 'Unknown area';
+          setUserAddress(fullAddr);
+        } catch (err) {
+          console.warn('[HomePage] Location fetch error:', err);
           setUserAddress('Location unavailable');
+        } finally {
+          setLocationLoading(false);
         }
+      },
+      (err) => {
+        console.warn('[HomePage] Geolocation error:', err);
+        const msg = err.code === 1 ? 'Permission denied' : 'Slow connection';
+        setUserAddress(msg);
         setLocationLoading(false);
       },
-      () => {
-        setUserAddress('Enable location access');
-        setLocationLoading(false);
-      },
-      { timeout: 10000, maximumAge: 300000 }
+      { timeout: 10000, maximumAge: 300000, enableHighAccuracy: false }
     );
   }, []);
+
+  useEffect(() => {
+    detectLocation();
+  }, [detectLocation]);
 
   // Filtered data based on search query
   const filteredServiceCategories = filterBySearch(serviceCategories, searchQuery);
@@ -154,7 +171,7 @@ const HomePage = ({
   return (
     <section className="page" id="page-home">
       {/* Location Bar */}
-      <div className="location-bar mobile-only">
+      <div className="location-bar mobile-only" onClick={detectLocation}>
         <div className="location-left">
           <MapPin size={20} className="location-pin" />
           <div className="location-text">
