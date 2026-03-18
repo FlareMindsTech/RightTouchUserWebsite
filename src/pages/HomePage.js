@@ -65,7 +65,6 @@ const filterBySearch = (items, query) => {
 
 const HomePage = ({
   isActive,
-  showToast,
   searchQuery,
   serviceCategories: initialServiceCategories = [],
   productCategories: initialProductCategories = [],
@@ -160,7 +159,26 @@ const HomePage = ({
   };
 
   const handleBookNow = (offer) => {
-    showToast(`Booking ${offer.title}`);
+    const normalizedTitle = (offer?.title || '').toLowerCase();
+    const offerKeywordMap = {
+      1: ['ac'],
+      2: ['carpet', 'electrical'],
+      3: ['plumbing', 'bathroom', 'kitchen']
+    };
+
+    const keywords = offerKeywordMap[offer?.id] || [];
+    const matchedCategory = serviceCategories.find((category) => {
+      const categoryName = (category?.category || '').toLowerCase();
+      return keywords.some((keyword) => categoryName.includes(keyword)) ||
+        keywords.some((keyword) => normalizedTitle.includes(keyword) && categoryName.includes(keyword));
+    });
+
+    if (matchedCategory?._id) {
+      navigate(`/services?category=${matchedCategory._id}`);
+      return;
+    }
+
+    navigate('/services');
   };
 
   if (!isActive) return null;
