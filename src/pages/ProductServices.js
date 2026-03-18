@@ -252,8 +252,6 @@ const ProductServices = ({
               </div>
             )}
             <div className="service-badges-overlay">
-              {service.isPopular && <span className="premium-badge badge-popular">Popular</span>}
-              {service.isRecommended && <span className="premium-badge badge-recommended">Recommended</span>}
             </div>
           </div>
 

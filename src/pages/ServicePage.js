@@ -78,7 +78,7 @@ const ServicesPage = ({
       });
     }
 
-    // 2. Filter by search query
+    // 3. Filter by search query
     if (effectiveSearchQuery) {
       result = result.filter(item => {
         const name = (item.serviceName || '').toLowerCase();
@@ -221,13 +221,21 @@ const ServicesPage = ({
 
   // Check if searching
   const isSearching = effectiveSearchQuery !== '';
+  const categoryName = (selectedCategory?.category || '').replace(/\s+/g, ' ').trim();
+  const normalizedCategoryName = categoryName.replace(/(?:\s+services)+$/i, '').trim();
+  const heroPrefix = selectedCategory
+    ? (normalizedCategoryName || categoryName)
+    : 'Our';
+  const heroSubtitle = selectedCategory
+    ? `Specialized ${heroPrefix} services for you`
+    : 'Browse all our premium home services';
 
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
       {/* Page Header */}
-      <div className="services-hero desktop-only" style={{ textAlign: 'left' }}>
-        <h1>{selectedCategory ? selectedCategory.category : 'Our'} <span className="accent">Services</span></h1>
-        <p>{selectedCategory ? `Specialized ${selectedCategory.category} services for you` : 'Browse all our premium home services'}</p>
+      <div className="services-hero services-page-hero desktop-only">
+        <h1>{heroPrefix} <span className="accent">Services</span></h1>
+        <p>{heroSubtitle}</p>
       </div>
 
       {/* Mobile Top Section */}
@@ -274,8 +282,6 @@ const ServicesPage = ({
               {filteredServices.map(service => (
                 <div key={service._id} className="massive-section-wrap">
                   <div className="massive-card">
-                    {service.isPopular && <span className="premium-badge badge-popular">Popular</span>}
-                    {service.isRecommended && <span className="premium-badge badge-recommended">Recommended</span>}
                     <div className="massive-card-content">
                       <h3 className="massive-card-title">{service.serviceName}</h3>
                       <div className="massive-card-rating">

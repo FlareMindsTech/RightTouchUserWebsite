@@ -83,18 +83,6 @@ body.dark-mode .top-navbar {
   font-weight: 600;
 }
 
-.nav-link.active::after {
-  content: '';
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  background: var(--green);
-  border-radius: 50%;
-}
-
 .nav-icon {
   display: flex;
   align-items: center;
