@@ -336,74 +336,77 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           )}
         </div>
 
-        {/* Action List */}
-        <div className="account-menu-simple">
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
-            <div className="menu-left-simple">
-              <LuClipboardList className="icon" />
-              <span>My Bookings</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+        {currentUser ? (
+          <>
+            {/* Action List */}
+            <div className="account-menu-simple">
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
+                <div className="menu-left-simple">
+                  <LuClipboardList className="icon" />
+                  <span>My Bookings</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
-            <div className="menu-left-simple">
-              <MdOutlineLocationOn className="icon" />
-              <span>Manage Addresses</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
+                <div className="menu-left-simple">
+                  <MdOutlineLocationOn className="icon" />
+                  <span>Manage Addresses</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage payment methods')}>
-            <div className="menu-left-simple">
-              <MdOutlinePayments className="icon" />
-              <span>Payment Methods</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage payment methods')}>
+                <div className="menu-left-simple">
+                  <MdOutlinePayments className="icon" />
+                  <span>Payment Methods</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('My rating')}>
-            <div className="menu-left-simple">
-              <MdOutlineStarOutline className="icon" />
-              <span>My Ratings</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('My rating')}>
+                <div className="menu-left-simple">
+                  <MdOutlineStarOutline className="icon" />
+                  <span>My Ratings</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
-            <div className="menu-left-simple">
-              <LuHeadphones className="icon" />
-              <span>Help & Support</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
+                <div className="menu-left-simple">
+                  <LuHeadphones className="icon" />
+                  <span>Help & Support</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
-            <div className="menu-left-simple">
-              <LuBookOpen className="icon" />
-              <span>Report Issue</span>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
+                <div className="menu-left-simple">
+                  <LuBookOpen className="icon" />
+                  <span>Report Issue</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
             </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
-        </div>
 
-        {/* Logout/Login Button */}
-        <div className="account-footer-simple">
-          {currentUser ? (
-            <>
+            {/* Logout/Delete Buttons */}
+            <div className="account-footer-simple">
               <button className="logout-button-simple" onClick={openLogoutConfirm}>
                 <LuLogOut size={20} /> Logout
               </button>
               <button className="delete-account-button-simple" onClick={openDeleteAccountConfirm} disabled={loading}>
                 <MdDeleteOutline size={20} /> {loading ? 'Deleting...' : 'Delete Account'}
               </button>
-            </>
-          ) : (
-            <button className="login-button-simple" onClick={handleLoginClick}>
-              <MdLogin size={20} /> Login
+            </div>
+          </>
+        ) : (
+          <div className="guest-account-prompt">
+            <p>Please login to access your account features</p>
+            <button className="login-prompt-btn" onClick={handleLoginClick}>
+              <MdLogin size={20} /> Login Now
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Address Management Modal */}
