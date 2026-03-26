@@ -81,7 +81,7 @@ const HomePage = ({
 
   // Keep local state in sync with global props
   useEffect(() => {
-    setServiceCategories(initialServiceCategories);
+    setServiceCategories([...initialServiceCategories].sort((a, b) => b.category.localeCompare(a.category)));
     setProductCategories(initialProductCategories);
     setServices(initialServices);
     setLoading(isGlobalLoading);

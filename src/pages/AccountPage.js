@@ -319,73 +319,83 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   return (
     <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
       <div className="account-container-simple">
-        {/* User Profile Header */}
-        <div className="account-profile-header-simple">
-          <div className="avatar-simple">
-            {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
-          </div>
-          <div className="profile-info-simple">
-            <h2>{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
-            <p className="email">{profileData.email || 'Complete your profile'}</p>
-            <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
-          </div>
-          {currentUser && (
-            <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
-              <MdEdit size={18} /> Edit Profile
-            </button>
-          )}
-        </div>
-
-        {/* Action List */}
-        <div className="account-menu-simple">
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
-            <div className="menu-left-simple">
-              <LuClipboardList className="icon" />
-              <span>My Bookings</span>
+        {currentUser ? (
+          <>
+            {/* User Profile Header */}
+            <div className="account-profile-header-simple">
+              <div className="avatar-simple">
+                {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
+              </div>
+              <div className="profile-info-simple">
+                <h2>{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
+                <p className="email">{profileData.email || 'Complete your profile'}</p>
+                <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
+              </div>
+              <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
+                <MdEdit size={18} /> Edit Profile
+              </button>
             </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
-            <div className="menu-left-simple">
-              <MdOutlineLocationOn className="icon" />
-              <span>Manage Addresses</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+            {/* Action List */}
+            <div className="account-menu-simple">
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
+                <div className="menu-left-simple">
+                  <LuClipboardList className="icon" />
+                  <span>My Bookings</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage payment methods')}>
-            <div className="menu-left-simple">
-              <MdOutlinePayments className="icon" />
-              <span>Payment Methods</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
+                <div className="menu-left-simple">
+                  <MdOutlineLocationOn className="icon" />
+                  <span>Manage Addresses</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('My rating')}>
-            <div className="menu-left-simple">
-              <MdOutlineStarOutline className="icon" />
-              <span>My Ratings</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage payment methods')}>
+                <div className="menu-left-simple">
+                  <MdOutlinePayments className="icon" />
+                  <span>Payment Methods</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
-            <div className="menu-left-simple">
-              <LuHeadphones className="icon" />
-              <span>Help & Support</span>
-            </div>
-            <MdOutlineChevronRight className="arrow" />
-          </div>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('My rating')}>
+                <div className="menu-left-simple">
+                  <MdOutlineStarOutline className="icon" />
+                  <span>My Ratings</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
 
-          <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
-            <div className="menu-left-simple">
-              <LuBookOpen className="icon" />
-              <span>Report Issue</span>
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
+                <div className="menu-left-simple">
+                  <LuHeadphones className="icon" />
+                  <span>Help & Support</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
+
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
+                <div className="menu-left-simple">
+                  <LuBookOpen className="icon" />
+                  <span>Report Issue</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
             </div>
-            <MdOutlineChevronRight className="arrow" />
+          </>
+        ) : (
+          <div className="account-profile-header-simple guest-view">
+            <div className="avatar-simple">U</div>
+            <div className="profile-info-simple">
+              <h2>Welcome Guest</h2>
+              <p className="email">Please login to view your profile and bookings</p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Logout/Login Button */}
         <div className="account-footer-simple">

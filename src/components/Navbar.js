@@ -1,7 +1,7 @@
 // components/Navbar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Wrench, User, ShoppingCart } from 'lucide-react';
+import { Home, Wrench, User, ShoppingCart, ClipboardList } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLoginClick, onLogout, searchQuery, onSearchChange }) => {
@@ -45,6 +45,14 @@ const Navbar = ({ currentPage, onNavigate, cartItemCount = 0, currentUser, onLog
           >
             <span className="nav-icon"><User size={18} /></span> {currentUser?.name || currentUser?.identifier || 'Account'}
           </Link>
+          {/* {currentUser && (
+            <Link
+              to="/bookings"
+              className={`nav-link ${isActive('bookings') ? 'active' : ''}`}
+            >
+              <span className="nav-icon"><ClipboardList size={18} /></span> Bookings
+            </Link>
+          )} */}
         </nav>
 
         <div className="nav-search desktop-only" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>

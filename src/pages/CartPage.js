@@ -15,7 +15,7 @@ import { loadRazorpayScript, createPaymentOrder, verifyPayment } from '../servic
 import { useNavigate } from 'react-router-dom';
 import './CartPage.css';
 
-const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToast, currentUser, fetchCart }) => {
+const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToast, currentUser, fetchCart, onLoginClick }) => {
   const navigate = useNavigate();
   const [profileData] = useState(currentUser || {});
   const [selectedTip, setSelectedTip] = useState(null);
@@ -560,87 +560,91 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   return (
     <div className="cart-page">
       <div className="cart-container">
-        {/* Address Section */}
-        <div className="address-section">
-          <div className="address-header">
-            <MdOutlineLocationOn className="address-icon" />
-            <span className="address-title">Delivery Address</span>
-          </div>
-          <div className="address-details">
-            {addressForm.id ? (
-              <>
-                <p className="address-name">{addressForm.label}</p>
-                <p className="address-text">{addressForm.addressLine}</p>
-              </>
-            ) : (
-              <p className="address-text">No address added yet.</p>
-            )}
-          </div>
-          <button
-            className="change-link"
-            onClick={() => {
-              setPendingCheckout(false);
-              setShowAddressPopup(true);
-            }}
-          >
-            Change
-          </button>
-        </div>
-
-        {/* Cart Items */}
-        <div className="cart-items-section">
-          {cartItems.length === 0 ? (
-            <div className="cart-empty">
-              <div className="empty-cart-icon">🛒</div>
-              <h3>Your cart is empty</h3>
-              <p>Add services to get started</p>
-            </div>
-          ) : (
-            cartItems.map((item, index) => (
-              <div key={`${item.id}-${index}`} className="cart-item-card">
-                <div className="cart-item-left">
-                  <div className="cart-item-image">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} />
-                    ) : (
-                      <div className="placeholder-image">🛒</div>
-                    )}
-                  </div>
-                </div>
-                <div className="cart-item-middle">
-                  <h4 className="cart-item-name">{item.name}</h4>
-                  <span className="service-badge">{item.itemType}</span>
-                  <div className="service-duration">
-                    <MdAccessTime className="duration-icon" />
-                    <span>{item.itemId?.serviceDuration || '1-2hr'}</span>
-                  </div>
-                  <p className="cart-item-price">₹{item.price}</p>
-                </div>
-                <div className="cart-item-right">
-                  <div className="quantity-container-cart">
-                    <button
-                      className="qty-btn-cart qty-minus"
-                      onClick={() => handleDecreaseQty(item)}
-                    >
-                      −
-                    </button>
-                    <span className="qty-value-cart">{item.quantity || 1}</span>
-                    <button
-                      className="qty-btn-cart qty-plus"
-                      onClick={() => handleIncreaseQty(item)}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <p className="item-subtotal">₹{item.price * (item.quantity || 1)}</p>
-                </div>
+        {currentUser ? (
+          <>
+            {/* Address Section */}
+            <div className="address-section">
+              <div className="address-header">
+                <MdOutlineLocationOn className="address-icon" />
+                <span className="address-title">Delivery Address</span>
               </div>
-            ))
-          )}
-        </div>
+              <div className="address-details">
+                {addressForm.id ? (
+                  <>
+                    <p className="address-name">{addressForm.label}</p>
+                    <p className="address-text">{addressForm.addressLine}</p>
+                  </>
+                ) : (
+                  <p className="address-text">No address added yet.</p>
+                )}
+              </div>
+              <button
+                className="change-link"
+                onClick={() => {
+                  setPendingCheckout(false);
+                  setShowAddressPopup(true);
+                }}
+              >
+                Change
+              </button>
+            </div>
+
+            {/* Cart Items */}
+            <div className="cart-items-section">
+              {cartItems.length === 0 ? (
+                <div className="cart-empty">
+                  <div className="empty-cart-icon">🛒</div>
+                  <h3>Your cart is empty</h3>
+                  <p>Add services to get started</p>
+                </div>
+              ) : (
+                cartItems.map((item, index) => (
+                  <div key={`${item.id}-${index}`} className="cart-item-card">
+                    <div className="cart-item-left">
+                      <div className="cart-item-image">
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} />
+                        ) : (
+                          <div className="placeholder-image">🛒</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="cart-item-middle">
+                      <h4 className="cart-item-name">{item.name}</h4>
+                      <span className="service-badge">{item.itemType}</span>
+                      <div className="service-duration">
+                        <MdAccessTime className="duration-icon" />
+                        <span>{item.itemId?.serviceDuration || '1-2hr'}</span>
+                      </div>
+                      <p className="cart-item-price">₹{item.price}</p>
+                    </div>
+                    <div className="cart-item-right">
+                      <div className="quantity-container-cart">
+                        <button
+                          className="qty-btn-cart qty-minus"
+                          onClick={() => handleDecreaseQty(item)}
+                        >
+                          −
+                        </button>
+                        <span className="qty-value-cart">{item.quantity || 1}</span>
+                        <button
+                          className="qty-btn-cart qty-plus"
+                          onClick={() => handleIncreaseQty(item)}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <p className="item-subtotal">₹{item.price * (item.quantity || 1)}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+
 
         {/* Contact Details Section */}
-        {cartItems.length > 0 && (
+        {cartItems.length > 0 && currentUser && (
           <div className="contact-section">
             <div className="contact-header">
               <MdPerson className="contact-icon" />
@@ -1033,15 +1037,26 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           </div>
         )}
 
-        {/* Checkout Button */}
-        {cartItems.length > 0 && (
-          <div className="checkout-section">
-            <button
-              className="checkout-btn-premium"
-              onClick={handleCheckout}
-              disabled={cartItems.length === 0}
-            >
-              {loading ? 'Processing...' : 'CHECKOUT'}
+            {/* Checkout Button */}
+            {cartItems.length > 0 && (
+              <div className="checkout-section">
+                <button
+                  className="checkout-btn-premium"
+                  onClick={handleCheckout}
+                  disabled={cartItems.length === 0}
+                >
+                  {loading ? 'Processing...' : 'CHECKOUT'}
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="cart-empty guest-view-cart">
+            <div className="empty-cart-icon">🛒</div>
+            <h3>Your Cart</h3>
+            <p>Please login to view your cart items and manage addresses</p>
+            <button className="login-button-simple" onClick={onLoginClick} style={{ marginTop: '20px' }}>
+              Login to Continue
             </button>
           </div>
         )}
