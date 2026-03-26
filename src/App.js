@@ -488,6 +488,7 @@ function App() {
               showToast={showToast}
               currentUser={currentUser}
               fetchCart={fetchCart}
+              onLoginClick={() => setShowLoginDialog(true)}
             />
           } />
             <Route path="/checkout" element={

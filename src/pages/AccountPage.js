@@ -319,25 +319,23 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   return (
     <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
       <div className="account-container-simple">
-        {/* User Profile Header */}
-        <div className="account-profile-header-simple">
-          <div className="avatar-simple">
-            {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
-          </div>
-          <div className="profile-info-simple">
-            <h2>{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
-            <p className="email">{profileData.email || 'Complete your profile'}</p>
-            <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
-          </div>
-          {currentUser && (
-            <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
-              <MdEdit size={18} /> Edit Profile
-            </button>
-          )}
-        </div>
-
         {currentUser ? (
           <>
+            {/* User Profile Header */}
+            <div className="account-profile-header-simple">
+              <div className="avatar-simple">
+                {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
+              </div>
+              <div className="profile-info-simple">
+                <h2>{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
+                <p className="email">{profileData.email || 'Complete your profile'}</p>
+                <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
+              </div>
+              <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
+                <MdEdit size={18} /> Edit Profile
+              </button>
+            </div>
+
             {/* Action List */}
             <div className="account-menu-simple">
               <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
@@ -388,6 +386,16 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                 <MdOutlineChevronRight className="arrow" />
               </div>
             </div>
+          </>
+        ) : (
+          <div className="account-profile-header-simple guest-view">
+            <div className="avatar-simple">U</div>
+            <div className="profile-info-simple">
+              <h2>Welcome Guest</h2>
+              <p className="email">Please login to view your profile and bookings</p>
+            </div>
+          </div>
+        )}
 
             {/* Logout/Delete Buttons */}
             <div className="account-footer-simple">
