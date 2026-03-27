@@ -406,7 +406,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                 <MdDeleteOutline size={20} /> {loading ? 'Deleting...' : 'Delete Account'}
               </button>
             </div>
-          </>
+          
         ) : (
           <div className="guest-account-prompt">
             <p>Please login to access your account features</p>
@@ -414,7 +414,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
               <MdLogin size={20} /> Login Now
             </button>
           </div>
-        )}
+        )
       </div>
 
       {/* Address Management Modal */}
