@@ -60,18 +60,46 @@ function App() {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const dataFetchedRef = useRef(false);
 
-  // Get current page from URL path
+  // Get current page from URL path (HashRouter compatible)
   const getCurrentPageFromPath = () => {
-    const path = location.pathname.replace('/', '') || 'home';
+    // Parse from hash for HashRouter, fallback to pathname
+    let path = location.hash.slice(1).replace('/', '') || location.pathname.replace('/', '') || 'home';
     return path;
   };
 
   const currentPage = getCurrentPageFromPath();
 
-  // Scroll to top on route change
+// Scroll to top on route change (robust version)
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    const scrollToTop = () => {
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'auto'
+        });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        // Scroll main content wrapper
+        const wrapper = document.querySelector('.page-wrapper');
+        if (wrapper) wrapper.scrollTop = 0;
+        // Scroll page content
+        const page = document.querySelector('.page');
+        if (page) page.scrollTop = 0;
+      });
+    };
+
+    scrollToTop();
+    // Multiple checks for animation/layout settling
+    const timeoutIds = [
+      setTimeout(scrollToTop, 50),
+      setTimeout(scrollToTop, 150),
+      setTimeout(scrollToTop, 300)
+    ];
+    return () => {
+      timeoutIds.forEach(id => clearTimeout(id));
+    };
+  }, [location.pathname, location.hash]);
 
   // Check for user login on mount
   useEffect(() => {
