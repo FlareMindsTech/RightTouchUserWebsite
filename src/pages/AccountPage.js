@@ -452,32 +452,28 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
       <div className="account-container-simple">
         {currentUser ? (
-          <>
-            {/* User Profile Header - Minimal on mobile */}
-            <div className="account-profile-header-simple">
-              <div className="avatar-simple">
-                {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
-              </div>
-              <div className="profile-info-simple">
-                <h2 className="desktop-only">{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
-                <h2 className="mobile-only">{profileData.fname || currentUser?.name || 'User'}</h2>
-                <p className="email">{profileData.email || 'Complete your profile'}</p>
-                <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
-              </>
-            ) : (
-              <>
-                <h2>Welcome Guest</h2>
-                <p className="email">Please login to view your profile and bookings</p>
-              </>
-            )}
-          </div>
-          {currentUser && (
+          <div className="account-profile-header-simple">
+            <div className="avatar-simple">
+              {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
+            </div>
+            <div className="profile-info-simple">
+              <h2 className="desktop-only">{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
+              <h2 className="mobile-only">{profileData.fname || currentUser?.name || 'User'}</h2>
+              <p className="email">{profileData.email || 'Complete your profile'}</p>
+              <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
+            </div>
             <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
               <MdEdit size={18} /> Edit Profile
             </button>
-          )}
-        </div>
-
+          </div>
+        ) : (
+          <div className="account-profile-header-simple">
+            <div className="profile-info-simple">
+              <h2>Welcome Guest</h2>
+              <p className="email">Please login to view your profile and bookings</p>
+            </div>
+          </div>
+        )}
         {currentUser ? (
           <>
             {/* Action List */}

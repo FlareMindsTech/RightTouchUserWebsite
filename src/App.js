@@ -125,6 +125,17 @@ function App() {
     }
   }, [formatCartItem]);
 
+  const showToast = useCallback((message, type) => {
+    if (type) {
+      rtAlert(message, type);
+      return;
+    }
+    const msg = String(message || '').toLowerCase();
+    const isError   = ['error', 'failed', 'invalid', 'unable'].some(k => msg.includes(k));
+    const isWarning = ['cancelled', 'already', 'disabled', 'pending', 'option will be', 'not available'].some(k => msg.includes(k));
+    rtAlert(message, isError ? 'error' : isWarning ? 'warning' : 'success');
+  }, []);
+
   // Check for user login on mount
   useEffect(() => {
     const savedUser = safeStorage.getItem('currentUser');
@@ -237,6 +248,18 @@ function App() {
       return;
     }
 
+    const tempId = `temp-${Date.now()}`;
+    const optimisticItem = {
+      ...itemData,
+      id: tempId,
+      originalId: itemData._id || itemData.id,
+      quantity: itemData.quantity || 1,
+      isOptimistic: true // Marker for UI if needed
+    };
+
+    // 🚀 OPTIMISTIC UPDATE: Add to local state immediately
+    setCartItems(prev => [...prev, formatCartItem(optimisticItem)]);
+
     try {
       const payload = {
         itemId: itemData._id || itemData.itemId || itemData.id,
@@ -248,71 +271,95 @@ function App() {
 
       if (response?.success && response.result) {
         showToast(`Item added to cart`);
-        
-        // Update local state without full refresh
         const newItem = formatCartItem(response.result);
+        
+        // 🚀 SYNC: Replace optimistic item with real server data
         setCartItems(prev => {
-          const exists = prev.findIndex(item => 
+          const filtered = prev.filter(item => item.id !== tempId);
+          const exists = filtered.findIndex(item => 
             (item.originalId || item.itemId?._id) === (newItem.originalId || newItem.itemId?._id)
           );
           if (exists !== -1) {
-            const updated = [...prev];
+            const updated = [...filtered];
             updated[exists] = newItem;
             return updated;
           }
-          return [...prev, newItem];
+          return [...filtered, newItem];
         });
       } else {
+        // 🚀 ROLLBACK: Remove optimistic item on failure
+        setCartItems(prev => prev.filter(item => item.id !== tempId));
         showToast(response?.message || 'Failed to add to cart');
       }
     } catch (error) {
+      setCartItems(prev => prev.filter(item => item.id !== tempId));
       showToast('Error adding to cart');
     }
   };
 
-  const removeFromCart = async (itemId) => {
+  const removeFromCart = useCallback(async (itemId) => {
+    const originalItems = [...cartItems];
+    
+    // 🚀 OPTIMISTIC UPDATE: Remove locally immediately
+    setCartItems(prev => prev.filter(item => item.id !== itemId && item._id !== itemId));
+    showToast('Item removed from cart');
+
     try {
       const response = await apiRemoveFromCart(itemId);
-      if (response?.success) {
-        showToast('Item removed from cart');
-        fetchCart();
-      } else {
+      if (!response?.success) {
+        // 🚀 ROLLBACK: Restore items if server fails
+        setCartItems(originalItems);
         showToast('Failed to remove item');
       }
     } catch (error) {
+      setCartItems(originalItems);
       showToast('Error removing from cart');
     }
-  };
+  }, [cartItems, showToast]);
 
-  const updateQuantity = async (itemId, itemType, newQuantity) => {
+  const updateQuantity = useCallback(async (itemId, itemType, newQuantity) => {
+    const originalItems = [...cartItems];
+    
+    // 🚀 OPTIMISTIC UPDATE: Update quantity locally immediately
+    if (newQuantity <= 0) {
+      setCartItems(prev => prev.filter(item => (item.originalId || item.itemId?._id) !== itemId));
+    } else {
+      setCartItems(prev => prev.map(item => 
+        (item.originalId || item.itemId?._id) === itemId ? { ...item, quantity: newQuantity } : item
+      ));
+    }
+
     try {
       const response = await updateCartItem({
-        itemId, // This is the original item ID
+        itemId,
         itemType,
         quantity: newQuantity
       });
-      if (response?.success) {
-        fetchCart();
+      
+      if (response?.success && response.result) {
+        if (response.result.deleted) {
+          setCartItems(prev => prev.filter(item => (item.originalId || item.itemId?._id) !== itemId));
+        } else {
+          // Sync with server's precision data (populated)
+          const updatedItem = formatCartItem(response.result);
+          setCartItems(prev => prev.map(item => 
+            (item.originalId || item.itemId?._id) === itemId ? updatedItem : item
+          ));
+        }
+      } else {
+        // 🚀 ROLLBACK
+        setCartItems(originalItems);
+        showToast(response?.message || 'Update failed');
       }
     } catch (error) {
+      setCartItems(originalItems);
       console.error('Error updating quantity:', error);
     }
-  };
+  }, [cartItems, formatCartItem, showToast]);
 
-  const isInCart = (targetId) => {
-    return cartItems.some(item => (item.itemId?._id || item.originalId) === targetId);
-  };
-
-  const showToast = useCallback((message, type) => {
-    if (type) {
-      rtAlert(message, type);
-      return;
-    }
-    const msg = String(message || '').toLowerCase();
-    const isError   = ['error', 'failed', 'invalid', 'unable'].some(k => msg.includes(k));
-    const isWarning = ['cancelled', 'already', 'disabled', 'pending', 'option will be', 'not available'].some(k => msg.includes(k));
-    rtAlert(message, isError ? 'error' : isWarning ? 'warning' : 'success');
-  }, []);
+  const isInCart = useCallback((targetId) => {
+    return cartItems.some(item => (item.originalId || item.itemId?._id) === targetId);
+  }, [cartItems]);
 
   const openServiceSheet = (service) => {
     setSelectedService(service);
