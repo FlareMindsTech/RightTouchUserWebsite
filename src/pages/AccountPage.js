@@ -3,7 +3,6 @@ import {
   MdEdit,
   MdOutlineChevronRight,
   MdOutlineLocationOn,
-  MdOutlinePayments,
   MdClose,
   MdMoreVert,
   MdStarOutline,
@@ -12,23 +11,28 @@ import {
   MdLogin,
   MdOutlineStarOutline,
   MdArrowBack,
-  MdPlace
+  MdPlace,
+  MdMyLocation,
+  MdOutlineEdit
 } from 'react-icons/md';
 import {
   LuClipboardList,
   LuHeadphones,
   LuBookOpen,
   LuPlus,
-  LuLogOut
+  LuLogOut,
+  LuSearch
 } from 'react-icons/lu';
 import './AccountPage.css';
 import ConfirmModal from '../components/ConfirmModal';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   getMyAddresses,
   createAddress,
   updateAddress,
-  deleteAddress
+  deleteAddress,
+  searchAddress,
+  reverseAddress
 } from '../services/addressService';
 import { getMyProfile, updateProfile, deleteMyAccount } from '../services/userService';
 
@@ -46,6 +50,13 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     open: false,
     action: null
   });
+  const [addrLimit, setAddrLimit] = useState(3);
+  const [addressStep, setAddressStep] = useState('picker'); // 'picker' or 'form'
+  const [locationSearch, setLocationSearch] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
   const fetchedRef = useRef(false);
 
   const [editFormData, setEditFormData] = useState({
@@ -62,8 +73,10 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     addressLine: '',
     city: '',
     state: '',
-    pincode: '',
     landmark: '',
+    houseNo: '',
+    latitude: '',
+    longitude: '',
     isDefault: false
   });
 
@@ -149,25 +162,38 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const handleSaveAddress = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const finalAddressLine = addrFormData.landmark.trim() 
-      ? `${addrFormData.addressLine.trim()} (Landmark: ${addrFormData.landmark.trim()})`
-      : addrFormData.addressLine.trim();
+    
+    // Construct descriptive address line
+    const baseAddr = addrFormData.addressLine.trim();
+    const house = addrFormData.houseNo?.trim() || '';
+    const ldmrk = addrFormData.landmark?.trim() || '';
+    
+    let descriptiveAddress = baseAddr;
+    if (house) descriptiveAddress = `${house}, ${descriptiveAddress}`;
+    if (ldmrk) descriptiveAddress = `${descriptiveAddress} (Landmark: ${ldmrk})`;
 
     try {
-      const response = await createAddress({
+      const payload = {
         ...addrFormData,
-        addressLine: finalAddressLine
-      });
+        addressLine: descriptiveAddress,
+        id: editingAddressId // Backend uses 'id' for updates
+      };
+
+      const response = editingAddressId 
+        ? await updateAddress(payload)
+        : await createAddress(payload);
 
       if (response?.success) {
-        showToast('Address added');
+        showToast(editingAddressId ? 'Address updated' : 'Address added');
         setIsAddingAddr(false);
+        setEditingAddressId(null);
         fetchAddresses();
       } else {
         showToast(response?.message || 'Failed to save address');
       }
     } catch (err) {
       showToast('Error saving address');
+      console.error('Save Address Error:', err);
     } finally {
       setLoading(false);
     }
@@ -210,18 +236,115 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
+  const handleLocationSearch = async (query) => {
+    setLocationSearch(query);
+    if (query.length < 3) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    setIsSearchingLocation(true);
+    try {
+      const response = await searchAddress(query);
+      setLocationSuggestions(response?.result || []);
+    } catch (error) {
+      console.error('Location search failed:', error);
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      showToast('Geolocation is not supported');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await reverseAddress(latitude, longitude);
+          const result = response?.result;
+          const addr = result?.address || {};
+
+          const composed = [
+            addr.house_number,
+            addr.road,
+            addr.neighbourhood,
+            addr.suburb,
+            addr.city_district,
+            addr.town,
+            addr.village
+          ].filter(Boolean).join(', ');
+
+          const finalAddress = result?.display_name || composed || 'Pinned Location';
+
+          setAddrFormData(prev => ({
+            ...prev,
+            addressLine: finalAddress,
+            city: addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.suburb || '',
+            state: addr.state || '',
+            pincode: addr.postcode || '',
+            latitude: latitude.toString(),
+            longitude: longitude.toString()
+          }));
+          setAddressStep('form');
+        } catch (error) {
+          console.error('Reverse geocoding error:', error);
+          setAddressStep('form');
+          showToast('Location found. Please fill details manually.');
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        showToast('Unable to retrieve your location');
+        setIsLocating(false);
+      }
+    );
+  };
+
+  const selectLocation = (suggestion) => {
+    const addr = suggestion.address || {};
+    const composed = [
+      addr.house_number,
+      addr.road,
+      addr.neighbourhood,
+      addr.suburb,
+      addr.city_district
+    ].filter(Boolean).join(', ');
+
+    setAddrFormData(prev => ({
+      ...prev,
+      addressLine: suggestion.display_name || composed,
+      city: addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.suburb || '',
+      state: addr.state || '',
+      pincode: addr.postcode || '',
+      latitude: suggestion.lat,
+      longitude: suggestion.lon
+    }));
+    setAddressStep('form');
+  };
+
   const openAddModal = () => {
     setAddrFormData({
-      name: '',
-      mobileNumber: '',
+      name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : '',
+      mobileNumber: currentUser?.mobileNumber || currentUser?.identifier || '',
       label: 'home',
       addressLine: '',
       city: '',
       state: '',
       pincode: '',
+      landmark: '',
       isDefault: addresses.length === 0
     });
-    setIsAddingAddr(true);
+    setAddressStep('picker');
+    setLocationSearch('');
+    setLocationSuggestions([]);
+    setShowAddressModal(true);
     setActiveDropdown(null);
   };
 
@@ -299,9 +422,6 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       case 'Manage address':
         setShowAddressModal(true);
         break;
-      case 'Manage payment methods':
-        onNavigate('payment-methods');
-        break;
       case 'My rating':
         navigate('/ratings');
         break;
@@ -316,18 +436,31 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
+  const handleEditAddress = (addr) => {
+    setAddrFormData({
+      ...addr,
+      houseNo: addr.houseNo || '', // Ensure houseNo exists in state
+      landmark: addr.landmark || ''
+    });
+    setEditingAddressId(addr._id);
+    setIsAddingAddr(true);
+    setAddressStep('form'); // Edit directly shows form
+    setActiveDropdown(null);
+  };
+
   return (
     <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
       <div className="account-container-simple">
-        {/* Common Guest View Header */}
-        <div className="account-profile-header-simple guest-view">
-          <div className="avatar-simple">
-            {currentUser ? (profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U') : 'U'}
-          </div>
-          <div className="profile-info-simple">
-            {currentUser ? (
-              <>
-                <h2>{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
+        {currentUser ? (
+          <>
+            {/* User Profile Header - Minimal on mobile */}
+            <div className="account-profile-header-simple">
+              <div className="avatar-simple">
+                {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
+              </div>
+              <div className="profile-info-simple">
+                <h2 className="desktop-only">{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
+                <h2 className="mobile-only">{profileData.fname || currentUser?.name || 'User'}</h2>
                 <p className="email">{profileData.email || 'Complete your profile'}</p>
                 <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
               </>
@@ -361,14 +494,6 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                 <div className="menu-left-simple">
                   <MdOutlineLocationOn className="icon" />
                   <span>Manage Addresses</span>
-                </div>
-                <MdOutlineChevronRight className="arrow" />
-              </div>
-
-              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage payment methods')}>
-                <div className="menu-left-simple">
-                  <MdOutlinePayments className="icon" />
-                  <span>Payment Methods</span>
                 </div>
                 <MdOutlineChevronRight className="arrow" />
               </div>
@@ -422,74 +547,150 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         <div className="modal-backdrop" onClick={() => { setShowAddressModal(false); setIsAddingAddr(false); setActiveDropdown(null); }}>
           <div className="address-modal" onClick={(e) => e.stopPropagation()}>
             <div className="address-modal-header">
-              <h2>{isAddingAddr ? 'Add New Address' : 'Manage Address'}</h2>
+              <div className="header-left">
+                {isAddingAddr && addressStep === 'form' ? (
+                  <button className="back-btn-simple" onClick={() => setAddressStep('picker')}>
+                    <MdArrowBack />
+                  </button>
+                ) : isAddingAddr ? (
+                  <button className="back-btn-simple" onClick={() => setIsAddingAddr(false)}>
+                    <MdArrowBack />
+                  </button>
+                ) : null}
+                <h2>{isAddingAddr ? (addressStep === 'picker' ? 'Select Location' : 'Address Details') : 'Manage Address'}</h2>
+              </div>
               <button className="modal-close" onClick={() => {
-                if (isAddingAddr) setIsAddingAddr(false);
-                else setShowAddressModal(false);
+                setShowAddressModal(false);
+                setIsAddingAddr(false);
                 setActiveDropdown(null);
               }}>
-                {isAddingAddr ? <MdArrowBack /> : <MdClose />}
+                <MdClose />
               </button>
             </div>
 
             {isAddingAddr ? (
-              <form onSubmit={handleSaveAddress} className="address-form-premium">
-                <div className="input-group">
-                  <label>Full Name</label>
-                  <input
-                    type="text"
-                    value={addrFormData.name}
-                    onChange={(e) => setAddrFormData({ ...addrFormData, name: e.target.value })}
-                    placeholder="e.g. John Doe"
-                    required
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Mobile Number (Optional)</label>
-                  <input
-                    type="tel"
-                    value={addrFormData.mobileNumber}
-                    onChange={(e) => setAddrFormData({ ...addrFormData, mobileNumber: e.target.value })}
-                    placeholder="10-digit mobile number"
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Address Type</label>
-                  <div className="type-selector">
-                    {['home', 'office', 'other'].map(label => (
-                      <button
-                        key={label}
-                        type="button"
-                        className={`type-btn ${addrFormData.label === label ? 'active' : ''}`}
-                        onClick={() => setAddrFormData({ ...addrFormData, label })}
-                      >
-                        {label}
-                      </button>
-                    ))}
+              <div className="address-flow-container">
+                {addressStep === 'picker' ? (
+                  <div className="location-picker-step">
+                    <div className="search-input-wrapper">
+                      <LuSearch className="search-icon" />
+                      <input
+                        type="text"
+                        placeholder="Search for area, street name..."
+                        value={locationSearch}
+                        onChange={(e) => handleLocationSearch(e.target.value)}
+                        autoFocus
+                      />
+                      {isSearchingLocation && <div className="search-loader"></div>}
+                    </div>
+
+                    <button 
+                      className={`current-location-btn ${isLocating ? 'locating' : ''}`}
+                      onClick={handleUseCurrentLocation}
+                      disabled={isLocating}
+                    >
+                      <MdMyLocation className="gps-icon" />
+                      <span>{isLocating ? 'Detecting location...' : 'Use Current Location'}</span>
+                    </button>
+
+                    <div className="location-suggestions">
+                      {locationSuggestions.map((suggestion, idx) => (
+                        <div 
+                          key={idx} 
+                          className="suggestion-item"
+                          onClick={() => selectLocation(suggestion)}
+                        >
+                          <MdPlace className="item-icon" />
+                          <div className="item-info">
+                            <p className="item-display">{suggestion.display_name}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {locationSearch.length >= 3 && locationSuggestions.length === 0 && !isSearchingLocation && (
+                        <div className="no-suggestions">No locations found. Try a different search.</div>
+                      )}
+                    </div>
+
+                    <div className="picker-footer">
+                      <p className="osm-attribution">Location search by <b>OpenStreetMap</b></p>
+                    </div>
                   </div>
-                </div>
-                <div className="input-group">
-                  <label>Landmark (Optional)</label>
-                  <input
-                    type="text"
-                    value={addrFormData.landmark}
-                    onChange={(e) => setAddrFormData({ ...addrFormData, landmark: e.target.value })}
-                    placeholder="E.g. Near Apollo Hospital"
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Complete Address</label>
-                  <textarea
-                    value={addrFormData.addressLine}
-                    onChange={(e) => setAddrFormData({ ...addrFormData, addressLine: e.target.value })}
-                    placeholder="House No, Building Name, Area, etc."
-                    required
-                  />
-                </div>
-                <button type="submit" className="save-addr-btn" disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Address'}
-                </button>
-              </form>
+                ) : (
+                  <form onSubmit={handleSaveAddress} className="address-form-premium fade-in">
+                    <div className="selected-location-preview">
+                      <MdPlace className="preview-icon" />
+                      <div className="preview-text">
+                        <p className="preview-addr">{addrFormData.addressLine}</p>
+                        <button type="button" className="change-loc-btn" onClick={() => setAddressStep('picker')}>Change</button>
+                      </div>
+                    </div>
+
+                    <div className="form-grid">
+                      <div className="input-group">
+                        <label>Full Name</label>
+                        <input
+                          type="text"
+                          value={addrFormData.name}
+                          onChange={(e) => setAddrFormData({ ...addrFormData, name: e.target.value })}
+                          placeholder="e.g. John Doe"
+                          required
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label>Mobile Number</label>
+                        <input
+                          type="tel"
+                          value={addrFormData.mobileNumber}
+                          onChange={(e) => setAddrFormData({ ...addrFormData, mobileNumber: e.target.value })}
+                          placeholder="10-digit mobile number"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="input-group">
+                      <label>House / Flat / Block No.</label>
+                      <input
+                        type="text"
+                        value={addrFormData.houseNo || ''}
+                        onChange={(e) => setAddrFormData({ ...addrFormData, houseNo: e.target.value })}
+                        placeholder="e.g. Flat 101, Block B"
+                        required
+                      />
+                    </div>
+
+                    <div className="input-group">
+                      <label>Landmark (Optional)</label>
+                      <input
+                        type="text"
+                        value={addrFormData.landmark}
+                        onChange={(e) => setAddrFormData({ ...addrFormData, landmark: e.target.value })}
+                        placeholder="e.g. Near Central Park"
+                      />
+                    </div>
+
+                    <div className="input-group">
+                      <label>Save as</label>
+                      <div className="type-selector">
+                        {['home', 'office', 'other'].map(label => (
+                          <button
+                            key={label}
+                            type="button"
+                            className={`type-btn ${addrFormData.label === label ? 'active' : ''}`}
+                            onClick={() => setAddrFormData({ ...addrFormData, label })}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button type="submit" className="save-addr-btn" disabled={loading}>
+                      {loading ? 'Saving...' : 'Save Address & Proceed'}
+                    </button>
+                  </form>
+                )}
+              </div>
             ) : (
               <>
                 <button className="add-address-btn" onClick={openAddModal}>
@@ -504,54 +705,77 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                       <p>No addresses saved yet</p>
                     </div>
                   ) : (
-                    addresses.map((address) => (
-                      <div key={address._id} className={`address-card ${address.isDefault ? 'is-default' : ''}`}>
-                        <div className="address-card-header">
-                          <div className="address-badge">
-                            <MdPlace className="badge-icon" />
-                            <span>{address.label || 'home'}</span>
-                          </div>
-                          {address.isDefault && (
-                            <span className="default-tag">
-                              <MdCheck /> Default
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="address-content">
-                          <h4 className="addr-name">{address.name || 'User'}</h4>
-                          <p className="addr-text">{address.addressLine || address.address}</p>
-                          {address.mobileNumber && <p className="addr-phone">{address.mobileNumber}</p>}
-                        </div>
-
-                        <div className="address-card-actions">
-                          <button
-                            className="three-dots-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveDropdown(activeDropdown === address._id ? null : address._id);
-                            }}
-                          >
-                            <MdMoreVert />
-                          </button>
-
-                          {activeDropdown === address._id && (
-                            <div className="dropdown-menu">
-                              {!address.isDefault && (
-                                <button className="dropdown-item" onClick={() => handleSetDefault(address._id)}>
-                                  <MdStarOutline className="dropdown-icon" />
-                                  <span>Set as Default</span>
-                                </button>
-                              )}
-                              <button className="dropdown-item delete" onClick={() => handleDelete(address._id)}>
-                                <MdDeleteOutline className="dropdown-icon" />
-                                <span>Delete</span>
-                              </button>
+                    <>
+                      {addresses.slice(0, addrLimit).map((address) => (
+                        <div key={address._id} className={`address-card ${address.isDefault ? 'is-default' : ''}`}>
+                          <div className="address-card-header">
+                            <div className="header-left-group">
+                              <div className="address-badge">
+                                <MdPlace className="badge-icon" />
+                                <span>{address.label || 'home'}</span>
+                              </div>
+                              <h4 className="addr-name">{address.name || 'User'}</h4>
                             </div>
-                          )}
+                            
+                            <div className="header-right-group">
+                              {address.isDefault && (
+                                <span className="default-tag">
+                                  <MdCheck /> Default
+                                </span>
+                              )}
+                              <div className="address-card-actions">
+                                <button
+                                  className="three-dots-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveDropdown(activeDropdown === address._id ? null : address._id);
+                                  }}
+                                >
+                                  <MdMoreVert />
+                                </button>
+
+                                {activeDropdown === address._id && (
+                                  <div className="dropdown-menu">
+                                    {!address.isDefault && (
+                                      <button className="dropdown-item" onClick={() => handleSetDefault(address._id)}>
+                                        <MdStarOutline className="dropdown-icon" />
+                                        <span>Set as Default</span>
+                                      </button>
+                                    )}
+                                    <button className="dropdown-item" onClick={() => handleEditAddress(address)}>
+                                      <MdOutlineEdit className="dropdown-icon" />
+                                      <span>Edit Address</span>
+                                    </button>
+                                    <button className="dropdown-item delete" onClick={() => handleDelete(address._id)}>
+                                      <MdDeleteOutline className="dropdown-icon" />
+                                      <span>Delete</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="address-content">
+                            <p className="addr-text">{address.addressLine || address.address}</p>
+                            {address.mobileNumber && (
+                              <p className="addr-phone">
+                                <MdLogin size={14} style={{ opacity: 0.7 }} /> {address.mobileNumber}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      ))}
+
+                      {addresses.length > 3 && (
+                        <button 
+                          className="view-more-addr-btn" 
+                          onClick={() => setAddrLimit(addrLimit >= addresses.length ? 3 : addresses.length)}
+                        >
+                          {addrLimit >= addresses.length ? 'Show Less' : `View More (${addresses.length - 3} more)`}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </>

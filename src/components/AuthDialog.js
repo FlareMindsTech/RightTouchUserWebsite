@@ -15,6 +15,17 @@ const AuthDialog = ({
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+
+  React.useEffect(() => {
+    let interval;
+    if (otpSent && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpSent, resendTimer]);
 
   if (!isOpen) return null;
 
@@ -39,6 +50,7 @@ const AuthDialog = ({
 
       if (response?.success || response?.message?.toLowerCase().includes('otp')) {
         setOtpSent(true);
+        setResendTimer(180); // 3 minutes
         onShowToast?.('OTP sent to your phone number');
       } else {
         const errorMsg = response?.message || response?.error?.message || response?.data?.message || 'Login failed. Please try again.';
@@ -112,8 +124,10 @@ const AuthDialog = ({
   };
 
   const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
     try {
       await loginCustomer({ identifier });
+      setResendTimer(180); // Restart 3 min timer
       onShowToast?.('OTP resent successfully');
     } catch (error) {
       onShowToast?.('Failed to resend OTP');
@@ -187,7 +201,11 @@ const AuthDialog = ({
 
             <div className="otp-resend">
               <span>Didn't receive the code? </span>
-              <button type="button" onClick={handleResendOtp}>Resend OTP</button>
+              {resendTimer > 0 ? (
+                <span className="resend-wait">Resend in {Math.floor(resendTimer / 60)}:{(resendTimer % 60).toString().padStart(2, '0')}</span>
+              ) : (
+                <button type="button" onClick={handleResendOtp}>Resend OTP</button>
+              )}
             </div>
 
             <button type="button" className="back-to-register" onClick={handleBackToLogin}>

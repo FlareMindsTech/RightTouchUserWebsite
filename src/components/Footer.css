@@ -1,7 +1,7 @@
 .footer {
     background: #ffffff;
     border-top: 1px solid #edf2f7;
-    margin-top: 60px;
+    margin-top: 20px;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: #4a5568;
 }
@@ -27,7 +27,7 @@
     color: #1a202c;
     font-size: 1rem;
     font-weight: 700;
-    margin-bottom: 30px;
+    margin-bottom: 32px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -39,7 +39,7 @@
 }
 
 .footer-col ul li {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 
 .footer-col ul li a {
@@ -252,7 +252,7 @@
     }
 
     .footer-col h4 {
-        margin-bottom: 20px;
+        margin-bottom: 24px;
     }
 
     .bottom-content {

@@ -5,8 +5,8 @@ import {
   Star,
   CheckCircle2,
   XCircle,
-  ChevronDown,
-  ChevronUp,
+  Check,
+  X,
   ShieldCheck,
   Clock,
   Zap,
@@ -117,7 +117,7 @@ const ProductServices = ({
     if (isActive) {
       fetchServiceDetails();
     }
-  }, [serviceId, isActive]);
+  }, [serviceId, isActive, allServices]);
 
   const handleBack = () => {
     navigate('/services');
@@ -183,6 +183,16 @@ const ProductServices = ({
       await updateQuantity(cartItem.originalId || cartItem.itemId?._id, cartItem.itemType || 'service', currentQuantity - 1);
       if (showToast) showToast(`${service.serviceName} quantity updated`);
     }
+  };
+
+  const [expandedSections, setExpandedSections] = useState({
+    included: false,
+    notIncluded: false,
+    checklist: false
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
   if (loading && isActive) {
@@ -347,65 +357,81 @@ const ProductServices = ({
               </button>
             )}
 
-            <div style={{ marginTop: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                <Clock size={16} style={{ color: 'var(--green)', marginBottom: '4px' }} />
-                <p style={{ fontSize: '11px', margin: 0, fontWeight: '600' }}>{service.duration || 'Flexible'}</p>
+            <div className="detail-feature-bar">
+              <div className="feature-item">
+                <Clock size={18} className="feature-icon" />
+                <div className="feature-content">
+                  <span className="feature-label">Duration</span>
+                  <p className="feature-value">{service.duration || 'Flexible'}</p>
+                </div>
               </div>
-              <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                <Truck size={16} style={{ color: service.siteVisitRequired ? 'var(--green)' : '#94a3b8', marginBottom: '4px' }} />
-                <p style={{ fontSize: '11px', margin: 0, fontWeight: '600' }}>{service.siteVisitRequired ? 'Site Visit' : 'Remote/Studio'}</p>
+              <div className="feature-item">
+                <Truck size={18} className="feature-icon" style={{ opacity: service.siteVisitRequired ? 1 : 0.4 }} />
+                <div className="feature-content">
+                  <span className="feature-label">Availability</span>
+                  <p className="feature-value">{service.siteVisitRequired ? 'Site Visit' : 'Remote'}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="section-wrap" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '30px', padding: '0 20px' }}>
+      <div className="detail-section-grid">
 
         {/* What's Included */}
         <div className="detail-card-new">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: 'var(--text-primary)' }}>
-            <CheckCircle2 size={22} color="var(--green)" /> What's Included
+          <h3 className="detail-card-title">
+            <CheckCircle2 size={24} color="var(--green)" /> What's Included
           </h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {service.whatIncluded?.map((item, idx) => (
-              <li key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                <span style={{ color: 'var(--green)', fontWeight: 'bold' }}>✓</span> {item}
+          <ul className="detail-list">
+            {(expandedSections.included ? service.whatIncluded : service.whatIncluded?.slice(0, 4))?.map((item, idx) => (
+              <li key={idx} className="detail-list-item">
+                <Check className="detail-list-icon" size={16} color="var(--green)" />
+                {item}
               </li>
             ))}
           </ul>
+          {service.whatIncluded?.length > 4 && (
+            <button className="show-more-toggle" onClick={() => toggleSection('included')}>
+              {expandedSections.included ? 'Show Less' : `+${service.whatIncluded.length - 4} More`}
+            </button>
+          )}
         </div>
 
         {/* What's Not Included */}
         <div className="detail-card-new">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: 'var(--text-primary)' }}>
-            <XCircle size={22} color="#ef4444" /> What's Not Included
+          <h3 className="detail-card-title">
+            <XCircle size={24} color="#ef4444" /> What's Not Included
           </h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {service.whatNotIncluded?.map((item, idx) => (
-              <li key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✕</span> {item}
+          <ul className="detail-list">
+            {(expandedSections.notIncluded ? service.whatNotIncluded : service.whatNotIncluded?.slice(0, 4))?.map((item, idx) => (
+              <li key={idx} className="detail-list-item">
+                <X className="detail-list-icon" size={16} color="#ef4444" />
+                {item}
               </li>
             ))}
           </ul>
+          {service.whatNotIncluded?.length > 4 && (
+            <button className="show-more-toggle" onClick={() => toggleSection('notIncluded')}>
+              {expandedSections.notIncluded ? 'Show Less' : `+${service.whatNotIncluded.length - 4} More`}
+            </button>
+          )}
         </div>
 
         {/* Rectify Method (How it works) */}
         <div className="detail-card-new" style={{ background: '#f0f9ff', borderColor: '#bae6fd' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#0369a1' }}>
-            <Hammer size={22} /> How it works (Rectify Method)
+          <h3 className="detail-card-title" style={{ color: '#0369a1' }}>
+            <Hammer size={24} /> How it works (Rectify Method)
           </h3>
-          <div style={{ position: 'relative', paddingLeft: '20px' }}>
+          <div className="timeline-container-v2">
             {service.rectifyMethod?.map((step, idx) => (
-              <div key={idx} style={{ marginBottom: '15px', position: 'relative' }}>
-                <div style={{
-                  position: 'absolute', left: '-20px', top: '2px',
-                  width: '14px', height: '14px', borderRadius: '50%',
-                  background: '#0ea5e9', color: 'white', fontSize: '9px',
-                  display: 'grid', placeItems: 'center', fontWeight: 'bold'
-                }}>{idx + 1}</div>
-                <p style={{ margin: 0, fontSize: '14px', color: '#0c4a6e', fontWeight: '500' }}>{step}</p>
+              <div key={idx} className="timeline-step-v2">
+                <div className="timeline-line-v2"></div>
+                <div className="timeline-marker-v2">{idx + 1}</div>
+                <div className="timeline-content-v2">
+                  <p className="timeline-text-v2">{step}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -413,38 +439,43 @@ const ProductServices = ({
 
         {/* Service Checklist */}
         <div className="detail-card-new">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: 'var(--text-primary)' }}>
-            <ClipboardList size={22} color="var(--green)" /> Service Checklist
+          <h3 className="detail-card-title">
+            <ClipboardList size={24} color="var(--green)" /> Service Checklist
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {service.serviceChecklist?.map((item, idx) => (
-              <div key={idx} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--green)' }}></div>
+          <div className="checklist-grid">
+            {(expandedSections.checklist ? service.serviceChecklist : service.serviceChecklist?.slice(0, 6))?.map((item, idx) => (
+              <div key={idx} className="checklist-item">
+                <div className="checklist-dot"></div>
                 {item}
               </div>
             ))}
           </div>
+          {service.serviceChecklist?.length > 6 && (
+            <button className="show-more-toggle" onClick={() => toggleSection('checklist')}>
+              {expandedSections.checklist ? 'Show Less' : `+${service.serviceChecklist.length - 6} More`}
+            </button>
+          )}
         </div>
 
         {/* Fault Reasons & Tools */}
-        <div className="detail-card-new" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="detail-card-new" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#991b1b', fontSize: '14px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: '#991b1b', fontSize: '14px', fontWeight: '800' }}>
               <AlertCircle size={18} /> Common Fault Reasons
             </h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <div className="tech-chip-group">
               {service.faultReasons?.map(reason => (
-                <span key={reason} style={{ background: '#fee2e2', color: '#b91c1c', padding: '4px 10px', borderRadius: '4px', fontSize: '12px' }}>{reason}</span>
+                <span key={reason} className="tech-chip fault">{reason}</span>
               ))}
             </div>
           </div>
           <div>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#1e293b', fontSize: '14px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: '#1e293b', fontSize: '14px', fontWeight: '800' }}>
               <Box size={18} /> Tools & Equipment Used
             </h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <div className="tech-chip-group">
               {service.toolsEquipments?.map(tool => (
-                <span key={tool} style={{ background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '4px', fontSize: '12px' }}>{tool}</span>
+                <span key={tool} className="tech-chip tool">{tool}</span>
               ))}
             </div>
           </div>
@@ -452,10 +483,10 @@ const ProductServices = ({
 
         {/* Service Highlights & Warranty */}
         <div className="detail-card-new" style={{ background: 'var(--bg-input)' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: 'var(--text-primary)' }}>
-            <Zap size={22} color="#3b82f6" /> Service Highlights
+          <h3 className="detail-card-title">
+            <Zap size={24} color="#3b82f6" /> Service Highlights
           </h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
             {service.serviceHighlights?.map((item, idx) => (
               <span key={idx} className="highlight-badge">
                 {item}
@@ -463,15 +494,15 @@ const ProductServices = ({
             ))}
           </div>
           <div className="warranty-box-new">
-            <ShieldCheck size={18} /> Service Warranty: {service.serviceWarranty || '15'} Days
+            <ShieldCheck size={20} /> Service Warranty: {service.serviceWarranty || '15'} Days
           </div>
           {service.cancellationPolicy && (
-            <div style={{ marginTop: '15px', padding: '12px', border: '1px dashed #cbd5e1', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <div style={{ marginTop: '20px', padding: '15px', border: '1px dashed #cbd5e1', borderRadius: '12px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
               <strong>Cancellation Policy:</strong> {service.cancellationPolicy}
             </div>
           )}
-          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: service.requiresSpareParts ? '#f59e0b' : '#22c55e' }}>
-            <Info size={14} />
+          <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: service.requiresSpareParts ? '#f59e0b' : '#22c55e', fontWeight: '600' }}>
+            <Info size={16} />
             {service.requiresSpareParts ? 'This service may require spare parts (extra cost)' : 'No additional spare parts typically required'}
           </div>
         </div>

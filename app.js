@@ -508,7 +508,7 @@ function showToast(msg) {
 
 // ─── HTML escape ──────────────────────────────────────────
 function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ─── Drag-to-scroll carousels ─────────────────────────────
@@ -602,15 +602,15 @@ function loadPreferences() {
 // ─── Ripple effect on cards ───────────────────────────────
 function initRipple() {
   document.querySelectorAll('.service-card, .category-card, .appliance-card, .offer-card').forEach(el => {
-    el.addEventListener('click', function(e) {
+    el.addEventListener('click', function (e) {
       const ripple = document.createElement('span');
       const rect = this.getBoundingClientRect();
       const size = Math.max(rect.width, rect.height);
       ripple.style.cssText = `
         position:absolute;
         width:${size}px;height:${size}px;
-        left:${e.clientX - rect.left - size/2}px;
-        top:${e.clientY - rect.top - size/2}px;
+        left:${e.clientX - rect.left - size / 2}px;
+        top:${e.clientY - rect.top - size / 2}px;
         background:rgba(34,197,94,0.2);
         border-radius:50%;
         transform:scale(0);

@@ -1,31 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  ShieldCheck,
-  Building2,
-  ChevronLeft,
   Star,
-  Sun,
-  Car,
-  Wrench,
   Search,
-  Hammer
+  Filter,
+  X,
+  Wrench,
+  Hammer,
+  Zap,
+  Wind,
+  Sun,
+  Droplets,
+  Sparkles,
+  Cpu,
+  Paintbrush,
+  ChevronRight,
+  LayoutGrid
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getAllServices } from '../services/serviceService';
-import { getAllCategories } from '../services/categoryService';
 import '../styles/services.css';
 
-// Filter helper function
-const filterBySearch = (items, query) => {
-  if (!query || query.trim() === '') return items;
-  const searchTerm = query.toLowerCase().trim();
-  return items.filter(item => {
-    const name = item.serviceName?.toLowerCase() || '';
-    const description = item.description?.toLowerCase() || '';
-    const category = item.categoryId?.category?.toLowerCase() || '';
-    return name.includes(searchTerm) || description.includes(searchTerm) || category.includes(searchTerm);
-  });
-};
 
 const ServicesPage = ({
   isActive,
@@ -50,11 +43,16 @@ const ServicesPage = ({
   const [allServices, setAllServices] = useState(initialAllServices);
   const [filteredServices, setFilteredServices] = useState([]);
   const [localSearchQuery, setLocalSearchQuery] = useState('');
-  const [view, setView] = useState('services'); // Default to 'services' to show all
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(isGlobalLoading);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, service: null });
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    priceRange: 'all',
+    rating: 0,
+  });
+  const [visibleCount, setVisibleCount] = useState(8);
 
   // Sync with global props
   useEffect(() => {
@@ -63,7 +61,7 @@ const ServicesPage = ({
     setLoading(isGlobalLoading);
   }, [initialCategories, initialAllServices, isGlobalLoading]);
 
-// Prioritize navbar/global searchQuery for services page filtering
+  // Prioritize navbar/global searchQuery for services page filtering
   const effectiveSearchQuery = (searchQuery || localSearchQuery || '').trim().toLowerCase();
 
   // Unified filtering logic
@@ -78,7 +76,23 @@ const ServicesPage = ({
       });
     }
 
-    // 3. Filter by search query
+    // 2. Filter by Price Range
+    if (filters.priceRange !== 'all') {
+      result = result.filter(s => {
+        const price = s.discountedPrice || s.serviceCost;
+        if (filters.priceRange === 'under500') return price < 500;
+        if (filters.priceRange === '500to2000') return price >= 500 && price <= 2000;
+        if (filters.priceRange === 'above2000') return price > 2000;
+        return true;
+      });
+    }
+
+    // 3. Filter by Rating
+    if (filters.rating > 0) {
+      result = result.filter(s => (s.ratingSummary?.averageRating || 0) >= filters.rating);
+    }
+
+    // 4. Filter by search query
     if (effectiveSearchQuery) {
       result = result.filter(item => {
         const name = (item.serviceName || '').toLowerCase();
@@ -91,7 +105,8 @@ const ServicesPage = ({
     }
 
     setFilteredServices(result);
-  }, [selectedCategory, allServices, effectiveSearchQuery]);
+    setVisibleCount(8); // Reset visibility when filters change
+  }, [selectedCategory, allServices, effectiveSearchQuery, filters]);
 
 
 
@@ -186,6 +201,87 @@ const ServicesPage = ({
     }
   };
 
+  const clearAllFilters = () => {
+    setFilters({ priceRange: 'all', rating: 0 });
+    setSelectedCategory(null);
+    navigate('/services');
+  };
+
+  const getCategoryIcon = (categoryName) => {
+    const name = categoryName?.toLowerCase() || '';
+    if (name.includes('solar')) return <Sun size={18} />;
+    if (name.includes('ac') || name.includes('air')) return <Wind size={18} />;
+    if (name.includes('electric')) return <Zap size={18} />;
+    if (name.includes('plumb')) return <Droplets size={18} />;
+    if (name.includes('clean')) return <Sparkles size={18} />;
+    if (name.includes('paint')) return <Paintbrush size={18} />;
+    if (name.includes('appliance') || name.includes('repair')) return <Cpu size={18} />;
+    return <Wrench size={18} />;
+  };
+
+  const TopCategoryBar = () => (
+    <div className="top-category-bar">
+      <div
+        className={`top-cat-item ${!selectedCategory ? 'active' : ''}`}
+        onClick={() => handleCategoryClick(null)}
+      >
+        <div className="top-cat-icon"><LayoutGrid size={20} /></div>
+        <span className="top-cat-label">All Services</span>
+      </div>
+      {categories.map(cat => (
+        <div
+          key={cat._id}
+          className={`top-cat-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+          onClick={() => handleCategoryClick(cat)}
+        >
+          <div className="top-cat-icon">
+            {cat.image ? (
+              <img src={cat.image} alt={cat.category} className="top-cat-img" />
+            ) : (
+              getCategoryIcon(cat.category)
+            )}
+          </div>
+          <span className="top-cat-label">{cat.category}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  const FilterContent = () => (
+    <div className="filter-content-inner">
+      <div className="filter-section">
+        <h4 className="section-title">Browse Categories</h4>
+        <div className="category-menu">
+          <div
+            className={`menu-item ${!selectedCategory ? 'active' : ''}`}
+            onClick={() => handleCategoryClick(null)}
+          >
+            <div className="menu-icon"><LayoutGrid size={18} /></div>
+            <span className="menu-label">All Services</span>
+            <ChevronRight className="menu-chevron" size={14} />
+          </div>
+          {categories.map(cat => (
+            <div
+              key={cat._id}
+              className={`menu-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+              onClick={() => handleCategoryClick(cat)}
+            >
+              <div className="menu-icon">{getCategoryIcon(cat.category)}</div>
+              <span className="menu-label">{cat.category}</span>
+              <ChevronRight className="menu-chevron" size={14} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {selectedCategory && (
+        <button className="reset-all-btn" onClick={clearAllFilters}>
+          <X size={16} /> Reset Categories
+        </button>
+      )}
+    </div>
+  );
+
 
   if (loading && isActive) {
     return (
@@ -219,29 +315,13 @@ const ServicesPage = ({
     );
   }
 
-  // Check if searching
-  const isSearching = effectiveSearchQuery !== '';
-  const categoryName = (selectedCategory?.category || '').replace(/\s+/g, ' ').trim();
-  const normalizedCategoryName = categoryName.replace(/(?:\s+services)+$/i, '').trim();
-  const heroPrefix = selectedCategory
-    ? (normalizedCategoryName || categoryName)
-    : 'Our';
-  const heroSubtitle = selectedCategory
-    ? `Specialized ${heroPrefix} services for you`
-    : 'Browse all our premium home services';
+
 
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
-      {/* Page Header */}
-      <div className="services-hero services-page-hero desktop-only">
-        <h1>{heroPrefix} <span className="accent">Services</span></h1>
-        <p>{heroSubtitle}</p>
-      </div>
-
-      {/* Mobile Top Section */}
-      <div className="services-mobile-container mobile-only">
-        <h2 className="mobile-page-title">Home Services</h2>
-        <div className="search-pill-container">
+      {/* Mobile Search - Keeping it compact */}
+      <div className="services-mobile-container mobile-only" style={{ padding: '0 16px', marginTop: '12px' }}>
+        <div className="search-pill-container" style={{ margin: 0 }}>
           <Search className="search-pill-icon" size={20} />
           <input
             type="text"
@@ -253,193 +333,236 @@ const ServicesPage = ({
         </div>
       </div>
 
-      <div className="section-wrap" style={{ paddingBottom: 0 }}>
-        {/* Category Ribbon */}
-        <div className="category-ribbon">
-          <button
-            className={`ribbon-item ${!selectedCategory ? 'active' : ''}`}
-            onClick={() => handleCategoryClick(null)}
-          >
-            All Services
-          </button>
-          {categories.map(cat => (
-            <button
-              key={cat._id}
-              className={`ribbon-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
-              onClick={() => handleCategoryClick(cat)}
-            >
-              {cat.category}
-            </button>
-          ))}
+      <div className="section-wrap">
+        {/* Mobile Filter Bar */}
+        <div className="mobile-filter-bar mobile-only">
+          <div className="filter-toggle-btn" onClick={() => setShowMobileFilters(true)}>
+            <Filter size={18} />
+            <span>Filters {(selectedCategory || filters.priceRange !== 'all' || filters.rating > 0) && "•"}</span>
+          </div>
+          <p className="results-count-text">
+            {filteredServices.length} {filteredServices.length === 1 ? 'Service' : 'Services'} Found
+          </p>
+        </div>
+
+        <div className="services-layout-wrapper">
+          {/* Main Content Area */}
+          <main className="services-results-main full-width">
+            <TopCategoryBar />
+
+            {/* Active Chips (Desktop Only) */}
+            <div className="active-chips-container desktop-only">
+              {selectedCategory && (
+                <div className="active-chip">
+                  Category: {selectedCategory.category}
+                  <X size={14} onClick={() => setSelectedCategory(null)} />
+                </div>
+              )}
+            </div>
+
+            {filteredServices.length > 0 ? (
+              <div className="services-results-container">
+                {/* Desktop View (Massive Cards) */}
+                <div className="massive-list desktop-only">
+                  {filteredServices.slice(0, visibleCount).map(service => (
+                    <div key={service._id} className="massive-section-wrap">
+                      <div className="massive-card">
+                        <div className="massive-card-content">
+                          <h3 className="massive-card-title">{service.serviceName}</h3>
+                          <div className="massive-card-rating">
+                            <Star size={16} className="star-icon" />
+                            <span>
+                              {service.ratingSummary?.averageRating || 0.0} ({service.ratingSummary?.totalRatings || 0} reviews)
+                            </span>
+                          </div>
+                          <div className="massive-card-price">
+                            ₹{service.discountedPrice || service.serviceCost} •
+                          </div>
+                          <ul className="massive-card-description">
+                            {(service.description?.split(',') || []).slice(0, 3).map((item, idx) => (
+                              <li key={idx}>{item.trim()}</li>
+                            ))}
+                          </ul>
+                          <div className="massive-card-link" onClick={() => handleServiceClick(service)}>
+                            View details
+                          </div>
+                        </div>
+                        <div className="massive-card-right">
+                          <div className="massive-card-image">
+                            {service.serviceImages?.[0] ? (
+                              <img src={service.serviceImages[0]} alt={service.serviceName} loading="lazy" />
+                            ) : (
+                              <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
+                                <Wrench size={40} />
+                              </div>
+                            )}
+                          </div>
+                          {isInCart && isInCart(service._id) ? (
+                            <div className="massive-cart-controls" onClick={(e) => e.stopPropagation()}>
+                              <div className="massive-quantity-container">
+                                <button
+                                  className="massive-qty-btn"
+                                  onClick={() => handleDecrementService(service)}
+                                  aria-label={`Decrease quantity for ${service.serviceName}`}
+                                >
+                                  -
+                                </button>
+                                <span className="massive-qty-value">{getServiceQuantity(service._id)}</span>
+                                <button
+                                  className="massive-qty-btn"
+                                  onClick={() => handleIncrementService(service)}
+                                  aria-label={`Increase quantity for ${service.serviceName}`}
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <button
+                                className="massive-add-btn massive-remove-btn"
+                                onClick={() => confirmAndRemoveService(service)}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="massive-add-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleIncrementService(service);
+                              }}
+                            >
+                              Add
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mobile View (Compact Cards) */}
+                <div className="compact-service-grid mobile-only">
+                  {filteredServices.slice(0, visibleCount).map(service => (
+                    <div
+                      key={service._id}
+                      className="compact-service-card"
+                      onClick={() => handleServiceClick(service)}
+                    >
+                      <div className="compact-image-box">
+                        {service.serviceImages?.[0] ? (
+                          <img src={service.serviceImages[0]} alt={service.serviceName} className="compact-img" />
+                        ) : (
+                          <Hammer size={18} />
+                        )}
+                      </div>
+                      <div className="compact-info">
+                        <h4 className="compact-name">{service.serviceName}</h4>
+                        {service.serviceCost && (
+                          <p className="compact-subtitle">₹{service.discountedPrice || service.serviceCost}</p>
+                        )}
+                      </div>
+                      <div className="compact-card-actions" onClick={(e) => e.stopPropagation()}>
+                        {isInCart && isInCart(service._id) ? (
+                          <>
+                            <div className="compact-quantity-container">
+                              <button
+                                className="compact-qty-btn"
+                                onClick={() => handleDecrementService(service)}
+                                aria-label={`Decrease quantity for ${service.serviceName}`}
+                              >
+                                -
+                              </button>
+                              <span className="compact-qty-value">{getServiceQuantity(service._id)}</span>
+                              <button
+                                className="compact-qty-btn"
+                                onClick={() => handleIncrementService(service)}
+                                aria-label={`Increase quantity for ${service.serviceName}`}
+                              >
+                                +
+                              </button>
+                            </div>
+                            <button
+                              className="compact-remove-btn"
+                              onClick={() => confirmAndRemoveService(service)}
+                            >
+                              Remove
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="compact-add-btn"
+                            onClick={() => handleIncrementService(service)}
+                          >
+                            Add
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Show More Button */}
+                {visibleCount < filteredServices.length && (
+                  <div className="load-more-container">
+                    <button
+                      className="load-more-btn"
+                      onClick={() => setVisibleCount(prev => prev + 8)}
+                    >
+                      Show More Services
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="no-services-message">
+                <Search size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px', opacity: 0.5 }} />
+                <h3>No matches found</h3>
+                <p>
+                  Try adjusting your filters or search query to find what you're looking for.
+                </p>
+                <button className="clear-search-btn" onClick={clearAllFilters}>
+                  Reset All Filters
+                </button>
+              </div>
+            )}
+          </main>
         </div>
       </div>
 
-      <div className="section-wrap">
-        {filteredServices.length > 0 ? (
-          <div className="services-results-container">
-            {/* Desktop View (Massive Cards) */}
-            <div className="massive-list desktop-only">
-              {filteredServices.map(service => (
-                <div key={service._id} className="massive-section-wrap">
-                  <div className="massive-card">
-                    <div className="massive-card-content">
-                      <h3 className="massive-card-title">{service.serviceName}</h3>
-                      <div className="massive-card-rating">
-                        <Star size={16} className="star-icon" />
-                        <span>
-                          {service.ratingSummary?.averageRating || 0.0} ({service.ratingSummary?.totalRatings || 0} reviews)
-                        </span>
-                      </div>
-                      <div className="massive-card-price">
-                        ₹{service.discountedPrice || service.serviceCost} •
-                      </div>
-                      <ul className="massive-card-description">
-                        {(service.description?.split(',') || []).slice(0, 3).map((item, idx) => (
-                          <li key={idx}>{item.trim()}</li>
-                        ))}
-                      </ul>
-                      <div className="massive-card-link" onClick={() => handleServiceClick(service)}>
-                        View details
-                      </div>
-                    </div>
-                    <div className="massive-card-right">
-                      <div className="massive-card-image">
-                        {service.serviceImages?.[0] ? (
-                          <img src={service.serviceImages[0]} alt={service.serviceName} />
-                        ) : (
-                          <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
-                            <Wrench size={40} />
-                          </div>
-                        )}
-                      </div>
-                      {isInCart && isInCart(service._id) ? (
-                        <div className="massive-cart-controls" onClick={(e) => e.stopPropagation()}>
-                          <div className="massive-quantity-container">
-                            <button
-                              className="massive-qty-btn"
-                              onClick={() => handleDecrementService(service)}
-                              aria-label={`Decrease quantity for ${service.serviceName}`}
-                            >
-                              -
-                            </button>
-                            <span className="massive-qty-value">{getServiceQuantity(service._id)}</span>
-                            <button
-                              className="massive-qty-btn"
-                              onClick={() => handleIncrementService(service)}
-                              aria-label={`Increase quantity for ${service.serviceName}`}
-                            >
-                              +
-                            </button>
-                          </div>
-                          <button
-                            className="massive-add-btn massive-remove-btn"
-                            onClick={() => confirmAndRemoveService(service)}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          className="massive-add-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleIncrementService(service);
-                          }}
-                        >
-                          Add
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+      {/* Mobile Filters Drawer */}
+      {showMobileFilters && (
+        <div className="filters-drawer-overlay" onClick={() => setShowMobileFilters(false)}>
+          <div className="filters-drawer-content mobile-filter-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header">
+              <h3>Filters</h3>
+              <button className="drawer-close" onClick={() => setShowMobileFilters(false)}>
+                <X size={24} />
+              </button>
             </div>
-
-            {/* Mobile View (Compact Cards) */}
-            <div className="compact-service-grid mobile-only">
-              {filteredServices.map(service => (
-                <div
-                  key={service._id}
-                  className="compact-service-card"
-                  onClick={() => handleServiceClick(service)}
-                >
-                  <div className="compact-image-box">
-                    {service.serviceImages?.[0] ? (
-                      <img src={service.serviceImages[0]} alt={service.serviceName} className="compact-img" />
-                    ) : (
-                      <Hammer size={18} />
-                    )}
-                  </div>
-                  <div className="compact-info">
-                    <h4 className="compact-name">{service.serviceName}</h4>
-                    {service.serviceCost && (
-                      <p className="compact-subtitle">₹{service.serviceCost}</p>
-                    )}
-                  </div>
-                  <div className="compact-card-actions" onClick={(e) => e.stopPropagation()}>
-                    {isInCart && isInCart(service._id) ? (
-                      <>
-                        <div className="compact-quantity-container">
-                          <button
-                            className="compact-qty-btn"
-                            onClick={() => handleDecrementService(service)}
-                            aria-label={`Decrease quantity for ${service.serviceName}`}
-                          >
-                            -
-                          </button>
-                          <span className="compact-qty-value">{getServiceQuantity(service._id)}</span>
-                          <button
-                            className="compact-qty-btn"
-                            onClick={() => handleIncrementService(service)}
-                            aria-label={`Increase quantity for ${service.serviceName}`}
-                          >
-                            +
-                          </button>
-                        </div>
-                        <button
-                          className="compact-remove-btn"
-                          onClick={() => confirmAndRemoveService(service)}
-                        >
-                          Remove
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="compact-add-btn"
-                        onClick={() => handleIncrementService(service)}
-                      >
-                        Add
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+            <div className="drawer-body">
+              <FilterContent />
             </div>
-          </div>
-        ) : (
-          <div className="no-services-message" style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <Search size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px', opacity: 0.5 }} />
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
-              {isSearching ? 'No matches found' : 'No services found'}
-            </h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-              {isSearching ? `No services match "${effectiveSearchQuery}"` : "This category is empty for now."}
-            </p>
-            {isSearching && (
+            <div className="mobile-filter-actions">
               <button
-                className="view-details-link"
-                style={{ marginTop: '16px' }}
+                className="clear-filters-btn"
+                style={{ flex: 1, marginTop: 0 }}
                 onClick={() => {
-                  setLocalSearchQuery('');
-                  onNavigate('services'); // This might clear global search if App handles it
+                  clearAllFilters();
+                  setShowMobileFilters(false);
                 }}
               >
-                Clear Search
+                Reset
               </button>
-            )}
+              <button
+                className="apply-filters-btn"
+                onClick={() => setShowMobileFilters(false)}
+              >
+                Show Results
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Custom Confirm Dialog */}
       {confirmDialog.open && (

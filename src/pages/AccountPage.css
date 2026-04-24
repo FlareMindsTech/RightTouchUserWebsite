@@ -398,22 +398,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 16px;
-  background-color: #f0fdf4;
-  color: #22c55e;
-  border: 1.5px dashed #22c55e;
-  border-radius: 16px;
+  gap: 12px;
+  padding: 18px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  color: #15803d;
+  border: 1.5px solid #bdf2d0;
+  border-radius: 20px; /* Match card radius */
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  margin-bottom: 24px;
-  transition: all 0.2s ease;
+  margin-bottom: 32px; /* More space before list starts */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.05);
 }
 
 .add-address-btn:hover {
-  background-color: #dcfce7;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
   transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.1);
+}
+
+.add-address-btn .add-icon {
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .address-list {
@@ -424,41 +433,58 @@
 
 .address-card {
   position: relative;
-  padding: 20px;
+  padding: 24px;
   border: 1.5px solid #f1f5f9;
-  border-radius: 20px;
-  background: white;
-  transition: all 0.2s ease;
+  border-radius: 24px;
+  background: #ffffff;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .address-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-color: #e2e8f0;
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.08);
 }
 
 .address-card.is-default {
   border-color: #22c55e;
   background-color: #f0fdf4;
+  box-shadow: 0 8px 16px -4px rgba(34, 197, 94, 0.1);
 }
 
 .address-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.header-left-group,
+.header-right-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-right-group {
+  gap: 6px;
 }
 
 .address-badge {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
+  padding: 6px 12px;
   background: #f1f5f9;
   color: #64748b;
   border-radius: 50px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .is-default .address-badge {
@@ -467,43 +493,56 @@
 }
 
 .default-tag {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #16a34a;
   display: flex;
   align-items: center;
   gap: 4px;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
 }
 
 .address-content {
-  padding-right: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .addr-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 4px 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .addr-text {
   font-size: 14px;
-  color: #64748b;
-  line-height: 1.5;
-  margin: 0 0 8px 0;
+  color: #475569;
+  line-height: 1.55;
+  margin: 0;
 }
 
 .addr-phone {
   font-size: 13px;
-  color: #94a3b8;
-  margin: 0;
-  font-weight: 500;
+  color: #64748b;
+  margin-top: 4px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .address-card-actions {
-  position: absolute;
-  top: 15px;
-  right: 15px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
 }
 
 .three-dots-btn {
@@ -648,36 +687,253 @@
   font-weight: 500;
 }
 
-/* Guest account prompt styles */
-.guest-account-prompt {
-  text-align: center;
-  padding: 2rem 1rem;
-  color: var(--text-secondary, #64748b);
+/* Address Flow & Location Picker Styles */
+.address-flow-container {
+  min-height: 400px;
 }
 
-.guest-account-prompt p {
-  margin-bottom: 1.5rem;
-  font-size: 1.1rem;
+.location-picker-step {
+  padding: 10px 0;
 }
 
-.login-prompt-btn {
-  background: var(--primary-gradient, linear-gradient(135deg, #22c55e, #16a34a));
-  color: white;
-  border: none;
-  padding: 0.75rem 2rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
+.search-input-wrapper {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  padding: 14px 14px 14px 44px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 15px;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.search-input-wrapper input:focus {
+  border-color: #22c55e;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+}
+
+.search-loader {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+.current-location-btn {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  justify-content: center;
-  margin: 0 auto;
+  gap: 12px;
+  padding: 14px;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 24px;
   transition: all 0.2s ease;
 }
 
-.login-prompt-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+.current-location-btn:hover {
+  background: #dcfce7;
+}
+
+.current-location-btn.locating {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.gps-icon {
+  font-size: 20px;
+}
+
+.location-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.suggestion-item:hover {
+  background: #f1f5f9;
+}
+
+.suggestion-item .item-icon {
+  margin-top: 2px;
+  font-size: 20px;
+  color: #94a3b8;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-display {
+  margin: 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.no-suggestions, .no-addresses-msg {
+  text-align: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.picker-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
+}
+
+.osm-attribution {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.osm-attribution b {
+  color: #64748b;
+}
+
+/* Step 2 Form Styles */
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.selected-location-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.preview-icon {
+  font-size: 20px;
+  color: #22c55e;
+  margin-top: 2px;
+}
+
+.preview-text {
+  flex: 1;
+}
+
+.preview-addr {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.change-loc-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #22c55e;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.change-loc-btn:hover {
+  text-decoration: underline;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn-simple {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.view-more-addr-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px;
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-more-addr-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+@media (max-width: 480px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }

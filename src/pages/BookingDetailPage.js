@@ -1,310 +1,72 @@
-import React from 'react';
-import {
-  MdOutlineChevronRight,
-  MdShare,
-  MdOutlineLocationOn,
-  MdAccessTime,
-  MdPerson,
-  MdPayment,
-  MdReceipt,
-  MdMessage,
-  MdCall,
-  MdStarOutline
+import React, { useState } from 'react';
+import { 
+  MdOutlineChevronRight, 
+  MdShare, 
+  MdOutlineLocationOn, 
+  MdAccessTime, 
+  MdMessage, 
+  MdPayment, 
+  MdCall, 
+  MdStarOutline,
+  MdVerified
 } from 'react-icons/md';
-import { useNavigate } from 'react-router-dom';
-import { createPaymentOrder, verifyPayment } from '../services/paymentService';
-import { addToCart } from '../services/cartService';
-import { createRating } from '../services/ratingService';
-import { safeStorage } from '../utils/browserUtils';
-import InvoiceModal from '../components/InvoiceModal';
 import './BookingDetailPage.css';
+import InvoiceModal from '../components/InvoiceModal';
 
-const loadRazorpaySDK = () => {
-  return new Promise((resolve) => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-};
+const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService, isPaidBooking, paymentLoading, canShowPayNow, handlePayButtonClick, canRate, ratingForm, setRatingForm, handleSubmitRating, ratingLoading, showInvoice, setShowInvoice }) => {
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
-const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
-  const navigate = useNavigate();
-  const [paymentLoading, setPaymentLoading] = React.useState(false);
-  const [showInvoice, setShowInvoice] = React.useState(false);
-  const [showRatingModal, setShowRatingModal] = React.useState(false);
-  const [ratingLoading, setRatingLoading] = React.useState(false);
-  const [ratingForm, setRatingForm] = React.useState({ rates: 0, comment: '' });
+  if (!booking) return null;
 
-  const handleAction = (action) => {};
-
-  const handlePayment = async () => {
-    if (paymentLoading) return;
-    setPaymentLoading(true);
-    try {
-      const res = await loadRazorpaySDK();
-      if (!res) {
-        showToast('Razorpay SDK failed to load. Are you online?');
-        setPaymentLoading(false);
-        return;
-      }
-
-      // Create Payment Order via backend
-      const orderRes = await createPaymentOrder({
-        bookingId: booking._id
-      });
-
-      if (!orderRes?.success) {
-        showToast(orderRes?.message || 'Failed to initialize payment');
-        setPaymentLoading(false);
-        return;
-      }
-
-      const orderData = orderRes.result || orderRes;
-      const user = currentUser || (() => {
-        try { return JSON.parse(safeStorage.getItem('currentUser') || '{}'); } catch { return {}; }
-      })();
-
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY || orderData.key || orderData.keyId,
-        amount: orderData.amount,
-        currency: orderData.currency || 'INR',
-        name: 'RightTouch Services',
-        description: `Payment for Booking ${details.id}`,
-        image: '/logo.png',
-        order_id: orderData.orderId || orderData.id,
-        handler: async function (paymentResponse) {
-          try {
-            const verification = await verifyPayment({
-              razorpay_payment_id: paymentResponse.razorpay_payment_id,
-              razorpay_order_id: paymentResponse.razorpay_order_id,
-              razorpay_signature: paymentResponse.razorpay_signature,
-              bookingId: booking._id
-            });
-
-            if (verification?.success) {
-              showToast('Payment successful!');
-              setTimeout(() => onBack(), 1200);
-            } else {
-              showToast('Payment verification failed');
-            }
-          } catch (err) {
-            console.error('Payment Verification error:', err);
-            showToast('Error verifying payment');
-          } finally {
-            setPaymentLoading(false);
-          }
-        },
-        prefill: {
-          name: user.name || `${user.fname || ''} ${user.lname || ''}`.trim() || 'Customer',
-          email: user.email || '',
-          contact: user.mobileNumber || user.phoneNumber || ''
-        },
-        theme: { color: '#2ecc71' },
-        modal: {
-          ondismiss: () => {
-            showToast('Payment cancelled. Your booking is saved.');
-            setPaymentLoading(false);
-          }
-        }
-      };
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
-
-    } catch (err) {
-      console.error(err);
-      showToast('Error launching payment');
-      setPaymentLoading(false);
-    }
+  const details = {
+    id: booking.bookingId || booking._id?.slice(-8).toUpperCase() || 'N/A',
+    serviceName: booking.itemId?.serviceName || booking.serviceName || 'Service Details',
+    status: booking.status || 'PENDING',
+    location: booking.address || 'Location not specified',
+    dateTime: booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Flexible',
+    professional: booking.technicianId?.name || 'Assigning Professional...',
+    professionalImage: booking.technicianId?.profileImage,
+    specialization: booking.technicianId?.category || 'Expert Technician',
+    rating: booking.technicianId?.averageRating || '4.8',
+    experience: booking.technicianId?.experience || '5+',
+    reviews: booking.technicianId?.totalReviews || '120',
+    amount: `₹${booking.totalAmount || 0}`,
+    bookingFee: `₹${booking.bookingFee || 0}`,
+    total: `₹${(booking.totalAmount || 0) + (booking.bookingFee || 0)}`,
+    paymentMethod: booking.paymentMethod || 'Online',
+    professionalMobile: booking.technicianId?.mobileNumber
   };
 
-  const getBookingDetails = () => {
-    // Dynamically build details from the booking prop with fallbacks
-    const serviceName = booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || booking?.service || 'Service Booking';
-    const addressInfo = booking?.addressSnapshot || booking?.addressId;
-    const location = addressInfo ? (addressInfo.addressLine || `${addressInfo.flat || ''}, ${addressInfo.area || ''}, ${addressInfo.city || ''}`.replace(/^[,\s]+|[,\s]+$/g, '')) : (booking?.address || 'Address not specified');
-    const price = booking?.baseAmount || booking?.serviceId?.serviceCost || booking?.totalPrice || booking?.cartId?.totalPrice || 0;
-    const platformFee = booking?.platformFee || booking?.bookingFee || booking?.commissionAmount || 0;
-    const totalAmount = parseInt(price) + parseInt(platformFee);
+  const paymentStatusUpper = (booking.paymentStatus || 'PENDING').toUpperCase();
 
-    const professionalName = booking?.technicianSnapshot?.name ||
-      (booking?.technicianId?.userId?.fname ? `${booking.technicianId.userId.fname} ${booking.technicianId.userId.lname || ''}`.trim() : null) ||
-      booking?.assignedTechnician?.name ||
-      (booking?.status === 'SEARCHING' ? 'Searching...' : 'Awaiting technician assignment');
+  const BookingStatusTracker = ({ status }) => {
+    const steps = [
+      { label: 'Booked', statuses: ['PENDING', 'SEARCHING'] },
+      { label: 'Assigned', statuses: ['ACCEPTED'] },
+      { label: 'Progress', statuses: ['IN PROGRESS'] },
+      { label: 'Done', statuses: ['COMPLETED'] }
+    ];
 
-    const professionalMobile = booking?.technicianSnapshot?.mobile ||
-      booking?.technicianId?.userId?.mobileNumber ||
-      'Not available';
+    const currentIdx = steps.findIndex(s => s.statuses.includes(status.toUpperCase()));
+    const finalIdx = status.toUpperCase() === 'COMPLETED' ? 3 : (currentIdx !== -1 ? currentIdx : 0);
 
-    const professionalImage = booking?.technicianSnapshot?.profileImage ||
-      booking?.technicianId?.profileImage ||
-      null;
-
-    const experience = booking?.technicianSnapshot?.experienceYears ||
-      booking?.technicianId?.experienceYears ||
-      0;
-
-    const specialization = booking?.technicianSnapshot?.specialization ||
-      booking?.technicianId?.specialization ||
-      'Technician';
-
-    const isOnline = booking?.technicianId?.availability?.isOnline || false;
-
-    const ratingValue = booking?.technicianSnapshot?.rating ||
-      booking?.technicianId?.rating?.avg ||
-      0;
-
-    const reviewCount = booking?.technicianSnapshot?.reviews ||
-      booking?.technicianId?.rating?.count ||
-      0;
-
-    return {
-      id: booking?._id ? `BKP${booking._id.substring(booking._id.length - 4).toUpperCase()}` : 'BKP000',
-      professional: professionalName,
-      professionalMobile: professionalMobile,
-      professionalImage: professionalImage,
-      experience: experience,
-      specialization: specialization,
-      isOnline: isOnline,
-      rating: ratingValue,
-      reviews: reviewCount,
-      location: location,
-      dateTime: booking?.scheduledAt ? new Date(booking.scheduledAt).toLocaleString() : (booking?.createdAt ? new Date(booking.createdAt).toLocaleString() : 'Date not fixed'),
-      amount: `₹${price}`,
-      paymentMethod: booking?.paymentProvider === 'razorpay' ? 'Online' : (booking?.paymentDetails?.method || booking?.paymentId ? 'Online' : 'Pending'),
-      bookingFee: `₹${platformFee}`,
-      total: `₹${totalAmount}`,
-      status: booking?.status || 'Pending',
-      serviceName: serviceName,
-      technicianId:
-        booking?.technicianId?._id ||
-        booking?.technicianSnapshot?._id ||
-        booking?.assignedTechnician?._id ||
-        null,
-      serviceId: booking?.serviceId?._id || booking?.serviceId || null,
-      productId: booking?.productId?._id || booking?.productId || null,
-      bookingType: booking?.serviceId ? 'service' : (booking?.productId ? 'product' : 'service'),
-      images: booking?.workImages?.beforeImage || booking?.workImages?.afterImage
-        ? [booking.workImages.beforeImage, booking.workImages.afterImage].filter(Boolean)
-        : []
-    };
-  };
-  const details = getBookingDetails();
-  const bookingStatusUpper = (booking?.status || '').toUpperCase();
-  const paymentStatusUpper = (booking?.paymentStatus || '').toUpperCase();
-  const isExpiredBooking = ['EXPIRED', 'CANCELLED'].includes(bookingStatusUpper);
-  const isCompletedBooking = bookingStatusUpper === 'COMPLETED';
-  const isPaidBooking = paymentStatusUpper === 'PAID';
-  const hasTechnician = Boolean(details.technicianId || booking?.technicianId);
-  const isService = details.bookingType === 'service';
-  const canRate = isService 
-    ? (hasTechnician && ['ACCEPTED', 'IN PROGRESS', 'COMPLETED'].includes(bookingStatusUpper))
-    : (isCompletedBooking);
-  const canShowPayNow = isService && isCompletedBooking && !isPaidBooking && !isExpiredBooking;
-
-  const handlePayButtonClick = () => {
-    if (paymentLoading) return;
-    if (canShowPayNow) {
-      handlePayment();
-      return;
-    }
-
-    if (isPaidBooking) {
-      showToast('Payment already completed for this booking');
-      return;
-    }
-
-    if (isExpiredBooking) {
-      showToast('Payment is disabled for expired or cancelled bookings');
-      return;
-    }
-
-    showToast('Pay option will be enabled once technician completes the work');
+    return (
+      <div className="booking-tracker-container">
+        <h4 style={{ margin: '0 0 15px 0', fontSize: '13px', fontWeight: '800', color: '#94a3b8' }}>BOOKING PROGRESS</h4>
+        <div className="status-timeline">
+          {steps.map((step, idx) => (
+            <div key={idx} className={`timeline-point ${idx === finalIdx ? 'active' : ''} ${idx < finalIdx ? 'completed' : ''}`}>
+              <div className="point-dot"></div>
+              <span className="point-label">{step.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
-  const handleRebook = async () => {
-    try {
-      const firstCartItem = booking?.cartId?.items?.[0] || null;
-      const itemId =
-        booking?.serviceId?._id ||
-        booking?.productId?._id ||
-        firstCartItem?.itemId?._id ||
-        firstCartItem?.item?._id ||
-        firstCartItem?.itemId ||
-        booking?.itemId?._id ||
-        booking?.itemId;
-
-      const itemType =
-        firstCartItem?.itemType ||
-        (booking?.serviceId ? 'service' : (booking?.productId ? 'product' : 'service'));
-
-      if (!itemId) {
-        showToast('Unable to rebook this item right now');
-        return;
-      }
-
-      const response = await addToCart({
-        itemId,
-        itemType,
-        quantity: 1
-      });
-
-      if (response?.success) {
-        showToast('Booking added to cart again');
-        navigate('/cart');
-      } else {
-        showToast(response?.message || 'Failed to add booking to cart');
-      }
-    } catch (error) {
-      console.error('Rebook failed:', error);
-      showToast('Error while booking again');
-    }
-  };
-
-  const handleSubmitRating = async (e) => {
-    e.preventDefault();
-    if (!canRate) {
-      showToast(isService ? 'Rating is available once technician accepts your booking' : 'Rating is available once product booking is completed');
-      return;
-    }
-    if (!ratingForm.rates) {
-      showToast('Please select a star rating');
-      return;
-    }
-
-    setRatingLoading(true);
-    try {
-      const isServiceType = details.bookingType.toLowerCase() === 'service';
-      const payload = {
-        bookingId: booking?._id,
-        bookingType: details.bookingType.toLowerCase(),
-        rates: ratingForm.rates,
-        comment: ratingForm.comment
-      };
-
-      if (isServiceType) {
-        payload.technicianId = details.technicianId;
-        payload.serviceId = details.serviceId;
-      } else {
-        payload.productId = details.productId;
-      }
-
-      const response = await createRating(payload);
-      if (response?.success) {
-        showToast('Rating submitted successfully');
-        setShowRatingModal(false);
-        setRatingForm({ rates: 0, comment: '' });
-      } else {
-        showToast(response?.message || 'Failed to submit rating');
-      }
-    } catch (error) {
-      console.error('Rating submit failed:', error);
-      showToast('Error submitting rating');
-    } finally {
-      setRatingLoading(false);
-    }
+  const handleRebook = () => {
+    if (handleAction) handleAction('Rebook', booking);
   };
 
   return (
@@ -312,240 +74,211 @@ const BookingDetailPage = ({ booking, onBack, showToast, currentUser }) => {
       {/* Header */}
       <div className="detail-header">
         <button className="back-btn" onClick={onBack}>
-          <MdOutlineChevronRight className="back-icon" />
+          <MdOutlineChevronRight className="back-icon" style={{ transform: 'rotate(180deg)' }} />
         </button>
-        <h2 className="detail-title">Booking Details</h2>
+        <h2 className="detail-title">{details.serviceName}</h2>
         <button className="share-btn" onClick={() => handleAction('Share')}>
           <MdShare className="share-icon" />
         </button>
       </div>
 
-      {/* Status Bar */}
-      <div className="status-bar">
-        <span className={`status-badge ${details.status.toLowerCase()}`}>{details.status}</span>
-        <span className="booking-id">ID: {details.id}</span>
-      </div>
+      {/* Progress Tracker */}
+      <BookingStatusTracker status={details.status} />
 
       {/* Professional Info */}
-      <div className="professional-section">
-        <div className="professional-info">
-          <div className="professional-avatar-container">
-            <div className="professional-avatar">
-              {details.professionalImage ? (
-                <img src={details.professionalImage} alt={details.professional} />
-              ) : (
-                details.professional ? details.professional.charAt(0) : '?'
-              )}
-            </div>
-            {booking?.technicianId && (
-              <span className={`online-status-dot ${details.isOnline ? 'online' : 'offline'}`}></span>
+      <div className="pro-profile-card-v2">
+        <div className="pro-header-main">
+          <div className="pro-avatar-v2">
+            {details.professionalImage ? (
+              <img src={details.professionalImage} alt={details.professional} loading="lazy" />
+            ) : (
+              <div style={{ width: '100%', height: '100%', background: '#22c55e', color: 'white', display: 'grid', placeItems: 'center', fontSize: '24px', fontWeight: '800' }}>
+                {details.professional ? details.professional.charAt(0) : '?'}
+              </div>
             )}
           </div>
-          <div className="professional-details">
-            <div className="professional-header">
+          <div className="pro-details-main">
+            <div className="pro-name-row">
               <h3>{details.professional}</h3>
-              {details.experience > 0 && (
-                <span className="experience-badge">{details.experience}y Exp</span>
-              )}
+              <div className="verified-badge-v2">
+                <MdVerified className="verified-icon" />
+                <span>Verified</span>
+              </div>
             </div>
-            <p className="specialization-text">{details.specialization}</p>
-            {details.professionalMobile && details.professionalMobile !== 'Not available' && (
-              <p className="mobile-text">
-                <MdCall style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                {details.professionalMobile}
-              </p>
-            )}
-            <div className="rating">
-              <span className="stars">{'★'.repeat(Math.round(details.rating) || 0)}</span>
-              <span className="rating-value">{details.rating}</span>
-              <span className="reviews">({details.reviews} reviews)</span>
-            </div>
+            <p className="pro-tagline">{details.specialization} • RightTouch Verified</p>
+          </div>
+        </div>
+
+        <div className="pro-stats-v2">
+          <div className="stat-v2">
+            <span className="label">Rating</span>
+            <span className="value">★ {details.rating}</span>
+          </div>
+          <div className="stat-v2">
+            <span className="label">Experience</span>
+            <span className="value">{details.experience} Years</span>
+          </div>
+          <div className="stat-v2">
+            <span className="label">Identity</span>
+            <span className="value" style={{ color: '#22c55e' }}>Verified</span>
           </div>
         </div>
       </div>
 
-      {/* Service Details */}
-      <div className="service-details-section">
-        <h3>Service Details</h3>
+      {/* Info Cards Grid */}
 
-        <div className="detail-item">
-          <MdOutlineLocationOn className="detail-icon" />
-          <div className="detail-content">
-            <span className="detail-label">Location</span>
-            <span className="detail-value">{details.location}</span>
-          </div>
-        </div>
-
-        <div className="detail-item">
-          <MdAccessTime className="detail-icon" />
-          <div className="detail-content">
-            <span className="detail-label">Date & Time</span>
-            <span className="detail-value">{details.dateTime}</span>
-          </div>
-        </div>
-
-        <div className="detail-item">
-          <MdPerson className="detail-icon" />
-          <div className="detail-content">
-            <span className="detail-label">Professional</span>
-            <span className="detail-value">{details.professional}</span>
-          </div>
-        </div>
-
-        {booking.faultProblem && (
-          <div className="detail-item">
-            <MdMessage className="detail-icon" />
-            <div className="detail-content">
-              <span className="detail-label">Reported Problem</span>
-              <span className="detail-value">{booking.faultProblem}</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Payment Details */}
-      <div className="payment-section">
-        <h3>Payment Details</h3>
-
-        <div className="payment-breakdown">
-          <div className="payment-row">
-            <span>Service Charge</span>
-            <span>{details.amount}</span>
-          </div>
-          <div className="payment-row">
-            <span>Booking Fee</span>
-            <span>{details.bookingFee}</span>
-          </div>
-          <div className="payment-row total">
-            <span>Total Amount</span>
-            <span>{details.total}</span>
-          </div>
-        </div>
-
-        <div className="payment-method">
-          <MdPayment className="payment-icon" />
-          {canShowPayNow
-            ? <span className="payment-pending-tag">Payment Pending</span>
-            : <span>{paymentStatusUpper === 'PAID' ? `Paid via ${details.paymentMethod}` : 'Payment not available'}</span>
-          }
-        </div>
-
-        {paymentStatusUpper === 'PAID' && (
-          <button className="invoice-btn" onClick={() => setShowInvoice(true)}>
-            <MdReceipt className="invoice-icon" />
-            View Invoice
-            <MdOutlineChevronRight className="arrow-icon" />
-          </button>
-        )}
-      </div>
-
-      {/* Work Images */}
-      {details.images && details.images.length > 0 && (
-        <div className="work-images-section">
-          <h3>Work Images</h3>
-          <div className="image-grid">
-            {details.images.map((image, index) => (
-              <div key={index} className="image-item">
-                <img src={image} alt={`Work ${index + 1}`} />
+      {/* Work Evidence Images */}
+      {booking.workImages && booking.workImages.length > 0 && (
+        <div className="info-card">
+          <h4>Work Photos</h4>
+          <div className="work-image-grid-v2">
+            {booking.workImages.map((img, i) => (
+              <div key={i} className="work-image-v2">
+                <img src={img} alt={`Work ${i+1}`} onClick={() => window.open(img, '_blank')} />
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="action-buttons">
-        <button
-          className={`action-btn primary pay-now-btn ${canShowPayNow && !paymentLoading ? 'enabled' : 'disabled-state'}`}
-          onClick={handlePayButtonClick}
-          aria-disabled={!canShowPayNow || paymentLoading}
-        >
-          <MdPayment className="action-icon" />
-          {paymentLoading
-            ? 'Processing...'
-            : (isPaidBooking ? 'Paid' : `Pay Now (${details.total})`)}
-        </button>
+      <div className="info-section-grid">
+        <div className="info-card">
+          <h4>Service Details</h4>
+          <div className="info-item-v2">
+            <div className="info-icon-v2"><MdOutlineLocationOn /></div>
+            <div className="info-content-v2">
+              <span className="info-label">Address</span>
+              <span className="info-value">{details.location}</span>
+            </div>
+          </div>
+          <div className="info-item-v2">
+            <div className="info-icon-v2"><MdAccessTime /></div>
+            <div className="info-content-v2">
+              <span className="info-label">Scheduled For</span>
+              <span className="info-value">{details.dateTime}</span>
+            </div>
+          </div>
+        </div>
 
-        <button className="action-btn secondary" onClick={() => {
+        {booking.faultProblem && (
+          <div className="info-card">
+            <h4>Problem Reported</h4>
+            <div className="info-item-v2">
+              <div className="info-icon-v2"><MdMessage /></div>
+              <div className="info-content-v2">
+                <span className="info-label">Customer Note</span>
+                <span className="info-value">{booking.faultProblem}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Payment Summary */}
+      <div className="payment-card-v2">
+        <h4 style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '800', marginBottom: '20px' }}>PAYMENT SUMMARY</h4>
+        <div className="payment-row-v2">
+          <span>Service Charges</span>
+          <span>{details.amount}</span>
+        </div>
+        <div className="payment-row-v2">
+          <span>Platform & Booking Fee</span>
+          <span>{details.bookingFee}</span>
+        </div>
+        <div className="payment-row-v2 total">
+          <span>Final Total</span>
+          <span>{details.total}</span>
+        </div>
+        
+        <div style={{ marginTop: '15px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <MdPayment />
+          {paymentStatusUpper === 'PAID' ? `Paid securely via ${details.paymentMethod}` : 'Payment yet to be initiated'}
+        </div>
+      </div>
+
+      {/* Work Images Section */}
+      {booking.images && booking.images.length > 0 && (
+        <div className="info-card" style={{ margin: '12px' }}>
+          <h4>Work Images</h4>
+          <div className="image-grid-v2">
+            {booking.images.map((img, idx) => (
+              <div key={idx} className="image-item-v2">
+                <img 
+                  src={img} 
+                  alt={`Work ${idx + 1}`} 
+                  onClick={() => window.open(img, '_blank')} 
+                  loading="lazy" 
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rebook Section */}
+      <div style={{ padding: '0 24px 120px' }}>
+        <button className="rebook-btn" onClick={handleRebook} style={{ width: '100%', padding: '16px', background: '#e2e8f0', color: '#1e293b', border: 'none', borderRadius: '16px', fontWeight: '800', cursor: 'pointer' }}>
+          Book Service Again
+        </button>
+      </div>
+
+      {/* Action Footer (Sticky) */}
+      <div className="action-footer-v2">
+        <button className="btn-v2 secondary" onClick={() => {
           if (details.professionalMobile && details.professionalMobile !== 'Not available') {
             window.location.href = `tel:${details.professionalMobile}`;
           } else {
-            showToast('Technician phone number not available yet');
+            showToast('Contact not available');
           }
         }}>
-          <MdCall className="action-icon" />
-          Call
+          <MdCall /> Call
         </button>
 
         <button
-          className={`action-btn primary ${canRate ? 'rate-enabled' : 'rate-disabled'}`}
-          onClick={() => {
-            if (!canRate) {
-              showToast(isService ? 'Rating option is available once technician accepts your booking' : 'Rating option is available once order is completed');
-              return;
-            }
-            setShowRatingModal(true);
-          }}
+          className={`btn-v2 primary ${canShowPayNow ? 'enabled' : 'disabled'}`}
+          onClick={handlePayButtonClick}
+          disabled={paymentLoading || (!canShowPayNow && !isPaidBooking)}
         >
-            <MdStarOutline className="action-icon" />
-            Rate & Review
-          </button>
-      </div>
+          <MdPayment />
+          {paymentLoading ? '...' : (isPaidBooking ? 'Invoice' : 'Pay Now')}
+        </button>
 
-      {/* Rebook Button */}
-      <div className="rebook-section">
-        <button className="rebook-btn" onClick={handleRebook}>
-          Book Again
+        <button
+          className="btn-v2 secondary"
+          onClick={() => canRate ? setShowRatingModal(true) : showToast('Rate after completion')}
+        >
+          <MdStarOutline /> Rate
         </button>
       </div>
 
       {showRatingModal && (
         <div className="rating-modal-overlay" onClick={() => !ratingLoading && setShowRatingModal(false)}>
           <div className="rating-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Rate Your {isService ? 'Service' : 'Product'}</h3>
-            <p className="rating-note">Optional feedback after {isService ? 'technician' : 'product'} acceptance.</p>
-
-            <form onSubmit={handleSubmitRating}>
-              <div className="star-row">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    type="button"
-                    key={star}
-                    className={`star-btn ${ratingForm.rates >= star ? 'active' : ''}`}
-                    onClick={() => setRatingForm((prev) => ({ ...prev, rates: star }))}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-
-              <textarea
-                value={ratingForm.comment}
-                onChange={(e) => setRatingForm((prev) => ({ ...prev, comment: e.target.value }))}
-                placeholder="Share your experience (optional)"
-                rows={4}
-              />
-
-              <div className="rating-actions">
-                <button type="button" className="rating-cancel" onClick={() => setShowRatingModal(false)} disabled={ratingLoading}>
-                  Cancel
+            <h3>Rate Your Experience</h3>
+            <div className="star-row">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button type="button" key={star} className={`star-btn ${ratingForm.rates >= star ? 'active' : ''}`} onClick={() => setRatingForm(prev => ({ ...prev, rates: star }))}>
+                  ★
                 </button>
-                <button type="submit" className="rating-submit" disabled={ratingLoading}>
-                  {ratingLoading ? 'Submitting...' : 'Submit Rating'}
-                </button>
-              </div>
-            </form>
+              ))}
+            </div>
+            <textarea value={ratingForm.comment} onChange={(e) => setRatingForm(prev => ({ ...prev, comment: e.target.value }))} placeholder="How was the service?" rows={4} />
+            <div className="rating-actions">
+              <button className="rating-submit" onClick={handleSubmitRating} disabled={ratingLoading}>Submit Review</button>
+            </div>
           </div>
         </div>
       )}
 
-      <InvoiceModal
-        isOpen={showInvoice}
-        onClose={() => setShowInvoice(false)}
-        booking={booking}
-        details={details}
-        paymentStatusUpper={paymentStatusUpper}
-      />
+      {showInvoice && (
+        <InvoiceModal
+          isOpen={showInvoice}
+          onClose={() => setShowInvoice(false)}
+          booking={booking}
+          details={details}
+          paymentStatusUpper={paymentStatusUpper}
+        />
+      )}
     </section>
   );
 };
