@@ -33,16 +33,13 @@ export const apiClient = async (endpoint, options = {}) => {
 
       // Handle 401 Unauthorized - clear token if invalid, expired, or account not found
       if (response.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("currentUser");
-        localStorage.removeItem("user");
-        console.warn("[Auth] Token cleared due to 401 Unauthorized");
-        window.dispatchEvent(new Event('userLoggedOut'));
-        
-        // Only reload if we were previously logged in to prevent reload loops
-        if (validToken && !url.includes('/login') && !url.includes('/signup') && !url.includes('/verify-otp')) {
-          // Instead of a forced reload which abruptly stops UX, let event listeners handle the UI update.
-          // The error will still be thrown below so the specific action can handle it (e.g. show a toast).
+        // Only clear if we actually had a token (indicates it's genuinely expired/invalid)
+        if (validToken) {
+          console.warn("[Auth] Token appears expired or invalid (401). Clearing session.");
+          localStorage.removeItem("token");
+          localStorage.removeItem("currentUser");
+          localStorage.removeItem("user");
+          window.dispatchEvent(new Event('userLoggedOut'));
         }
       }
 

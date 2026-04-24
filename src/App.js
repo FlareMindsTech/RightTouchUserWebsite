@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
-import './styles/gmh-cart-pill.css';
 import { safeStorage } from './utils/browserUtils';
 // Import components
 import Navbar from './components/Navbar';
@@ -42,7 +41,6 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [cartItems, setCartItems] = useState([]);
-  const [toasts, setToasts] = useState([]);
 
   // Auth states
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -72,6 +70,32 @@ function App() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
+
+  const formatCartItem = useCallback((cartItem) => {
+    const detail = cartItem.item || {};
+    return {
+      ...cartItem,
+      name: detail.productName || detail.serviceName || 'Unknown Item',
+      price: detail.discountedPrice || detail.serviceCost || detail.productPrice || detail.estimatedPriceFrom || 0,
+      id: cartItem._id || cartItem.id, // Backend cart item ID
+      originalId: cartItem.itemId?._id || cartItem.itemId || cartItem.originalId, // Original Product/Service ID
+      itemType: cartItem.itemType,
+      image: detail.productImages?.[0] || detail.serviceImages?.[0]
+    };
+  }, []);
+
+  const fetchCart = useCallback(async () => {
+    try {
+      const response = await getMyCart();
+      if (response?.success && response.result) {
+        // The backend returns an array of cart items directly in response.result
+        const items = Array.isArray(response.result) ? response.result : (response.result.items || []);
+        setCartItems(items.map(formatCartItem));
+      }
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+    }
+  }, [formatCartItem]);
 
   // Check for user login on mount
   useEffect(() => {
@@ -157,32 +181,7 @@ function App() {
       window.removeEventListener('userLoggedOut', handleLogoutEvent);
       window.removeEventListener('userProfileUpdated', handleProfileUpdateEvent);
     };
-  }, []);
-
-  const fetchCart = async () => {
-    try {
-      const response = await getMyCart();
-      if (response?.success && response.result) {
-        // The backend returns an array of cart items directly in response.result
-        const items = Array.isArray(response.result) ? response.result : (response.result.items || []);
-
-        setCartItems(items.map(cartItem => {
-          const detail = cartItem.item || {};
-          return {
-            ...cartItem,
-            name: detail.productName || detail.serviceName || 'Unknown Item',
-            price: detail.discountedPrice || detail.serviceCost || detail.productPrice || detail.estimatedPriceFrom || 0,
-            id: cartItem._id, // Backend cart item ID
-            originalId: cartItem.itemId, // Original Product/Service ID
-            itemType: cartItem.itemType,
-            image: detail.productImages?.[0] || detail.serviceImages?.[0]
-          };
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to fetch cart:', error);
-    }
-  };
+  }, [fetchCart]);
 
   const handleNavigate = useCallback((page, element = null) => {
     // If element is a string, treat it as service type
@@ -216,13 +215,25 @@ function App() {
         itemType: itemData.itemType,
         quantity: itemData.quantity || 1
       };
-      console.log("[App.js] addToCart payload:", payload);
 
       const response = await apiAddToCart(payload);
 
-      if (response?.success) {
+      if (response?.success && response.result) {
         showToast(`Item added to cart`);
-        fetchCart();
+        
+        // Update local state without full refresh
+        const newItem = formatCartItem(response.result);
+        setCartItems(prev => {
+          const exists = prev.findIndex(item => 
+            (item.originalId || item.itemId?._id) === (newItem.originalId || newItem.itemId?._id)
+          );
+          if (exists !== -1) {
+            const updated = [...prev];
+            updated[exists] = newItem;
+            return updated;
+          }
+          return [...prev, newItem];
+        });
       } else {
         showToast(response?.message || 'Failed to add to cart');
       }
@@ -359,21 +370,18 @@ function App() {
       {/* Global Mobile Header - shows on all pages */}
       <div className="global-mobile-header mobile-only">
         <div className="gmh-left">
-          {currentPage !== 'home' && (
-            <img src={logo} alt="RightTouch" className="gmh-logo gmh-logo-mini" />
-          )}
-          {['bookings', 'cart', 'checkout', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) ? (
-            <h1 className="gmh-title">{currentPage.charAt(0).toUpperCase() + currentPage.slice(1).replace('-', ' ')}</h1>
-          ) : currentPage === 'home' ? (
+          {currentPage === 'home' ? (
             <img src={logo} alt="RightTouch" className="gmh-logo" />
-          ) : null}
+          ) : (
+            <>
+              <img src={logo} alt="RightTouch" className="gmh-logo gmh-logo-mini" />
+              {/* Only show title for non-redundant pages on mobile */}
+              {!['account', 'services'].includes(currentPage) && (
+                <h1 className="gmh-title">{currentPage.charAt(0).toUpperCase() + currentPage.slice(1).replace('-', ' ')}</h1>
+              )}
+            </>
+          )}
         </div>
-        {cartTotalQuantity > 0 && !['cart', 'checkout'].includes(currentPage) && (
-          <button className="gmh-cart-pill" onClick={handleCartClick}>
-            <MdShoppingCart size={14} />
-            <span>{cartTotalQuantity} {cartTotalQuantity === 1 ? 'item' : 'items'} in cart</span>
-          </button>
-        )}
         <div className="gmh-right">
 
           {!['bookings', 'cart', 'checkout', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) && (
@@ -540,7 +548,10 @@ function App() {
         </Routes>
       </main>
 
-      <Footer />
+      <Footer 
+        currentUser={currentUser} 
+        onLoginClick={() => setShowLoginDialog(true)} 
+      />
 
       <BottomNav currentPage={currentPage} onNavigate={handleNavigate} currentUser={currentUser} />
 

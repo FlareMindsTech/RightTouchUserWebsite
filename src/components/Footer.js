@@ -4,7 +4,15 @@ import { Facebook, Twitter, Instagram, Mail, Phone, MapPin, Linkedin } from 'luc
 // import logo from '../assets/logo.png';
 import './Footer.css';
 
-const Footer = () => {
+const Footer = ({ currentUser, onLoginClick }) => {
+    const handleRestrictedLink = (e, path) => {
+        if (!currentUser) {
+            e.preventDefault();
+            onLoginClick?.();
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll up to show dialog
+        }
+    };
+
     return (
         <footer className="footer">
             <div className="footer-main">
@@ -30,10 +38,10 @@ const Footer = () => {
                         <div className="footer-col">
                             <h4>Our Services</h4>
                             <ul>
-                                <li><Link to="/services/ac-repair">AC Repair & Service</Link></li>
-                                <li><Link to="/services/plumbing">Plumbing Solutions</Link></li>
-                                <li><Link to="/services/electrical">Electrical Services</Link></li>
-                                <li><Link to="/services/cleaning">Home Cleaning</Link></li>
+                                <li><Link to="/services">AC Repair & Service</Link></li>
+                                <li><Link to="/services">Plumbing Solutions</Link></li>
+                                <li><Link to="/services">Electrical Services</Link></li>
+                                <li><Link to="/services">Home Cleaning</Link></li>
                                 <li><Link to="/services">View All Services</Link></li>
                             </ul>
                         </div>
@@ -43,10 +51,31 @@ const Footer = () => {
                             <h4>Quick Links</h4>
                             <ul>
                                 <li><Link to="/about">About RightTouch</Link></li>
+                                {currentUser && (
+                                    <>
+                                        <li><Link to="/bookings">My Bookings</Link></li>
+                                        <li>
+                                            <Link 
+                                                to="/account?edit=address" 
+                                                onClick={(e) => handleRestrictedLink(e, '/account?edit=address')}
+                                            >
+                                                My Addresses
+                                            </Link>
+                                        </li>
+                                    </>
+                                )}
+                                {!currentUser && (
+                                    <li>
+                                        <Link 
+                                            to="/bookings" 
+                                            onClick={(e) => handleRestrictedLink(e, '/bookings')}
+                                        >
+                                            Track Bookings
+                                        </Link>
+                                    </li>
+                                )}
                                 <li><Link to="/contact">Contact Support</Link></li>
-                                <li><Link to="/bookings">Track Bookings</Link></li>
                                 <li><Link to="/privacy-policy">Privacy Policy</Link></li>
-                                <li><Link to="/terms">Terms & Conditions</Link></li>
                             </ul>
                         </div>
 

@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   MdOutlineChevronRight,
-  MdHelpOutline,
   MdSearch,
   MdShoppingCart,
   MdPayment
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/logo.png';
 import BookingDetailPage from './BookingDetailPage';
 import { getCustomerBookings, getBookings } from '../services/bookingService';
 import { safeParseDate } from '../utils/browserUtils';
@@ -20,6 +18,8 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   const [isLoading, setIsLoading] = useState(false);
   const [bookingsHistory, setBookingsHistory] = useState([]);
   const [activeBookingsList, setActiveBookingsList] = useState([]);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [activeHistoryFilter, setActiveHistoryFilter] = useState('ALL'); // 'ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'PAID', 'UNPAID'
   const fetchedRef = useRef(false);
 
   const handleBack = () => {
@@ -36,9 +36,6 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     setSelectedBooking(booking);
   };
 
-  const handleCartClick = () => {
-    navigate('/cart');
-  };
 
   const fetchMyBookings = useCallback(async () => {
     try {
@@ -111,6 +108,31 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     }
   }, [isActive, fetchMyBookings]);
 
+  // Derived filtered history
+  const filteredHistory = bookingsHistory.filter(booking => {
+    const status = (booking.status || 'PENDING').toUpperCase();
+    const paymentStatus = (booking?.paymentStatus || '').toUpperCase();
+
+    // Consolidated Filter Logic
+    if (activeHistoryFilter !== 'ALL') {
+      if (['PAID', 'UNPAID'].includes(activeHistoryFilter)) {
+        if (paymentStatus !== activeHistoryFilter) return false;
+      } else {
+        if (status !== activeHistoryFilter) return false;
+      }
+    }
+
+    // 3. Search Query
+    if (historySearchQuery.trim()) {
+      const query = historySearchQuery.toLowerCase();
+      const serviceName = (booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || '').toLowerCase();
+      const bookingId = (booking._id || '').toLowerCase();
+      return serviceName.includes(query) || bookingId.includes(query);
+    }
+
+    return true;
+  });
+
   // If a booking is selected, show the detail page
   if (selectedBooking) {
     return (
@@ -159,9 +181,11 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
             <div className={`status-badge-vibrant ${getStatusClass(status)}`}>
               {status}
             </div>
-            <div className={`payment-status-badge ${paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
-              {paymentLabel}
-            </div>
+            {status !== 'EXPIRED' && status !== 'CANCELLED' && (
+              <div className={`payment-status-badge ${paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
+                {paymentLabel}
+              </div>
+            )}
           </div>
         </div>
 
@@ -242,15 +266,52 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                 </div>
               )
             ) : (
-              bookingsHistory.length > 0 ? (
-                bookingsHistory.map(booking => renderBookingCard(booking))
-              ) : (
-                <div className="empty-state-premium">
-                  <div className="empty-icon-wrapper">⌛</div>
-                  <h3>No history found</h3>
-                  <p>Your past bookings will appear here.</p>
+              <>
+                <div className="history-filters-premium">
+                  <div className="history-search-wrapper">
+                    <MdSearch className="search-icon-dim" />
+                    <input
+                      type="text"
+                      placeholder="Search by service or ID..."
+                      value={historySearchQuery}
+                      onChange={(e) => setHistorySearchQuery(e.target.value)}
+                      className="history-search-input"
+                    />
+                  </div>
+                  <div className="status-filter-pills-container">
+                    <div className="status-filter-pills">
+                      {['ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'PAID', 'UNPAID'].map(filter => (
+                        <button
+                          key={filter}
+                          className={`filter-pill ${activeHistoryFilter === filter ? 'active' : ''}`}
+                          onClick={() => setActiveHistoryFilter(filter)}
+                        >
+                          {filter}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              )
+
+                {filteredHistory.length > 0 ? (
+                  filteredHistory.map(booking => renderBookingCard(booking))
+                ) : (
+                  <div className="empty-state-premium">
+                    <div className="empty-icon-wrapper">⌛</div>
+                    <h3>No bookings found</h3>
+                    <p>Try adjusting your search or filters.</p>
+                    {(historySearchQuery || activeHistoryFilter !== 'ALL') && (
+                      <button 
+                        className="view-details-link" 
+                        style={{ marginTop: '12px', background: 'none', border: 'none', color: 'var(--green)', fontWeight: '700', cursor: 'pointer' }}
+                        onClick={() => { setHistorySearchQuery(''); setActiveHistoryFilter('ALL'); }}
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

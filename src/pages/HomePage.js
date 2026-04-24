@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wind,
@@ -12,8 +12,6 @@ import {
   CircleDollarSign,
   RotateCcw,
 } from 'lucide-react';
-import { getAllCategories } from '../services/categoryService';
-import { getAllServices } from '../services/serviceService';
 
 // --- Static Data ---
 
@@ -39,6 +37,7 @@ const CategoryIcon = ({ category }) => {
         src={category.image}
         alt={category.category}
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        loading="lazy"
       />
     );
   }
@@ -213,15 +212,20 @@ const HomePage = ({
 
       {/* Show search results if searching */}
       {isSearching ? (
-        <div className="section-wrap">
-          <h2 className="section-title">Search <span className="accent">Results</span></h2>
+        <div className="section-wrap search-results-section">
+          <div className="search-results-header">
+            <h2>Search <span className="accent">Results</span></h2>
+            <div className="search-results-count">
+              Found {filteredServiceCategories.length + filteredProductCategories.length + filteredServices.length} items matching your search
+            </div>
+          </div>
 
           {/* Filtered Service Categories */}
           {filteredServiceCategories.length > 0 && (
-            <div className="section-wrap" style={{ paddingTop: 0 }}>
-              <h3 className="section-title" style={{ fontSize: '14px' }}>Service Categories</h3>
+            <div className="section-wrap" style={{ paddingTop: 0, marginBottom: '32px' }}>
+              <h3 className="search-sub-title">Service Categories</h3>
               <div className="category-grid">
-                {filteredServiceCategories.slice(0, 8).map(cat => (
+                {filteredServiceCategories.map(cat => (
                   <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'service')}>
                     <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
                       <CategoryIcon category={cat} />
@@ -235,10 +239,10 @@ const HomePage = ({
 
           {/* Filtered Product Categories */}
           {filteredProductCategories.length > 0 && (
-            <div className="section-wrap" style={{ paddingTop: 0 }}>
-              <h3 className="section-title" style={{ fontSize: '14px' }}>Product Categories</h3>
+            <div className="section-wrap" style={{ paddingTop: 0, marginBottom: '32px' }}>
+              <h3 className="search-sub-title">Product Categories</h3>
               <div className="category-grid">
-                {filteredProductCategories.slice(0, 8).map(cat => (
+                {filteredProductCategories.map(cat => (
                   <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'product')}>
                     <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
                       <CategoryIcon category={cat} />
@@ -253,20 +257,28 @@ const HomePage = ({
           {/* Filtered Services */}
           {filteredServices.length > 0 && (
             <div className="section-wrap" style={{ paddingTop: 0 }}>
-              <h3 className="section-title" style={{ fontSize: '14px' }}>Services</h3>
-              <div className="carousel-track">
-                {filteredServices.slice(0, 10).map(service => (
-                  <div key={service._id} className="appliance-card" onClick={() => handleServiceClick(service)}>
-                    <div className="appliance-img-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green-dark)' }}>
+              <h3 className="search-sub-title">Services</h3>
+              <div className="services-grid">
+                {filteredServices.map(service => (
+                    <div key={service._id} className="search-service-card" onClick={() => handleServiceClick(service)}>
+                    <div className="search-service-img">
                       {service.serviceImages?.[0] ? (
-                        <img src={service.serviceImages[0]} alt={service.serviceName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        <img src={service.serviceImages[0]} alt={service.serviceName} />
                       ) : (
-                        <Wrench size={32} />
+                        <div style={{ color: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Wrench size={32} />
+                        </div>
                       )}
                     </div>
-                    <span style={{ fontSize: '12px', textAlign: 'center', display: 'block', marginTop: '8px', fontWeight: '600' }}>
-                      {service.serviceName}
-                    </span>
+                    <div className="search-service-info">
+                      <h4 className="search-service-name">{service.serviceName}</h4>
+                      <div className="search-service-price-block">
+                        <span className="search-service-price">₹{service.discountedPrice || service.serviceCost}</span>
+                        {service.serviceCost > (service.discountedPrice || 0) && (
+                          <span className="search-service-old-price">₹{service.serviceCost}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -275,10 +287,19 @@ const HomePage = ({
 
           {/* No results found */}
           {!hasSearchResults && !loading && (
-            <div className="no-results" style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <Search size={48} style={{ color: '#ccc', marginBottom: '16px' }} />
-              <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>No results found</h3>
-              <p style={{ fontSize: '14px', color: '#666' }}>Try different keywords or browse our categories</p>
+            <div className="no-results" style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)', border: '1px dashed var(--border)' }}>
+              <div style={{ width: '80px', height: '80px', background: 'var(--green-bg)', borderRadius: '50%', display: 'grid', placeItems: 'center', margin: '0 auto 20px' }}>
+                <Search size={40} style={{ color: 'var(--green)' }} />
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '10px' }}>No matches found</h3>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '300px', margin: '0 auto' }}> We couldn't find any services or categories matching "<strong>{searchQuery}</strong>"</p>
+              <button 
+                className="btn-hero" 
+                style={{ marginTop: '24px', height: '44px', padding: '0 30px' }}
+                onClick={() => navigate('/services')}
+              >
+                Browse All Services
+              </button>
             </div>
           )}
         </div>
@@ -375,7 +396,7 @@ const HomePage = ({
           </div>
 
           {/* Why Choose Us */}
-          <div className="section-wrap desktop-only">
+          <div className="section-wrap">
             <h2 className="section-title">Why Choose RightTouch?</h2>
             <div className="why-grid">
               {WHY_CHOOSE_US.map(item => (

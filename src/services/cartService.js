@@ -26,3 +26,12 @@ export const checkout = (data) =>
     method: "POST",
     body: JSON.stringify(data)
   });
+
+export const getAvailableSlots = () =>
+  apiClient(ENDPOINTS.CART.GET_SLOTS);
+
+export const setSchedule = (data) =>
+  apiClient(ENDPOINTS.CART.SET_SCHEDULE, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });

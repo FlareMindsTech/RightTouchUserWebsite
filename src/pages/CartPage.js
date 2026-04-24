@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   MdOutlineLocationOn,
   MdEdit,
@@ -7,11 +7,11 @@ import {
   MdClose,
   MdMyLocation,
   MdArrowBack,
-  MdPlace
+  MdPlace,
+  MdCheck
 } from 'react-icons/md';
-import { createAddress, getMyAddresses, searchAddress, reverseAddress, updateAddress } from '../services/addressService';
-import { checkout, getMyCart } from '../services/cartService';
-import { loadRazorpayScript, createPaymentOrder, verifyPayment } from '../services/paymentService';
+import { createAddress, getMyAddresses, searchAddress, updateAddress } from '../services/addressService';
+import { checkout, getMyCart, getAvailableSlots, setSchedule } from '../services/cartService';
 import { useNavigate } from 'react-router-dom';
 import './CartPage.css';
 
@@ -60,6 +60,100 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : '',
     phone: currentUser?.mobileNumber || currentUser?.identifier || ''
   });
+
+  // Schedule state
+  const [scheduledItemId, setScheduledItemId] = useState(null);
+  const [slotsData, setSlotsData] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [faultReason, setFaultReason] = useState('');
+  const [isInstant, setIsInstant] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+
+  const faultSections = [
+    {
+      title: "Most Common Issues",
+      reasons: [
+        "Unit not turning on",
+        "Error code on display",
+        "Abnormal noise or smell",
+        "Frequent tripping/shorts"
+      ]
+    },
+    {
+      title: "Solar & Battery Issues",
+      reasons: [
+        "Battery not charging properly",
+        "Low solar output efficiency",
+        "Inverter erratic operation",
+        "Backup duration is low"
+      ]
+    }
+  ];
+
+
+  const fetchSlots = useCallback(async () => {
+    setLoadingSlots(true);
+    try {
+      const response = await getAvailableSlots();
+      if (response?.success && response?.result) {
+        setSlotsData(response.result);
+        if (response.result.schedule?.days?.length > 0 && !selectedDay) {
+          setSelectedDay(response.result.schedule.days[0]);
+        }
+        if (response.result.schedule?.timeSlots?.length > 0 && !selectedTime) {
+          setSelectedTime(response.result.schedule.timeSlots[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch slots:', error);
+      showToast('Could not fetch available slots');
+    } finally {
+      setLoadingSlots(false);
+    }
+  }, [selectedDay, selectedTime, showToast]);
+
+  const handleSaveSchedule = async () => {
+    if (!isInstant && (!selectedDay || !selectedTime)) {
+      showToast('Please select a date and time');
+      return;
+    }
+
+    setIsSavingSchedule(true);
+    try {
+      const payload = {
+        itemId: scheduledItemId,
+        faultProblem: faultReason,
+        scheduledDate: isInstant ? null : selectedDay.fullDate,
+        scheduledTime: isInstant ? null : selectedTime.value
+      };
+      const response = await setSchedule(payload);
+
+      if (response?.success) {
+        showToast('Schedule and fault updated!');
+        await fetchCart();
+        setScheduledItemId(null);
+      } else {
+        showToast(response?.message || 'Failed to update schedule');
+      }
+    } catch (error) {
+      console.error('Failed to set schedule:', error);
+      showToast('Error saving schedule');
+    } finally {
+      setIsSavingSchedule(false);
+    }
+  };
+
+  const openScheduleModal = (item) => {
+    setScheduledItemId(item.originalId);
+    setFaultReason(item.faultProblem || '');
+    setIsInstant(!item.scheduledAt);
+    
+    // If it's already scheduled, try to pre-select the day/time (optional complexity)
+    // For now, simple clear or keep current if valid
+    fetchSlots();
+  };
 
   const mapAddressToSelection = useCallback((addr) => {
     let displayAddress = addr?.addressLine || addr?.address || '';
@@ -387,7 +481,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     return getSubtotal() + getTax() + getTipAmount();
   };
 
-  const totalAmount = getTotal();
 
   const startCheckout = async () => {
     if (!addressForm.id) {
@@ -398,6 +491,20 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
     const isCartValid = await validateCartBeforeCheckout();
     if (!isCartValid) return;
+
+    // Check for past-dated schedules
+    const now = new Date();
+    const pastDatedItems = cartItems.filter(item => {
+      if (!item.scheduledAt) return false;
+      const scheduledDate = new Date(item.scheduledAt);
+      return scheduledDate < now;
+    });
+
+    if (pastDatedItems.length > 0) {
+      showToast(`Some items have past scheduled dates. Please update schedule for: ${pastDatedItems.map(i => i.name).join(', ')}`);
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -612,11 +719,26 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                     <div className="cart-item-middle">
                       <h4 className="cart-item-name">{item.name}</h4>
                       <span className="service-badge">{item.itemType}</span>
-                      <div className="service-duration">
-                        <MdAccessTime className="duration-icon" />
-                        <span>{item.itemId?.serviceDuration || '1-2hr'}</span>
-                      </div>
                       <p className="cart-item-price">₹{item.price}</p>
+                      
+                      {/* Schedule Info for Service */}
+                      {(item.itemType === 'service' || item.itemId?.category === 'service') && (
+                        <div className="item-schedule-info">
+                          <button 
+                            className="set-schedule-btn"
+                            onClick={() => openScheduleModal(item)}
+                          >
+                            <MdAccessTime className="btn-icon" />
+                            {item.scheduledAt ? 'Edit Schedule' : 'Set Schedule & Fault'}
+                          </button>
+                          {item.scheduledAt && (
+                            <div className="scheduled-details-mini">
+                              <span className="mini-text">📅 {new Date(item.scheduledAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} at {new Date(item.scheduledAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                              {item.faultProblem && <span className="mini-text fault-mini-text">🛠️ {item.faultProblem}</span>}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="cart-item-right">
                       <div className="quantity-container-cart">
@@ -663,6 +785,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           </div>
         )}
 
+
         {/* Contact Edit Popup */}
         {showContactPopup && (
           <div className="address-popup-overlay" onClick={() => setShowContactPopup(false)}>
@@ -698,6 +821,120 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                     setShowContactPopup(false);
                   }}>
                     Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Schedule Popup */}
+        {scheduledItemId && (
+          <div className="address-popup-overlay" onClick={() => setScheduledItemId(null)}>
+            <div className="address-popup schedule-popup" onClick={(e) => e.stopPropagation()}>
+              <button className="address-popup-close" onClick={() => setScheduledItemId(null)}>
+                <MdClose />
+              </button>
+              <h3 className="address-popup-heading">Schedule Your Service</h3>
+              
+              <div className="schedule-form-container">
+                {/* Instant vs Scheduled */}
+                <div className="booking-type-toggle">
+                  <button 
+                    className={`toggle-btn ${isInstant ? 'active' : ''}`}
+                    onClick={() => setIsInstant(true)}
+                  >
+                    Instant (In 30 mins)
+                  </button>
+                  <button 
+                    className={`toggle-btn ${!isInstant ? 'active' : ''}`}
+                    onClick={() => setIsInstant(false)}
+                  >
+                    Schedule for Later
+                  </button>
+                </div>
+
+                {!isInstant && (
+                  <>
+                    {loadingSlots ? (
+                      <div className="slots-loading">Loading slots...</div>
+                    ) : (
+                      <>
+                        {/* Days Selection */}
+                        <div className="days-selection">
+                          <label className="section-label">Select Day</label>
+                          <div className="days-grid">
+                            {slotsData?.schedule?.days?.map((day, idx) => (
+                              <button
+                                key={idx}
+                                className={`day-card ${selectedDay?.fullDate === day.fullDate ? 'active' : ''}`}
+                                onClick={() => setSelectedDay(day)}
+                              >
+                                <span className="day-name">{day.dayName}</span>
+                                <span className="day-date">{day.date} {day.month}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Time Slots Selection */}
+                        <div className="time-slots-selection">
+                          <label className="section-label">Select Time Slot</label>
+                          <div className="slots-grid">
+                            {slotsData?.schedule?.timeSlots?.map((slot, idx) => (
+                              <button
+                                key={idx}
+                                className={`slot-pill ${selectedTime?.value === slot.value ? 'active' : ''}`}
+                                onClick={() => setSelectedTime(slot)}
+                              >
+                                {slot.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* Fault Reason Sections */}
+                <div className="fault-reason-input">
+                  <label className="section-label">Describe the Problem (Optional)</label>
+                  
+                  {faultSections.map((section, sIdx) => (
+                    <div key={sIdx} className="fault-section-group">
+                      <h5 className="fault-section-title">{section.title}</h5>
+                      <div className="fault-reasons-chips">
+                        {section.reasons.map((reason, idx) => (
+                          <button
+                            key={idx}
+                            className={`reason-chip ${faultReason === reason ? 'active' : ''}`}
+                            onClick={() => setFaultReason(reason)}
+                          >
+                            <span className="reason-text">{reason}</span>
+                            {faultReason === reason && <div className="active-tick"><MdCheck /></div>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <textarea
+                    placeholder="Or describe the issue specifically..."
+                    value={faultReason}
+                    onChange={(e) => setFaultReason(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="address-popup-buttons">
+                  <button 
+                    className="address-save-btn" 
+                    style={{ width: '100%' }} 
+                    onClick={handleSaveSchedule}
+                    disabled={isSavingSchedule}
+                  >
+                    {isSavingSchedule ? 'Saving...' : 'Done'}
                   </button>
                 </div>
               </div>
@@ -995,7 +1232,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
             <p className="cancellation-text">
               Free cancellation is done more than 12 hrs before the service or if professional isn't assigned. A fee will be charged otherwise.
             </p>
-            <a href="#" className="read-policy-link">Read full policy</a>
+            <a href="/policy" className="read-policy-link">Read full policy</a>
           </div>
         )}
 
