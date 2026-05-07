@@ -1,14 +1,21 @@
-const BASE_URL = process.env.REACT_APP_API_URL;
+const BASE_URL = process.env.REACT_APP_API_URL || "";
 
 export const apiClient = async (endpoint, options = {}) => {
   const token = localStorage.getItem("token");
 
   // Ensure the base URL doesn't end with a slash and the endpoint starts with a slash
-  const cleanBase = BASE_URL.replace(/\/$/, "");
+  const cleanBase = BASE_URL ? BASE_URL.replace(/\/$/, "") : "";
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const url = `${cleanBase}${cleanEndpoint}`;
 
-  console.log(`[API Request] Fetching: ${url} (${process.env.NODE_ENV === 'development' ? 'via proxy' : 'from env'})`);
+  const isSecureOrigin = window.location.protocol === 'https:';
+  const isTargetInsecure = url.startsWith('http://');
+  
+  if (isSecureOrigin && isTargetInsecure) {
+    console.warn(`[API Warning] Mixed Content detected! The page is HTTPS but target is HTTP: ${url}. This request will likely fail in most browsers.`);
+  }
+
+  console.log(`[API Request] Fetching: ${url} ${BASE_URL ? '(from env)' : '(via proxy)'}`);
 
   try {
     const validToken = token && token !== "null" && token !== "undefined" ? token : null;

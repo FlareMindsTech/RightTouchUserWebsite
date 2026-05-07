@@ -3,11 +3,14 @@ import {
   MdOutlineChevronRight,
   MdSearch,
   MdShoppingCart,
-  MdPayment
+  MdPayment,
+  MdCalendarToday,
+  MdHistory
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import BookingDetailPage from './BookingDetailPage';
 import { getCustomerBookings, getBookings } from '../services/bookingService';
+import { createPaymentOrder, verifyPayment } from '../services/paymentService';
 import { safeParseDate } from '../utils/browserUtils';
 import './BookingsPage.css';
 
@@ -20,6 +23,8 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   const [activeBookingsList, setActiveBookingsList] = useState([]);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
   const [activeHistoryFilter, setActiveHistoryFilter] = useState('ALL'); // 'ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'PAID', 'UNPAID'
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
   const fetchedRef = useRef(false);
 
   const handleBack = () => {
@@ -133,14 +138,187 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     return true;
   });
 
+  const handleAction = useCallback((type, data) => {
+    if (type === 'Share') {
+      const shareUrl = window.location.origin;
+      const shareText = `Check out my booking for ${data?.serviceId?.serviceName || 'RightTouch Service'}`;
+      
+      if (navigator.share) {
+        navigator.share({
+          title: 'RightTouch Booking',
+          text: shareText,
+          url: shareUrl
+        }).catch(err => console.log('Error sharing:', err));
+      } else {
+        navigator.clipboard.writeText(`${shareText} - ${shareUrl}`);
+        showToast('Booking link copied to clipboard');
+      }
+    } else if (type === 'Rebook') {
+      const serviceName = data?.serviceId?.serviceName || data?.serviceName;
+      if (serviceName) {
+        navigate(`/services?search=${encodeURIComponent(serviceName)}`);
+      } else {
+        navigate('/services');
+      }
+    }
+  }, [navigate, showToast]);
+  
+  const handlePayNow = async (booking) => {
+    if (paymentLoading) return;
+    setPaymentLoading(true);
+    try {
+      const bookingId = booking._id;
+      
+      // 1. Create Razorpay Order
+      const orderRes = await createPaymentOrder({ bookingId });
+      console.log('[Razorpay] Order Creation Response:', orderRes);
+
+      if (!orderRes?.success || !orderRes.result) {
+        throw new Error(orderRes?.message || 'Failed to create payment order from server');
+      }
+
+      // Destructure with fallbacks
+      const { 
+        amount: rawAmount, 
+        orderId, 
+        keyId, 
+        key, 
+        currency = 'INR' 
+      } = orderRes.result;
+
+      // ✅ Always use backend key first
+      const finalKey = (keyId || key || process.env.REACT_APP_RAZORPAY_KEY_ID || "").trim();
+      const finalOrderId = (orderId || "").trim();
+      const finalCurrency = String(currency).toUpperCase();
+
+      console.log("Frontend Key (Bookings):", finalKey);
+      console.log("Order ID (Bookings):", finalOrderId);
+
+      if (!finalKey) throw new Error('Razorpay Key ID is missing');
+      if (!finalOrderId) throw new Error('Razorpay Order ID is missing');
+      if (!rawAmount) throw new Error('Payment amount is missing');
+
+      // 2. Amount unit handling (ensure it is in paise)
+      // Heuristic: If amount is > 1000 and total matches, it might already be in paise
+      // But the safest way is to trust the server and multiply if it looks like rupees (small value)
+      // However, to be robust, we check if the server amount matches the booking's total
+      let amountInPaise = Math.round(Number(rawAmount) * 100);
+      
+      // If the raw amount is already very large (e.g. > 10000 for a 100 rupee item), 
+      // it's likely already in paise.
+      if (Number(rawAmount) > (booking.totalPrice || 10000)) {
+        console.warn('[Razorpay] Amount from server seems to be already in paise:', rawAmount);
+        amountInPaise = Math.round(Number(rawAmount));
+      }
+
+      if (amountInPaise < 100) {
+        throw new Error('Minimum payment amount is ₹1.00 (100 paise)');
+      }
+
+      // Clean phone number
+      const cleanPhone = (currentUser?.phone || currentUser?.mobile || "").replace(/\D/g, "");
+
+      // 3. Open Razorpay Checkout
+      const options = {
+        key: finalKey,
+        amount: amountInPaise,
+        currency: finalCurrency,
+        name: "RightTouch",
+        description: `Payment for Booking #${bookingId?.slice(-6).toUpperCase()}`,
+        order_id: finalOrderId,
+        prefill: {
+          name: (currentUser?.name || currentUser?.fname || "Customer").trim(),
+          email: (currentUser?.email || "").trim(),
+          contact: cleanPhone.length >= 10 ? cleanPhone : ""
+        },
+        theme: {
+          color: "#22c55e"
+        },
+        handler: async function (response) {
+          try {
+            console.log('[Razorpay Success] Response:', response);
+            // 4. Verify Payment
+            const verifyRes = await verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              bookingId: bookingId
+            });
+
+            if (verifyRes?.success) {
+              showToast('Payment Successful!', 'success');
+              await fetchMyBookings();
+              setSelectedBooking(null);
+            } else {
+              showToast(verifyRes?.message || 'Payment verification failed', 'error');
+            }
+          } catch (error) {
+            console.error('[Razorpay Verify Error]:', error);
+            showToast('Error verifying payment', 'error');
+          } finally {
+            setPaymentLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('[Razorpay] Checkout dismissed by user');
+            setPaymentLoading(false);
+          }
+        }
+      };
+
+      console.log('[Razorpay Options] Final Payload:', { ...options, key: finalKey.substring(0, 8) + '***' });
+      
+      try {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response){
+                console.error('[Razorpay Payment Failed]:', response.error);
+                showToast(response.error.description || 'Payment failed', 'error');
+        });
+        rzp.open();
+      } catch (e) {
+        console.error('[Razorpay Init Error]:', e);
+        showToast('Failed to open payment gateway. Check console.', 'error');
+        setPaymentLoading(false);
+      }
+
+    } catch (error) {
+      console.error('[Payment Flow Error]:', error);
+      showToast(error.message || 'Payment initialization failed', 'error');
+      setPaymentLoading(false);
+    }
+
+  };
+
   // If a booking is selected, show the detail page
   if (selectedBooking) {
+    const status = (selectedBooking.status || '').toUpperCase();
+    const isPaid = (selectedBooking.paymentStatus || '').toUpperCase() === 'PAID';
+    const canPay = status === 'COMPLETED' && !isPaid;
+
     return (
       <BookingDetailPage
         booking={selectedBooking}
         onBack={handleBack}
+        handleAction={handleAction}
         showToast={showToast}
         currentUser={currentUser}
+        isPaidBooking={isPaid}
+        canShowPayNow={canPay}
+        paymentLoading={paymentLoading}
+        handlePayButtonClick={() => {
+          if (isPaid) {
+            setShowInvoice(true);
+          } else {
+            handlePayNow(selectedBooking);
+          }
+        }}
+        canRate={status === 'COMPLETED'}
+        ratingForm={{ rates: 5, comment: '' }}
+        setRatingForm={() => {}} // Pass stubs if logic is complex
+        handleSubmitRating={() => showToast('Rating submitted')}
+        showInvoice={showInvoice}
+        setShowInvoice={setShowInvoice}
       />
     );
   }
@@ -205,6 +383,22 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
             <span className="info-label">Total Amount</span>
             <span className="info-value-price">₹{booking.totalPrice || booking.baseAmount || 0}</span>
           </div>
+          
+          {booking.technicianId && (
+            <div className="booking-tech-preview">
+              <div className="tech-avatar-mini">
+                {booking.technicianId.profileImage ? (
+                  <img src={booking.technicianId.profileImage} alt="Tech" />
+                ) : (
+                  <div className="avatar-placeholder">{booking.technicianId.userId?.fname?.charAt(0) || 'T'}</div>
+                )}
+              </div>
+              <div className="tech-info-mini">
+                <span className="tech-role">Assigned Expert</span>
+                <span className="tech-name">{booking.technicianId.userId?.fname} {booking.technicianId.userId?.lname}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="booking-card-footer">
@@ -234,12 +428,14 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
             className={`tab-btn-premium ${activeTab === 'active' ? 'active' : ''}`}
             onClick={() => setActiveTab('active')}
           >
+            <MdCalendarToday style={{ marginBottom: '-2px', marginRight: '6px' }} />
             Active & Upcoming
           </button>
           <button
             className={`tab-btn-premium ${activeTab === 'history' ? 'active' : ''}`}
             onClick={() => setActiveTab('history')}
           >
+            <MdHistory style={{ marginBottom: '-2px', marginRight: '6px' }} />
             Past Bookings
           </button>
         </div>

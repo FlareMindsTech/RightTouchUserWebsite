@@ -162,12 +162,12 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const handleSaveAddress = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Construct descriptive address line
     const baseAddr = addrFormData.addressLine.trim();
     const house = addrFormData.houseNo?.trim() || '';
     const ldmrk = addrFormData.landmark?.trim() || '';
-    
+
     let descriptiveAddress = baseAddr;
     if (house) descriptiveAddress = `${house}, ${descriptiveAddress}`;
     if (ldmrk) descriptiveAddress = `${descriptiveAddress} (Landmark: ${ldmrk})`;
@@ -179,7 +179,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         id: editingAddressId // Backend uses 'id' for updates
       };
 
-      const response = editingAddressId 
+      const response = editingAddressId
         ? await updateAddress(payload)
         : await createAddress(payload);
 
@@ -580,7 +580,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                       {isSearchingLocation && <div className="search-loader"></div>}
                     </div>
 
-                    <button 
+                    <button
                       className={`current-location-btn ${isLocating ? 'locating' : ''}`}
                       onClick={handleUseCurrentLocation}
                       disabled={isLocating}
@@ -591,8 +591,8 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
 
                     <div className="location-suggestions">
                       {locationSuggestions.map((suggestion, idx) => (
-                        <div 
-                          key={idx} 
+                        <div
+                          key={idx}
                           className="suggestion-item"
                           onClick={() => selectLocation(suggestion)}
                         >
@@ -712,7 +712,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                               </div>
                               <h4 className="addr-name">{address.name || 'User'}</h4>
                             </div>
-                            
+
                             <div className="header-right-group">
                               {address.isDefault && (
                                 <span className="default-tag">
@@ -764,8 +764,8 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                       ))}
 
                       {addresses.length > 3 && (
-                        <button 
-                          className="view-more-addr-btn" 
+                        <button
+                          className="view-more-addr-btn"
                           onClick={() => setAddrLimit(addrLimit >= addresses.length ? 3 : addresses.length)}
                         >
                           {addrLimit >= addresses.length ? 'Show Less' : `View More (${addresses.length - 3} more)`}

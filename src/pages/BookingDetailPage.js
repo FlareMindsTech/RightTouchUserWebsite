@@ -22,29 +22,32 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
     id: booking.bookingId || booking._id?.slice(-8).toUpperCase() || 'N/A',
     serviceName: booking.itemId?.serviceName || booking.serviceName || 'Service Details',
     status: booking.status || 'PENDING',
-    location: booking.address || 'Location not specified',
+    location: booking.addressSnapShot?.addressLine || booking.address || 'Location not specified',
     dateTime: booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Flexible',
-    professional: booking.technicianId?.name || 'Assigning Professional...',
-    professionalImage: booking.technicianId?.profileImage,
-    specialization: booking.technicianId?.category || 'Expert Technician',
-    rating: booking.technicianId?.averageRating || '4.8',
-    experience: booking.technicianId?.experience || '5+',
-    reviews: booking.technicianId?.totalReviews || '120',
-    amount: `₹${booking.totalAmount || 0}`,
+    professional: booking.technicianId?.userId ? `${booking.technicianId.userId.fname || ''} ${booking.technicianId.userId.lname || ''}`.trim() : (booking.technicianSnapshot?.name || null),
+    professionalImage: booking.technicianId?.profileImage || null,
+    specialization: booking.technicianId?.specialization || booking.technicianId?.category || null,
+    rating: booking.technicianId?.rating?.avg || booking.technicianId?.averageRating || null,
+    experience: booking.technicianId?.experienceYears || booking.technicianId?.experience || null,
+    reviews: booking.technicianId?.totalReviews || booking.technicianId?.rating?.count || 0,
+    amount: `₹${booking.baseAmount || booking.totalAmount || 0}`,
     bookingFee: `₹${booking.bookingFee || 0}`,
-    total: `₹${(booking.totalAmount || 0) + (booking.bookingFee || 0)}`,
+    total: `₹${(booking.totalAmount || booking.baseAmount || 0) + (booking.bookingFee || 0)}`,
     paymentMethod: booking.paymentMethod || 'Online',
-    professionalMobile: booking.technicianId?.mobileNumber
+    professionalMobile: booking.technicianId?.userId?.mobileNumber || booking.technicianSnapshot?.mobile || booking.technicianId?.mobileNumber || null,
+    addressDetails: booking.addressSnapShot ? `${booking.addressSnapShot.houseNo ? booking.addressSnapShot.houseNo + ', ' : ''}${booking.addressSnapShot.landmark ? booking.addressSnapShot.landmark + ', ' : ''}${booking.addressSnapShot.city || ''} ${booking.addressSnapShot.pincode || ''}`.trim() : null,
+    bio: booking.technicianId?.about || booking.technicianId?.bio || null,
+    completedJobs: booking.technicianId?.completedBookings || booking.technicianId?.totalBookings || 0
   };
 
   const paymentStatusUpper = (booking.paymentStatus || 'PENDING').toUpperCase();
 
   const BookingStatusTracker = ({ status }) => {
     const steps = [
-      { label: 'Booked', statuses: ['PENDING', 'SEARCHING'] },
-      { label: 'Assigned', statuses: ['ACCEPTED'] },
-      { label: 'Progress', statuses: ['IN PROGRESS'] },
-      { label: 'Done', statuses: ['COMPLETED'] }
+      { label: 'Confirmed', statuses: ['PENDING', 'SEARCHING'] },
+      { label: 'Arriving', statuses: ['ACCEPTED', 'ACCEPTED_BY_TECH', 'ON_THE_WAY', 'REACHED'] },
+      { label: 'Working', statuses: ['IN_PROGRESS'] },
+      { label: 'Completed', statuses: ['COMPLETED'] }
     ];
 
     const currentIdx = steps.findIndex(s => s.statuses.includes(status.toUpperCase()));
@@ -77,7 +80,7 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
           <MdOutlineChevronRight className="back-icon" style={{ transform: 'rotate(180deg)' }} />
         </button>
         <h2 className="detail-title">{details.serviceName}</h2>
-        <button className="share-btn" onClick={() => handleAction('Share')}>
+        <button className="share-btn" onClick={() => handleAction ? handleAction('Share', booking) : null}>
           <MdShare className="share-icon" />
         </button>
       </div>
@@ -85,58 +88,86 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
       {/* Progress Tracker */}
       <BookingStatusTracker status={details.status} />
 
-      {/* Professional Info */}
-      <div className="pro-profile-card-v2">
-        <div className="pro-header-main">
-          <div className="pro-avatar-v2">
-            {details.professionalImage ? (
-              <img src={details.professionalImage} alt={details.professional} loading="lazy" />
-            ) : (
-              <div style={{ width: '100%', height: '100%', background: '#22c55e', color: 'white', display: 'grid', placeItems: 'center', fontSize: '24px', fontWeight: '800' }}>
-                {details.professional ? details.professional.charAt(0) : '?'}
-              </div>
-            )}
-          </div>
-          <div className="pro-details-main">
-            <div className="pro-name-row">
-              <h3>{details.professional}</h3>
-              <div className="verified-badge-v2">
-                <MdVerified className="verified-icon" />
-                <span>Verified</span>
-              </div>
+      {/* Professional Info - Only show if assigned */}
+      {details.professional ? (
+        <div className="pro-profile-card-v2">
+          {/* ... existing header ... */}
+          <div className="pro-header-main">
+            <div className="pro-avatar-v2">
+              {details.professionalImage ? (
+                <img src={details.professionalImage} alt={details.professional} loading="lazy" />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: '#22c55e', color: 'white', display: 'grid', placeItems: 'center', fontSize: '24px', fontWeight: '800' }}>
+                  {details.professional.charAt(0)}
+                </div>
+              )}
             </div>
-            <p className="pro-tagline">{details.specialization} • RightTouch Verified</p>
+            <div className="pro-details-main">
+              <div className="pro-name-row">
+                <h3>{details.professional}</h3>
+                <div className="verified-badge-v2">
+                  <MdVerified className="verified-icon" />
+                  <span>Verified</span>
+                </div>
+              </div>
+              {details.specialization && <p className="pro-tagline">{details.specialization} • RightTouch Expert</p>}
+            </div>
           </div>
-        </div>
 
-        <div className="pro-stats-v2">
-          <div className="stat-v2">
-            <span className="label">Rating</span>
-            <span className="value">★ {details.rating}</span>
+          <div className="pro-stats-v2">
+            <div className="stat-v2">
+              <span className="label">Rating</span>
+              <span className="value">★ {details.rating || '4.8'}</span>
+            </div>
+            <div className="stat-v2">
+              <span className="label">Jobs</span>
+              <span className="value">{details.completedJobs > 0 ? details.completedJobs + '+' : '50+'}</span>
+            </div>
+            <div className="stat-v2">
+              <span className="label">Exp</span>
+              <span className="value">{details.experience || '3'} Yrs</span>
+            </div>
+            <div className="stat-v2">
+              <span className="label">Identity</span>
+              <span className="value" style={{ color: '#22c55e' }}>Pass</span>
+            </div>
           </div>
-          <div className="stat-v2">
-            <span className="label">Experience</span>
-            <span className="value">{details.experience} Years</span>
-          </div>
-          <div className="stat-v2">
-            <span className="label">Identity</span>
-            <span className="value" style={{ color: '#22c55e' }}>Verified</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Info Cards Grid */}
+          {(details.bio || true) && (
+            <div className="pro-bio-section">
+              <h4 className="bio-title">About Expert</h4>
+              <p className="bio-text">
+                {details.bio || `${details.professional} is a highly skilled expert in ${details.specialization || 'home services'} with a proven track record of customer satisfaction and quality workmanship.`}
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="pro-profile-card-v2 waiting-state">
+           <div className="info-content-v2">
+              <span className="info-label" style={{ display: 'block', marginBottom: '8px' }}>Assigning Professional</span>
+              <span className="info-value" style={{ color: '#22c55e', fontSize: '16px' }}>Searching for the best expert for you...</span>
+            </div>
+        </div>
+      )}
 
       {/* Work Evidence Images */}
-      {booking.workImages && booking.workImages.length > 0 && (
+      {booking.workImages && (booking.workImages.beforeImage || booking.workImages.afterImage) && (
         <div className="info-card">
           <h4>Work Photos</h4>
           <div className="work-image-grid-v2">
-            {booking.workImages.map((img, i) => (
-              <div key={i} className="work-image-v2">
-                <img src={img} alt={`Work ${i+1}`} onClick={() => window.open(img, '_blank')} />
+            {booking.workImages.beforeImage && (
+              <div className="work-image-v2">
+                <span className="label">Before</span>
+                <img src={booking.workImages.beforeImage} alt="Before" onClick={() => window.open(booking.workImages.beforeImage, '_blank')} />
               </div>
-            ))}
+            )}
+            {booking.workImages.afterImage && (
+              <div className="work-image-v2">
+                <span className="label">After</span>
+                <img src={booking.workImages.afterImage} alt="After" onClick={() => window.open(booking.workImages.afterImage, '_blank')} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -149,6 +180,11 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
             <div className="info-content-v2">
               <span className="info-label">Address</span>
               <span className="info-value">{details.location}</span>
+              {details.addressDetails && details.location === 'Pinned Location' && (
+                <span className="info-sub-value" style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  {details.addressDetails}
+                </span>
+              )}
             </div>
           </div>
           <div className="info-item-v2">
@@ -226,7 +262,11 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
       <div className="action-footer-v2">
         <button className="btn-v2 secondary" onClick={() => {
           if (details.professionalMobile && details.professionalMobile !== 'Not available') {
-            window.location.href = `tel:${details.professionalMobile}`;
+            navigator.clipboard.writeText(details.professionalMobile);
+            showToast('Technician number copied!');
+            setTimeout(() => {
+              window.location.href = `tel:${details.professionalMobile}`;
+            }, 500);
           } else {
             showToast('Contact not available');
           }

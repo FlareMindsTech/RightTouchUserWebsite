@@ -22,12 +22,12 @@ export const safeParseDate = (dateVal, fallback = new Date()) => {
       // If it looks like a date but doesn't have a timezone, append 'Z' if appropriate
       // or at least ensure it's parseable.
     }
-    
+
     const parsed = new Date(normalized);
     if (!isNaN(parsed.getTime())) {
       return parsed;
     }
-    
+
     // Last ditch effort: try the original value
     const originalParsed = new Date(dateVal);
     return !isNaN(originalParsed.getTime()) ? originalParsed : fallback;

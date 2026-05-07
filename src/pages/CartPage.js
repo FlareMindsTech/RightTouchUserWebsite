@@ -763,516 +763,509 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
               )}
             </div>
 
-
-
-        {/* Contact Details Section */}
-        {cartItems.length > 0 && currentUser && (
-          <div className="contact-section">
-            <div className="contact-header">
-              <MdPerson className="contact-icon" />
-              <div className="contact-title-group">
-                <span className="contact-title">Contact Details</span>
-                <span className="contact-subtitle">(Editable & Optional)</span>
-              </div>
-            </div>
-            <div className="contact-details">
-              <p className="contact-name">{contactDetails.name || 'Not provided'}</p>
-              <p className="contact-phone">{contactDetails.phone || 'Not provided'}</p>
-            </div>
-            <button className="edit-contact-btn" onClick={() => setShowContactPopup(true)}>
-              <MdEdit className="edit-icon" />
-            </button>
-          </div>
-        )}
-
-
-        {/* Contact Edit Popup */}
-        {showContactPopup && (
-          <div className="address-popup-overlay" onClick={() => setShowContactPopup(false)}>
-            <div className="address-popup" onClick={(e) => e.stopPropagation()}>
-              <button className="address-popup-close" onClick={() => setShowContactPopup(false)}>
-                <MdClose />
-              </button>
-              <h3 className="address-popup-heading">Edit Contact Details</h3>
-              <div className="address-form-container">
-                <div className="address-form-group">
-                  <label className="address-form-label">Contact Name (Optional)</label>
-                  <input
-                    type="text"
-                    className="address-form-input"
-                    placeholder="Receiver's name"
-                    value={contactDetails.name}
-                    onChange={(e) => setContactDetails({ ...contactDetails, name: e.target.value })}
-                  />
-                </div>
-                <div className="address-form-group">
-                  <label className="address-form-label">Contact Phone (Optional)</label>
-                  <input
-                    type="tel"
-                    className="address-form-input"
-                    placeholder="Receiver's phone"
-                    value={contactDetails.phone}
-                    onChange={(e) => setContactDetails({ ...contactDetails, phone: e.target.value })}
-                  />
-                </div>
-                <div className="address-popup-buttons">
-                  <button className="address-save-btn" style={{ width: '100%' }} onClick={() => {
-                    showToast('Contact updated!');
-                    setShowContactPopup(false);
-                  }}>
-                    Done
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Schedule Popup */}
-        {scheduledItemId && (
-          <div className="address-popup-overlay" onClick={() => setScheduledItemId(null)}>
-            <div className="address-popup schedule-popup" onClick={(e) => e.stopPropagation()}>
-              <button className="address-popup-close" onClick={() => setScheduledItemId(null)}>
-                <MdClose />
-              </button>
-              <h3 className="address-popup-heading">Schedule Your Service</h3>
-              
-              <div className="schedule-form-container">
-                {/* Instant vs Scheduled */}
-                <div className="booking-type-toggle">
-                  <button 
-                    className={`toggle-btn ${isInstant ? 'active' : ''}`}
-                    onClick={() => setIsInstant(true)}
-                  >
-                    Instant (In 30 mins)
-                  </button>
-                  <button 
-                    className={`toggle-btn ${!isInstant ? 'active' : ''}`}
-                    onClick={() => setIsInstant(false)}
-                  >
-                    Schedule for Later
-                  </button>
-                </div>
-
-                {!isInstant && (
-                  <>
-                    {loadingSlots ? (
-                      <div className="slots-loading">Loading slots...</div>
-                    ) : (
-                      <>
-                        {/* Days Selection */}
-                        <div className="days-selection">
-                          <label className="section-label">Select Day</label>
-                          <div className="days-grid">
-                            {slotsData?.schedule?.days?.map((day, idx) => (
-                              <button
-                                key={idx}
-                                className={`day-card ${selectedDay?.fullDate === day.fullDate ? 'active' : ''}`}
-                                onClick={() => setSelectedDay(day)}
-                              >
-                                <span className="day-name">{day.dayName}</span>
-                                <span className="day-date">{day.date} {day.month}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Time Slots Selection */}
-                        <div className="time-slots-selection">
-                          <label className="section-label">Select Time Slot</label>
-                          <div className="slots-grid">
-                            {slotsData?.schedule?.timeSlots?.map((slot, idx) => (
-                              <button
-                                key={idx}
-                                className={`slot-pill ${selectedTime?.value === slot.value ? 'active' : ''}`}
-                                onClick={() => setSelectedTime(slot)}
-                              >
-                                {slot.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-
-                {/* Fault Reason Sections */}
-                <div className="fault-reason-input">
-                  <label className="section-label">Describe the Problem (Optional)</label>
-                  
-                  {faultSections.map((section, sIdx) => (
-                    <div key={sIdx} className="fault-section-group">
-                      <h5 className="fault-section-title">{section.title}</h5>
-                      <div className="fault-reasons-chips">
-                        {section.reasons.map((reason, idx) => (
-                          <button
-                            key={idx}
-                            className={`reason-chip ${faultReason === reason ? 'active' : ''}`}
-                            onClick={() => setFaultReason(reason)}
-                          >
-                            <span className="reason-text">{reason}</span>
-                            {faultReason === reason && <div className="active-tick"><MdCheck /></div>}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-
-                  <textarea
-                    placeholder="Or describe the issue specifically..."
-                    value={faultReason}
-                    onChange={(e) => setFaultReason(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="address-popup-buttons">
-                  <button 
-                    className="address-save-btn" 
-                    style={{ width: '100%' }} 
-                    onClick={handleSaveSchedule}
-                    disabled={isSavingSchedule}
-                  >
-                    {isSavingSchedule ? 'Saving...' : 'Done'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Advanced Location Selection Popup */}
-        {showAddressPopup && (
-          <div className="address-popup-overlay location-overlay-premium" onClick={resetAddressPopupState}>
-            <div className="address-popup location-popup-premium" onClick={(e) => e.stopPropagation()}>
-
-              {/* Header with Search */}
-              <div className="location-header-premium">
-                <button className="location-back-btn" onClick={resetAddressPopupState}>
-                  <MdArrowBack />
-                </button>
-                <div className="location-search-wrapper">
-                  <input
-                    type="text"
-                    placeholder="Search for area, street name..."
-                    value={locationSearch}
-                    onChange={(e) => setLocationSearch(e.target.value)}
-                    autoFocus
-                  />
-                  {locationSearch && (
-                    <button className="location-clear-btn" onClick={() => setLocationSearch('')}>
-                      <MdClose />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="location-actions-premium">
-                <button className="use-current-loc-btn" onClick={handleUseCurrentLocation} disabled={isLocating}>
-                  <MdMyLocation className="loc-icon-gps" />
-                  <span>{isLocating ? 'Detecting location...' : 'Use current location'}</span>
-                </button>
-              </div>
-
-              {isSearchingLocation && (
-                <div className="location-search-status">Searching locations...</div>
-              )}
-
-              {!isSearchingLocation && locationSuggestions.length > 0 && (
-                <div className="location-suggestions-box">
-                  {locationSuggestions.map((suggestion) => (
-                    <button
-                      key={`${suggestion.place_id}`}
-                      className="location-suggestion-item"
-                      onClick={() => applyLocationToAddressForm(suggestion)}
-                    >
-                      <MdPlace />
-                      <span>{suggestion.display_name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {showAddAddressForm && (
-                <div className="new-address-form-box">
-                  <h4 style={{ marginBottom: '16px' }}>Add New Address</h4>
-                  <div className="new-address-grid">
-                    <select
-                      className="address-form-input"
-                      value={newAddressForm.label}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, label: e.target.value }))}
-                    >
-                      <option value="home">Home</option>
-                      <option value="office">Office</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <input
-                      type="text"
-                      className="address-form-input"
-                      placeholder="Pincode"
-                      value={newAddressForm.pincode}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, pincode: e.target.value }))}
-                    />
-                    <input
-                      type="text"
-                      className="address-form-input"
-                      placeholder="Landmark (Optional)"
-                      value={newAddressForm.landmark}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, landmark: e.target.value }))}
-                      style={{ gridColumn: 'span 2' }}
-                    />
-                    <textarea
-                      className="address-form-input"
-                      placeholder="Complete Address (House No, Street, Area, etc.)"
-                      value={newAddressForm.addressLine}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, addressLine: e.target.value }))}
-                      style={{ gridColumn: 'span 2', minHeight: '80px' }}
-                    />
-                    <input
-                      type="text"
-                      className="address-form-input"
-                      placeholder="City"
-                      value={newAddressForm.city}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, city: e.target.value }))}
-                    />
-                    <input
-                      type="text"
-                      className="address-form-input"
-                      placeholder="State"
-                      value={newAddressForm.state}
-                      onChange={(e) => setNewAddressForm((prev) => ({ ...prev, state: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="checkbox-group" style={{ margin: '12px 0' }}>
-                    <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={newAddressForm.isDefault}
-                        onChange={(e) => setNewAddressForm((prev) => ({ ...prev, isDefault: e.target.checked }))}
-                      />
-                      <span style={{ fontSize: '14px' }}>Set as Default Address</span>
-                    </label>
-                  </div>
-
-                  <div className="address-popup-buttons" style={{ marginTop: '16px' }}>
-                    <button
-                      className="address-save-btn"
-                      onClick={handleSaveNewAddress}
-                      disabled={isSavingAddress}
-                      style={{ width: '100%' }}
-                    >
-                      {isSavingAddress ? 'Saving...' : 'Save Address'}
-                    </button>
-                    <button
-                      className="address-cancel-btn"
-                      onClick={() => setShowAddAddressForm(false)}
-                      style={{ width: '100%', marginTop: '8px', background: 'transparent', color: '#64748b', border: '1px solid #e2e8f0' }}
-                    >
-                      Cancel
-                    </button>
+            {/* Contact Details Section */}
+            {cartItems.length > 0 && currentUser && (
+              <div className="contact-section">
+                <div className="contact-header">
+                  <MdPerson className="contact-icon" />
+                  <div className="contact-title-group">
+                    <span className="contact-title">Contact Details</span>
+                    <span className="contact-subtitle">(Editable & Optional)</span>
                   </div>
                 </div>
-              )}
-
-              {/* Address List */}
-              <div className="location-list-premium">
-                {getFilteredAddresses().length > 0 && (
-                  <>
-                    {getFilteredAddresses().some((addr) => addr.isDefault) && (
-                      <p className="address-group-title">Default Address</p>
-                    )}
-                    {getFilteredAddresses().filter((addr) => addr.isDefault).map((addr) => (
-                      <div
-                        key={addr._id}
-                        className={`location-item-premium ${addressForm.id === addr._id ? 'active' : ''}`}
-                        onClick={async () => {
-                          setAddressForm(mapAddressToSelection(addr));
-                          try {
-                            // Automatically update the backend to make the selected address the default one
-                            const updatePayload = {
-                              id: addr._id,
-                              isDefault: true
-                            };
-                            await updateAddress(updatePayload);
-                            // Refresh list so UI moves it to 'Default Address' section instantly
-                            await fetchAddresses();
-                          } catch (err) {
-                            console.error('Failed to set address as default:', err);
-                          }
-                          showToast('Address selected as default');
-                        }}
-                      >
-                        <div className="loc-item-icon">
-                          <MdPlace />
-                        </div>
-                        <div className="loc-item-content">
-                          <h4 className="loc-item-title">{addr.label || 'Saved Address'} <span className="default-pill">Default</span></h4>
-                          <p className="loc-item-subtitle">
-                            {(addr.addressLine && !addr.addressLine.toLowerCase().includes('pinned location'))
-                              ? addr.addressLine
-                              : [addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || 'Pinned Location'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-
-                    {getFilteredAddresses().some((addr) => !addr.isDefault) && (
-                      <p className="address-group-title">Other Addresses</p>
-                    )}
-                    {getFilteredAddresses().filter((addr) => !addr.isDefault).map((addr) => (
-                      <div
-                        key={addr._id}
-                        className={`location-item-premium ${addressForm.id === addr._id ? 'active' : ''}`}
-                        onClick={async () => {
-                          setAddressForm(mapAddressToSelection(addr));
-                          try {
-                            const updatePayload = {
-                              id: addr._id,
-                              isDefault: true
-                            };
-                            await updateAddress(updatePayload);
-                            // Refresh list to instantly move this address under 'Default Address' heading
-                            await fetchAddresses();
-                          } catch (err) {
-                            console.error('Failed to set address as default:', err);
-                          }
-                          showToast('Address selected as default');
-                        }}
-                      >
-                        <div className="loc-item-icon">
-                          <MdPlace />
-                        </div>
-                        <div className="loc-item-content">
-                          <h4 className="loc-item-title">{addr.label || 'Saved Address'}</h4>
-                          <p className="loc-item-subtitle">{addr.addressLine || addr.address}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {getFilteredAddresses().length === 0 && (
-                  <div className="no-addresses-found">
-                    <p>No addresses found. Add a new address to continue.</p>
-                  </div>
-                )}
-
-              </div>
-
-              <div className="address-popup-footer">
-                <button
-                  className="checkout-btn-premium"
-                  disabled={loading || (showAddAddressForm ? !newAddressForm.addressLine.trim() : !addressForm.id)}
-                  onClick={async () => {
-                    if (showAddAddressForm) {
-                      await handleSaveNewAddress();
-                      return;
-                    }
-
-                    if (!addressForm.id) {
-                      showToast('Please select a delivery address');
-                      return;
-                    }
-
-                    if (pendingCheckout) {
-                      resetAddressPopupState();
-                      await startCheckout();
-                      return;
-                    }
-
-                    resetAddressPopupState();
-                  }}
-                >
-                  {showAddAddressForm ? 'Save & Use Address' : (pendingCheckout ? 'Continue to payment' : 'Use this address')}
-                </button>
-              </div>
-
-              {/* Attribution */}
-              <div className="google-attribution-premium">
-                <p>Location search by <span>OpenStreetMap</span></p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Payment Summary Section */}
-        {cartItems.length > 0 && (
-          <div className="payment-summary-section">
-            <h3 className="summary-title">Payment Summary</h3>
-            <div className="summary-rows">
-              <div className="summary-row">
-                <span className="summary-label">Total Item{cartItems.length > 1 ? 's' : ''}</span>
-                <span className="summary-value">₹{getSubtotal()}</span>
-              </div>
-              <div className="summary-row">
-                <span className="summary-label">Taxes and Fee</span>
-                <span className="summary-value">₹{getTax()}</span>
-              </div>
-              {getTipAmount() > 0 && (
-                <div className="summary-row">
-                  <span className="summary-label">Tip</span>
-                  <span className="summary-value">₹{getTipAmount()}</span>
+                <div className="contact-details">
+                  <p className="contact-name">{contactDetails.name || 'Not provided'}</p>
+                  <p className="contact-phone">{contactDetails.phone || 'Not provided'}</p>
                 </div>
-              )}
-            </div>
-            <div className="total-row">
-              <span className="total-label">Amount to pay</span>
-              <span className="total-value">₹{getTotal()}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Cancellation Policy Section */}
-        {cartItems.length > 0 && (
-          <div className="cancellation-section">
-            <h4 className="cancellation-title">Cancellation policy</h4>
-            <p className="cancellation-text">
-              Free cancellation is done more than 12 hrs before the service or if professional isn't assigned. A fee will be charged otherwise.
-            </p>
-            <a href="/policy" className="read-policy-link">Read full policy</a>
-          </div>
-        )}
-
-        {/* Tip Section */}
-        {cartItems.length > 0 && (
-          <div className="tip-section">
-            <h4 className="tip-title">Add a tip to thank the professional</h4>
-            <div className="tip-options">
-              {tipOptions.map((option, index) => (
-                <button
-                  key={index}
-                  className={`tip-option ${selectedTip === option.amount ? 'selected' : ''} ${option.mostTipped ? 'most-tipped' : ''}`}
-                  onClick={() => {
-                    if (option.amount === 'custom') {
-                      setSelectedTip(null);
-                      setCustomTip('');
-                    } else {
-                      setSelectedTip(option.amount);
-                      setCustomTip('');
-                    }
-                  }}
-                >
-                  {option.label}
-                  {option.mostTipped && <span className="most-tipped-badge">Most tipped</span>}
+                <button className="edit-contact-btn" onClick={() => setShowContactPopup(true)}>
+                  <MdEdit className="edit-icon" />
                 </button>
-              ))}
-            </div>
-            {selectedTip === null && (
-              <div className="custom-tip-container">
-                <input
-                  type="number"
-                  className="custom-tip-input"
-                  placeholder="Enter custom amount"
-                  value={customTip}
-                  onChange={(e) => setCustomTip(e.target.value)}
-                />
               </div>
             )}
-          </div>
-        )}
+
+            {/* Contact Edit Popup */}
+            {showContactPopup && (
+              <div className="address-popup-overlay" onClick={() => setShowContactPopup(false)}>
+                <div className="address-popup" onClick={(e) => e.stopPropagation()}>
+                  <button className="address-popup-close" onClick={() => setShowContactPopup(false)}>
+                    <MdClose />
+                  </button>
+                  <h3 className="address-popup-heading">Edit Contact Details</h3>
+                  <div className="address-form-container">
+                    <div className="address-form-group">
+                      <label className="address-form-label">Contact Name (Optional)</label>
+                      <input
+                        type="text"
+                        className="address-form-input"
+                        placeholder="Receiver's name"
+                        value={contactDetails.name}
+                        onChange={(e) => setContactDetails({ ...contactDetails, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="address-form-group">
+                      <label className="address-form-label">Contact Phone (Optional)</label>
+                      <input
+                        type="tel"
+                        className="address-form-input"
+                        placeholder="Receiver's phone"
+                        value={contactDetails.phone}
+                        onChange={(e) => setContactDetails({ ...contactDetails, phone: e.target.value })}
+                      />
+                    </div>
+                    <div className="address-popup-buttons">
+                      <button className="address-save-btn" style={{ width: '100%' }} onClick={() => {
+                        showToast('Contact updated!');
+                        setShowContactPopup(false);
+                      }}>
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Schedule Popup */}
+            {scheduledItemId && (
+              <div className="address-popup-overlay" onClick={() => setScheduledItemId(null)}>
+                <div className="address-popup schedule-popup" onClick={(e) => e.stopPropagation()}>
+                  <button className="address-popup-close" onClick={() => setScheduledItemId(null)}>
+                    <MdClose />
+                  </button>
+                  <h3 className="address-popup-heading">Schedule Your Service</h3>
+                  
+                  <div className="schedule-form-container">
+                    {/* Instant vs Scheduled */}
+                    <div className="booking-type-toggle">
+                      <button 
+                        className={`toggle-btn ${isInstant ? 'active' : ''}`}
+                        onClick={() => setIsInstant(true)}
+                      >
+                        Instant (In 30 mins)
+                      </button>
+                      <button 
+                        className={`toggle-btn ${!isInstant ? 'active' : ''}`}
+                        onClick={() => setIsInstant(false)}
+                      >
+                        Schedule for Later
+                      </button>
+                    </div>
+
+                    {!isInstant && (
+                      <>
+                        {loadingSlots ? (
+                          <div className="slots-loading">Loading slots...</div>
+                        ) : (
+                          <>
+                            {/* Days Selection */}
+                            <div className="days-selection">
+                              <label className="section-label">Select Day</label>
+                              <div className="days-grid">
+                                {slotsData?.schedule?.days?.map((day, idx) => (
+                                  <button
+                                    key={idx}
+                                    className={`day-card ${selectedDay?.fullDate === day.fullDate ? 'active' : ''}`}
+                                    onClick={() => setSelectedDay(day)}
+                                  >
+                                    <span className="day-name">{day.dayName}</span>
+                                    <span className="day-date">{day.date} {day.month}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Time Slots Selection */}
+                            <div className="time-slots-selection">
+                              <label className="section-label">Select Time Slot</label>
+                              <div className="slots-grid">
+                                {slotsData?.schedule?.timeSlots?.map((slot, idx) => (
+                                  <button
+                                    key={idx}
+                                    className={`slot-pill ${selectedTime?.value === slot.value ? 'active' : ''}`}
+                                    onClick={() => setSelectedTime(slot)}
+                                  >
+                                    {slot.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {/* Fault Reason Sections */}
+                    <div className="fault-reason-input">
+                      <label className="section-label">Describe the Problem (Optional)</label>
+                      
+                      {faultSections.map((section, sIdx) => (
+                        <div key={sIdx} className="fault-section-group">
+                          <h5 className="fault-section-title">{section.title}</h5>
+                          <div className="fault-reasons-chips">
+                            {section.reasons.map((reason, idx) => (
+                              <button
+                                key={idx}
+                                className={`reason-chip ${faultReason === reason ? 'active' : ''}`}
+                                onClick={() => setFaultReason(reason)}
+                              >
+                                <span className="reason-text">{reason}</span>
+                                {faultReason === reason && <div className="active-tick"><MdCheck /></div>}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      <textarea
+                        placeholder="Or describe the issue specifically..."
+                        value={faultReason}
+                        onChange={(e) => setFaultReason(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="address-popup-buttons">
+                      <button 
+                        className="address-save-btn" 
+                        style={{ width: '100%' }} 
+                        onClick={handleSaveSchedule}
+                        disabled={isSavingSchedule}
+                      >
+                        {isSavingSchedule ? 'Saving...' : 'Done'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Advanced Location Selection Popup */}
+            {showAddressPopup && (
+              <div className="address-popup-overlay location-overlay-premium" onClick={resetAddressPopupState}>
+                <div className="address-popup location-popup-premium" onClick={(e) => e.stopPropagation()}>
+
+                  {/* Header with Search */}
+                  <div className="location-header-premium">
+                    <button className="location-back-btn" onClick={resetAddressPopupState}>
+                      <MdArrowBack />
+                    </button>
+                    <div className="location-search-wrapper">
+                      <input
+                        type="text"
+                        placeholder="Search for area, street name..."
+                        value={locationSearch}
+                        onChange={(e) => setLocationSearch(e.target.value)}
+                        autoFocus
+                      />
+                      {locationSearch && (
+                        <button className="location-clear-btn" onClick={() => setLocationSearch('')}>
+                          <MdClose />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="location-actions-premium">
+                    <button className="use-current-loc-btn" onClick={handleUseCurrentLocation} disabled={isLocating}>
+                      <MdMyLocation className="loc-icon-gps" />
+                      <span>{isLocating ? 'Detecting location...' : 'Use current location'}</span>
+                    </button>
+                  </div>
+
+                  {isSearchingLocation && (
+                    <div className="location-search-status">Searching locations...</div>
+                  )}
+
+                  {!isSearchingLocation && locationSuggestions.length > 0 && (
+                    <div className="location-suggestions-box">
+                      {locationSuggestions.map((suggestion) => (
+                        <button
+                          key={`${suggestion.place_id}`}
+                          className="location-suggestion-item"
+                          onClick={() => applyLocationToAddressForm(suggestion)}
+                        >
+                          <MdPlace />
+                          <span>{suggestion.display_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {showAddAddressForm && (
+                    <div className="new-address-form-box">
+                      <h4 style={{ marginBottom: '16px' }}>Add New Address</h4>
+                      <div className="new-address-grid">
+                        <select
+                          className="address-form-input"
+                          value={newAddressForm.label}
+                          onChange={(e) => setNewAddressForm((prev) => ({ ...prev, label: e.target.value }))}
+                        >
+                          <option value="home">Home</option>
+                          <option value="office">Office</option>
+                          <option value="other">Other</option>
+                        </select>
+                        <input
+                          type="text"
+                          className="address-form-input"
+                          placeholder="Pincode"
+                          value={newAddressForm.pincode}
+                          onChange={(e) => setNewAddressForm((prev) => ({ ...prev, pincode: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="address-form-input"
+                          placeholder="Landmark (Optional)"
+                          value={newAddressForm.landmark}
+                          onChange={(e) => setNewAddressForm((prev) => ({ ...prev, landmark: e.target.value }))}
+                          style={{ gridColumn: 'span 2' }}
+                        />
+                        <textarea
+                          className="address-form-input"
+                          placeholder="Complete Address (House No, Street, Area, etc.)"
+                          value={newAddressForm.addressLine}
+                          onChange={(e) => setNewAddressForm((prev) => ({ ...prev, addressLine: e.target.value }))}
+                          style={{ gridColumn: 'span 2', minHeight: '80px' }}
+                        />
+                        <input
+                          type="text"
+                          className="address-form-input"
+                          placeholder="City"
+                          value={newAddressForm.city}
+                          onChange={(e) => setNewAddressForm((prev) => ({ ...prev, city: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="address-form-input"
+                          placeholder="State"
+                          value={newAddressForm.state}
+                          onChange={(e) => setNewAddressForm((prev) => ({ ...prev, state: e.target.value }))}
+                        />
+                      </div>
+
+                      <div className="checkbox-group" style={{ margin: '12px 0' }}>
+                        <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={newAddressForm.isDefault}
+                            onChange={(e) => setNewAddressForm((prev) => ({ ...prev, isDefault: e.target.checked }))}
+                          />
+                          <span style={{ fontSize: '14px' }}>Set as Default Address</span>
+                        </label>
+                      </div>
+
+                      <div className="address-popup-buttons" style={{ marginTop: '16px' }}>
+                        <button
+                          className="address-save-btn"
+                          onClick={handleSaveNewAddress}
+                          disabled={isSavingAddress}
+                          style={{ width: '100%' }}
+                        >
+                          {isSavingAddress ? 'Saving...' : 'Save Address'}
+                        </button>
+                        <button
+                          className="address-cancel-btn"
+                          onClick={() => setShowAddAddressForm(false)}
+                          style={{ width: '100%', marginTop: '8px', background: 'transparent', color: '#64748b', border: '1px solid #e2e8f0' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Address List */}
+                  <div className="location-list-premium">
+                    {getFilteredAddresses().length > 0 && (
+                      <>
+                        {getFilteredAddresses().some((addr) => addr.isDefault) && (
+                          <p className="address-group-title">Default Address</p>
+                        )}
+                        {getFilteredAddresses().filter((addr) => addr.isDefault).map((addr) => (
+                          <div
+                            key={addr._id}
+                            className={`location-item-premium ${addressForm.id === addr._id ? 'active' : ''}`}
+                            onClick={async () => {
+                              setAddressForm(mapAddressToSelection(addr));
+                              try {
+                                const updatePayload = {
+                                  id: addr._id,
+                                  isDefault: true
+                                };
+                                await updateAddress(updatePayload);
+                                await fetchAddresses();
+                              } catch (err) {
+                                console.error('Failed to set address as default:', err);
+                              }
+                              showToast('Address selected as default');
+                            }}
+                          >
+                            <div className="loc-item-icon">
+                              <MdPlace />
+                            </div>
+                            <div className="loc-item-content">
+                              <h4 className="loc-item-title">{addr.label || 'Saved Address'} <span className="default-pill">Default</span></h4>
+                              <p className="loc-item-subtitle">
+                                {(addr.addressLine && !addr.addressLine.toLowerCase().includes('pinned location'))
+                                  ? addr.addressLine
+                                  : [addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || 'Pinned Location'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+
+                        {getFilteredAddresses().some((addr) => !addr.isDefault) && (
+                          <p className="address-group-title">Other Addresses</p>
+                        )}
+                        {getFilteredAddresses().filter((addr) => !addr.isDefault).map((addr) => (
+                          <div
+                            key={addr._id}
+                            className={`location-item-premium ${addressForm.id === addr._id ? 'active' : ''}`}
+                            onClick={async () => {
+                              setAddressForm(mapAddressToSelection(addr));
+                              try {
+                                const updatePayload = {
+                                  id: addr._id,
+                                  isDefault: true
+                                };
+                                await updateAddress(updatePayload);
+                                await fetchAddresses();
+                              } catch (err) {
+                                console.error('Failed to set address as default:', err);
+                              }
+                              showToast('Address selected as default');
+                            }}
+                          >
+                            <div className="loc-item-icon">
+                              <MdPlace />
+                            </div>
+                            <div className="loc-item-content">
+                              <h4 className="loc-item-title">{addr.label || 'Saved Address'}</h4>
+                              <p className="loc-item-subtitle">{addr.addressLine || addr.address}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {getFilteredAddresses().length === 0 && (
+                      <div className="no-addresses-found">
+                        <p>No addresses found. Add a new address to continue.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="address-popup-footer">
+                    <button
+                      className="checkout-btn-premium"
+                      disabled={loading || (showAddAddressForm ? !newAddressForm.addressLine.trim() : !addressForm.id)}
+                      onClick={async () => {
+                        if (showAddAddressForm) {
+                          await handleSaveNewAddress();
+                          return;
+                        }
+
+                        if (!addressForm.id) {
+                          showToast('Please select a delivery address');
+                          return;
+                        }
+
+                        if (pendingCheckout) {
+                          resetAddressPopupState();
+                          await startCheckout();
+                          return;
+                        }
+
+                        resetAddressPopupState();
+                      }}
+                    >
+                      {showAddAddressForm ? 'Save & Use Address' : (pendingCheckout ? 'Continue to payment' : 'Use this address')}
+                    </button>
+                  </div>
+
+                  {/* Attribution */}
+                  <div className="google-attribution-premium">
+                    <p>Location search by <span>OpenStreetMap</span></p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Summary Section */}
+            {cartItems.length > 0 && (
+              <div className="payment-summary-section">
+                <h3 className="summary-title">Payment Summary</h3>
+                <div className="summary-rows">
+                  <div className="summary-row">
+                    <span className="summary-label">Total Item{cartItems.length > 1 ? 's' : ''}</span>
+                    <span className="summary-value">₹{getSubtotal()}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Taxes and Fee</span>
+                    <span className="summary-value">₹{getTax()}</span>
+                  </div>
+                  {getTipAmount() > 0 && (
+                    <div className="summary-row">
+                      <span className="summary-label">Tip</span>
+                      <span className="summary-value">₹{getTipAmount()}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="total-row">
+                  <span className="total-label">Amount to pay</span>
+                  <span className="total-value">₹{getTotal()}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Cancellation Policy Section */}
+            {cartItems.length > 0 && (
+              <div className="cancellation-section">
+                <h4 className="cancellation-title">Cancellation policy</h4>
+                <p className="cancellation-text">
+                  Free cancellation is done more than 12 hrs before the service or if professional isn't assigned. A fee will be charged otherwise.
+                </p>
+                <a href="/policy" className="read-policy-link">Read full policy</a>
+              </div>
+            )}
+
+            {/* Tip Section */}
+            {cartItems.length > 0 && (
+              <div className="tip-section">
+                <h4 className="tip-title">Add a tip to thank the professional</h4>
+                <div className="tip-options">
+                  {tipOptions.map((option, index) => (
+                    <button
+                      key={index}
+                      className={`tip-option ${selectedTip === option.amount ? 'selected' : ''} ${option.mostTipped ? 'most-tipped' : ''}`}
+                      onClick={() => {
+                        if (option.amount === 'custom') {
+                          setSelectedTip(null);
+                          setCustomTip('');
+                        } else {
+                          setSelectedTip(option.amount);
+                          setCustomTip('');
+                        }
+                      }}
+                    >
+                      {option.label}
+                      {option.mostTipped && <span className="most-tipped-badge">Most tipped</span>}
+                    </button>
+                  ))}
+                </div>
+                {selectedTip === null && (
+                  <div className="custom-tip-container">
+                    <input
+                      type="number"
+                      className="custom-tip-input"
+                      placeholder="Enter custom amount"
+                      value={customTip}
+                      onChange={(e) => setCustomTip(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Checkout Button */}
             {cartItems.length > 0 && (

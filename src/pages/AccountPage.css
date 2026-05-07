@@ -403,11 +403,13 @@
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   color: #15803d;
   border: 1.5px solid #bdf2d0;
-  border-radius: 20px; /* Match card radius */
+  border-radius: 20px;
+  /* Match card radius */
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  margin-bottom: 32px; /* More space before list starts */
+  margin-bottom: 32px;
+  /* More space before list starts */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.05);
 }
@@ -741,7 +743,9 @@
 }
 
 @keyframes spin {
-  to { transform: translateY(-50%) rotate(360deg); }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
 }
 
 .current-location-btn {
@@ -813,7 +817,8 @@
   line-height: 1.5;
 }
 
-.no-suggestions, .no-addresses-msg {
+.no-suggestions,
+.no-addresses-msg {
   text-align: center;
   padding: 40px 20px;
   color: #94a3b8;
@@ -843,8 +848,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .selected-location-preview {
