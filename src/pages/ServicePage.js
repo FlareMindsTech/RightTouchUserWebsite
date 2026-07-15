@@ -350,15 +350,7 @@ const ServicesPage = ({
           <main className="services-results-main full-width">
             <TopCategoryBar />
 
-            {/* Active Chips (Desktop Only) */}
-            <div className="active-chips-container desktop-only">
-              {selectedCategory && (
-                <div className="active-chip">
-                  Category: {selectedCategory.category}
-                  <X size={14} onClick={() => setSelectedCategory(null)} />
-                </div>
-              )}
-            </div>
+
 
             {filteredServices.length > 0 ? (
               <div className="services-results-container">

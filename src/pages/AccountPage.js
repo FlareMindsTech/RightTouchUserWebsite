@@ -431,6 +431,9 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       case 'Report issue':
         navigate('/report');
         break;
+      case 'About Us':
+        navigate('/about');
+        break;
       default:
         showToast(`${menuItem} coming soon!`);
     }
@@ -517,15 +520,20 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                 </div>
                 <MdOutlineChevronRight className="arrow" />
               </div>
+
+              <div className="menu-item-simple" onClick={() => handleMenuItemClick('About Us')}>
+                <div className="menu-left-simple">
+                  <LuBookOpen className="icon" />
+                  <span>About Us</span>
+                </div>
+                <MdOutlineChevronRight className="arrow" />
+              </div>
             </div>
 
             {/* Logout/Delete Buttons */}
             <div className="account-footer-simple">
-              <button className="logout-button-simple" onClick={openLogoutConfirm}>
+              <button className="logout-button-simple" onClick={openLogoutConfirm} style={{ width: '100%' }}>
                 <LuLogOut size={20} /> Logout
-              </button>
-              <button className="delete-account-button-simple" onClick={openDeleteAccountConfirm} disabled={loading}>
-                <MdDeleteOutline size={20} /> {loading ? 'Deleting...' : 'Delete Account'}
               </button>
             </div>
           </>

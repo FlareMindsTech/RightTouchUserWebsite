@@ -23,6 +23,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   const [activeBookingsList, setActiveBookingsList] = useState([]);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
   const [activeHistoryFilter, setActiveHistoryFilter] = useState('ALL'); // 'ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'PAID', 'UNPAID'
+  const [visibleHistoryCount, setVisibleHistoryCount] = useState(5);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const fetchedRef = useRef(false);
@@ -314,9 +315,6 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
           }
         }}
         canRate={status === 'COMPLETED'}
-        ratingForm={{ rates: 5, comment: '' }}
-        setRatingForm={() => {}} // Pass stubs if logic is complex
-        handleSubmitRating={() => showToast('Rating submitted')}
         showInvoice={showInvoice}
         setShowInvoice={setShowInvoice}
       />
@@ -433,7 +431,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
           </button>
           <button
             className={`tab-btn-premium ${activeTab === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveTab('history')}
+            onClick={() => { setActiveTab('history'); setVisibleHistoryCount(5); }}
           >
             <MdHistory style={{ marginBottom: '-2px', marginRight: '6px' }} />
             Past Bookings
@@ -470,7 +468,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                       type="text"
                       placeholder="Search by service or ID..."
                       value={historySearchQuery}
-                      onChange={(e) => setHistorySearchQuery(e.target.value)}
+                      onChange={(e) => { setHistorySearchQuery(e.target.value); setVisibleHistoryCount(5); }}
                       className="history-search-input"
                     />
                   </div>
@@ -480,7 +478,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                         <button
                           key={filter}
                           className={`filter-pill ${activeHistoryFilter === filter ? 'active' : ''}`}
-                          onClick={() => setActiveHistoryFilter(filter)}
+                          onClick={() => { setActiveHistoryFilter(filter); setVisibleHistoryCount(5); }}
                         >
                           {filter}
                         </button>
@@ -490,7 +488,19 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                 </div>
 
                 {filteredHistory.length > 0 ? (
-                  filteredHistory.map(booking => renderBookingCard(booking))
+                  <>
+                    {filteredHistory.slice(0, visibleHistoryCount).map(booking => renderBookingCard(booking))}
+                    {filteredHistory.length > visibleHistoryCount && (
+                      <div style={{ textAlign: 'center', margin: '20px 0 40px' }}>
+                        <button 
+                          className="book-now-btn" 
+                          onClick={() => setVisibleHistoryCount(prev => prev + 5)}
+                        >
+                          See More Bookings
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="empty-state-premium">
                     <div className="empty-icon-wrapper">⌛</div>
@@ -500,7 +510,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                       <button 
                         className="view-details-link" 
                         style={{ marginTop: '12px', background: 'none', border: 'none', color: 'var(--green)', fontWeight: '700', cursor: 'pointer' }}
-                        onClick={() => { setHistorySearchQuery(''); setActiveHistoryFilter('ALL'); }}
+                        onClick={() => { setHistorySearchQuery(''); setActiveHistoryFilter('ALL'); setVisibleHistoryCount(5); }}
                       >
                         Clear Filters
                       </button>

@@ -93,13 +93,17 @@ export default function HelpSupportPage({ showToast }) {
         <div className="hs-contact-grid">
           <a href="tel:+918000000000" className="hs-contact-card hs-phone">
             <MdOutlinePhone size={24} />
-            <span className="hs-contact-label">Call Us</span>
-            <span className="hs-contact-detail">+91 80000 00000</span>
+            <div>
+              <div className="hs-contact-label">Call Us</div>
+              <div className="hs-contact-detail">+91 80000 00000</div>
+            </div>
           </a>
           <a href="mailto:support@righttouch.in" className="hs-contact-card hs-email">
             <MdOutlineEmail size={24} />
-            <span className="hs-contact-label">Email</span>
-            <span className="hs-contact-detail">support@righttouch.in</span>
+            <div>
+              <div className="hs-contact-label">Email</div>
+              <div className="hs-contact-detail">support@righttouch.in</div>
+            </div>
           </a>
         </div>
 

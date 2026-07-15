@@ -4,7 +4,7 @@ import { Facebook, Twitter, Instagram, Mail, Phone, MapPin, Linkedin } from 'luc
 // import logo from '../assets/logo.png';
 import './Footer.css';
 
-const Footer = ({ currentUser, onLoginClick }) => {
+const Footer = ({ currentUser, onLoginClick, serviceCategories = [] }) => {
     const handleRestrictedLink = (e, path) => {
         if (!currentUser) {
             e.preventDefault();
@@ -38,11 +38,20 @@ const Footer = ({ currentUser, onLoginClick }) => {
                         <div className="footer-col">
                             <h4>Our Services</h4>
                             <ul>
-                                <li><Link to="/services">AC Repair & Service</Link></li>
-                                <li><Link to="/services">Plumbing Solutions</Link></li>
-                                <li><Link to="/services">Electrical Services</Link></li>
-                                <li><Link to="/services">Home Cleaning</Link></li>
-                                <li><Link to="/services">View All Services</Link></li>
+                                {serviceCategories.length > 0 ? (
+                                    serviceCategories.slice(0, 4).map(cat => (
+                                        <li key={cat._id}>
+                                            <Link to={`/services?category=${cat._id}`}>{cat.category}</Link>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <>
+                                        <li><Link to="/services">Home Services</Link></li>
+                                        <li><Link to="/services">Repair Services</Link></li>
+                                        <li><Link to="/services">Cleaning</Link></li>
+                                    </>
+                                )}
+                                <li><Link to="/services" className="accent" style={{ fontWeight: '600' }}>View All Services</Link></li>
                             </ul>
                         </div>
 
@@ -74,7 +83,7 @@ const Footer = ({ currentUser, onLoginClick }) => {
                                         </Link>
                                     </li>
                                 )}
-                                <li><Link to="/contact">Contact Support</Link></li>
+                                <li><Link to="/help">Contact Support</Link></li>
                                 <li><Link to="/privacy-policy">Privacy Policy</Link></li>
                             </ul>
                         </div>

@@ -1335,18 +1335,25 @@ body.dark-mode .confirm-cancel {
 }
 
 .schedule-popup {
-  max-width: 500px !important;
-  margin: 0 auto;
+  max-width: 540px !important;
+  margin: auto;
+  border-radius: 24px;
+  padding: 32px 24px !important;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .schedule-form-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-height: 550px;
+  gap: 24px;
+  max-height: 60vh;
   overflow-y: auto;
-  padding-right: 12px;
-  margin-right: -8px;
+  padding-right: 16px;
+  margin-right: -16px;
+  padding-left: 4px;
+  padding-bottom: 20px;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
@@ -1376,22 +1383,22 @@ body.dark-mode .confirm-cancel {
 .booking-type-toggle {
   display: flex;
   background: #f1f5f9;
-  padding: 4px;
-  border-radius: 12px;
-  gap: 4px;
+  padding: 6px;
+  border-radius: 16px;
+  gap: 8px;
 }
 
 .toggle-btn {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   border: none;
   background: transparent;
   color: #64748b;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
 .toggle-btn.active {
@@ -1411,17 +1418,24 @@ body.dark-mode .confirm-cancel {
 
 .day-card {
   flex-shrink: 0;
-  width: 90px;
-  padding: 12px;
-  border: 1.5px solid #f1f5f9;
-  border-radius: 12px;
+  width: 95px;
+  padding: 14px 10px;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
   background: white;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.day-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px rgba(0,0,0,0.05);
 }
 
 .day-card.active {
@@ -1457,16 +1471,23 @@ body.dark-mode .confirm-cancel {
 }
 
 .slot-pill {
-  padding: 10px 4px;
-  border: 1.5px solid #f1f5f9;
-  border-radius: 10px;
+  padding: 12px 6px;
+  border: 2px solid #f1f5f9;
+  border-radius: 12px;
   background: white;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
   color: #475569;
   cursor: pointer;
   text-align: center;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.slot-pill:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.05);
 }
 
 .slot-pill.active {
@@ -1482,14 +1503,16 @@ body.dark-mode .confirm-cancel {
 
 .fault-reason-input textarea {
   width: 100%;
-  padding: 14px;
-  border: 1.5px solid #f1f5f9;
-  border-radius: 12px;
-  font-size: 14px;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 15px;
   outline: none;
-  resize: none;
-  transition: border-color 0.2s;
+  resize: vertical;
+  min-height: 100px;
+  transition: all 0.3s ease;
   background: #f8fafc;
+  color: #0f172a;
 }
 
 .fault-reason-input textarea:focus {

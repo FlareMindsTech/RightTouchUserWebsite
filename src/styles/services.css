@@ -484,24 +484,30 @@ body.dark-mode .filters-sidebar {
 /* Top Filter Bar (Horizontal) */
 .top-category-bar {
   position: sticky;
-  top: 70px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  top: 60px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
-  padding: 12px 24px;
+  gap: 16px;
+  padding: 14px 24px 24px; /* Reduced top padding, but kept bottom padding for shadows */
   margin: 0 auto 32px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
   transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   width: 100%;
+}
+
+/* Forces right-side padding in flex scrolling containers to prevent clipping */
+.top-category-bar::after {
+  content: '';
+  padding-right: 24px;
 }
 
 .top-category-bar::-webkit-scrollbar {
@@ -513,12 +519,11 @@ body.dark-mode .filters-sidebar {
   display: flex;
   align-items: center;
   height: 48px;
-  /* Fixed height for consistency */
   gap: 12px;
-  padding: 0 20px;
-  border-radius: 999px;
+  padding: 0 20px 0 10px; /* Less padding on the left to hug the circular icon nicely */
+  border-radius: 100px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1.5px solid transparent;
   background: rgba(248, 250, 252, 0.8);
   position: relative;
@@ -526,16 +531,16 @@ body.dark-mode .filters-sidebar {
 }
 
 .top-cat-item:hover {
-  background: white;
-  border-color: #e2e8f0;
+  background: #ffffff;
+  border-color: #cbd5e1;
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
 }
 
 .top-cat-item.active {
-  background: white;
+  background: #ffffff;
   border-color: #22c55e;
-  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.12);
+  box-shadow: 0 12px 24px -8px rgba(34, 197, 94, 0.3);
 }
 
 .top-cat-item.active .top-cat-label {
@@ -545,8 +550,8 @@ body.dark-mode .filters-sidebar {
 
 
 .top-cat-icon {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -563,6 +568,7 @@ body.dark-mode .filters-sidebar {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
   transition: transform 0.3s ease;
 }
 

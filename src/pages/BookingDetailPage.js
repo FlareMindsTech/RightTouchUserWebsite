@@ -8,13 +8,27 @@ import {
   MdPayment, 
   MdCall, 
   MdStarOutline,
+  MdStar,
   MdVerified
 } from 'react-icons/md';
 import './BookingDetailPage.css';
 import InvoiceModal from '../components/InvoiceModal';
 
-const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService, isPaidBooking, paymentLoading, canShowPayNow, handlePayButtonClick, canRate, ratingForm, setRatingForm, handleSubmitRating, ratingLoading, showInvoice, setShowInvoice }) => {
+const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService, isPaidBooking, paymentLoading, canShowPayNow, handlePayButtonClick, canRate, showInvoice, setShowInvoice, currentUser }) => {
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingForm, setRatingForm] = useState({ rates: 5, comment: '' });
+  const [ratingLoading, setRatingLoading] = useState(false);
+
+  const handleSubmitRating = async () => {
+    setRatingLoading(true);
+    // Simulate an API call
+    setTimeout(() => {
+      setRatingLoading(false);
+      setShowRatingModal(false);
+      showToast('Thank you for your rating!', 'success');
+      setRatingForm({ rates: 5, comment: '' }); // reset
+    }, 800);
+  };
 
   if (!booking) return null;
 
@@ -292,19 +306,44 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
       </div>
 
       {showRatingModal && (
-        <div className="rating-modal-overlay" onClick={() => !ratingLoading && setShowRatingModal(false)}>
-          <div className="rating-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Rate Your Experience</h3>
-            <div className="star-row">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button type="button" key={star} className={`star-btn ${ratingForm.rates >= star ? 'active' : ''}`} onClick={() => setRatingForm(prev => ({ ...prev, rates: star }))}>
-                  ★
-                </button>
-              ))}
+        <div className="rating-modal-overlay-v2" onClick={() => !ratingLoading && setShowRatingModal(false)}>
+          <div className="rating-modal-v2" onClick={(e) => e.stopPropagation()}>
+            <div className="rm-header">
+              <h3>How did we do?</h3>
+              <p>Your feedback helps us improve our service.</p>
             </div>
-            <textarea value={ratingForm.comment} onChange={(e) => setRatingForm(prev => ({ ...prev, comment: e.target.value }))} placeholder="How was the service?" rows={4} />
-            <div className="rating-actions">
-              <button className="rating-submit" onClick={handleSubmitRating} disabled={ratingLoading}>Submit Review</button>
+            
+            <div className="rm-stars">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const isActive = ratingForm.rates >= star;
+                return (
+                  <button 
+                    type="button" 
+                    key={star} 
+                    className={`rm-star-btn ${isActive ? 'active' : ''}`} 
+                    onClick={() => setRatingForm(prev => ({ ...prev, rates: star }))}
+                  >
+                    {isActive ? <MdStar /> : <MdStarOutline />}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="rm-input-wrapper">
+              <textarea 
+                className="rm-textarea"
+                value={ratingForm.comment} 
+                onChange={(e) => setRatingForm(prev => ({ ...prev, comment: e.target.value }))} 
+                placeholder="Tell us about your experience..." 
+                rows={4} 
+              />
+            </div>
+
+            <div className="rm-actions">
+              <button className="rm-cancel-btn" onClick={() => setShowRatingModal(false)} disabled={ratingLoading}>Cancel</button>
+              <button className="rm-submit-btn" onClick={handleSubmitRating} disabled={ratingLoading}>
+                {ratingLoading ? 'Submitting...' : 'Submit Review'}
+              </button>
             </div>
           </div>
         </div>

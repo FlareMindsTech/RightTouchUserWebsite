@@ -24,6 +24,7 @@ import SettingsPage from './pages/SettingsPage';
 import RatingsPage from './pages/RatingsPage';
 import ReportPage from './pages/ReportPage';
 import HelpSupportPage from './pages/HelpSupportPage';
+import AboutPage from './pages/AboutPage';
 import { MdSearch, MdShoppingCart } from 'react-icons/md';
 import logo from './assets/logo.png';
 import { getAllCategories } from './services/categoryService';
@@ -97,7 +98,7 @@ function App() {
     return () => {
       timeoutIds.forEach(id => clearTimeout(id));
     };
-  }, [location.pathname, location.hash]);
+  }, [location.pathname, location.hash, location.search]);
 
   const formatCartItem = useCallback((cartItem) => {
     const detail = cartItem.item || {};
@@ -620,12 +621,14 @@ function App() {
           <Route path="/ratings" element={<RatingsPage showToast={showToast} />} />
           <Route path="/report" element={<ReportPage showToast={showToast} />} />
           <Route path="/help" element={<HelpSupportPage showToast={showToast} />} />
+          <Route path="/about" element={<AboutPage isActive={currentPage === 'about'} />} />
         </Routes>
       </main>
 
       <Footer 
         currentUser={currentUser} 
         onLoginClick={() => setShowLoginDialog(true)} 
+        serviceCategories={serviceCategories}
       />
 
       <BottomNav currentPage={currentPage} onNavigate={handleNavigate} currentUser={currentUser} />
