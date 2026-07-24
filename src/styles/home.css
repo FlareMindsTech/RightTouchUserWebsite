@@ -815,3 +815,147 @@ body.dark-mode .desktop-hero {
   color: var(--text-secondary);
   line-height: 1.5;
 }
+
+/* ═══════════════════════════════════════════════════════
+   HOME PAGE DENSITY TUNING
+═══════════════════════════════════════════════════════ */
+#page-home .location-bar {
+  padding: 12px 0 6px;
+}
+
+#page-home .section-wrap {
+  margin-bottom: 20px;
+}
+
+#page-home .section-title {
+  margin-bottom: 10px;
+}
+
+#page-home .desktop-hero {
+  padding: 36px 32px;
+  margin-bottom: 24px;
+}
+
+#page-home .search-results-section {
+  padding: 8px 0 110px;
+}
+
+#page-home .search-results-header {
+  margin-bottom: 18px;
+}
+
+#page-home .search-sub-title {
+  margin: 20px 0 12px;
+}
+
+#page-home .carousel-track {
+  gap: 12px;
+  padding: 8px 2px 16px;
+  margin: -8px -2px -16px;
+}
+
+#page-home .offer-card {
+  width: 300px;
+  min-height: 170px;
+}
+
+#page-home .appliance-card-premium {
+  min-width: 140px;
+  padding: 10px;
+  gap: 8px;
+}
+
+#page-home .why-card {
+  padding: 20px 16px;
+}
+
+@media (max-width: 1023px) {
+  #page-home .desktop-hero {
+    padding: 30px 24px;
+    margin-bottom: 20px;
+  }
+
+  #page-home .category-grid {
+    gap: 10px;
+  }
+
+  #page-home .category-card {
+    padding: 14px 10px;
+  }
+}
+
+@media (max-width: 767px) {
+  #page-home .location-bar {
+    padding: 10px 0 4px;
+  }
+
+  #page-home .section-wrap {
+    margin-bottom: 18px;
+  }
+
+  #page-home .section-title {
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+
+  #page-home .search-results-section {
+    padding-bottom: 96px;
+  }
+
+  #page-home .search-results-header h2 {
+    font-size: 22px;
+  }
+
+  #page-home .search-results-count {
+    font-size: 13px;
+  }
+
+  #page-home .search-sub-title {
+    margin: 18px 0 10px;
+  }
+
+  #page-home .category-card {
+    padding: 12px 10px;
+    gap: 8px;
+  }
+
+  #page-home .cat-icon-wrap {
+    width: 36px;
+    height: 36px;
+  }
+
+  #page-home .offer-card {
+    width: 220px;
+    padding: 18px 14px;
+    min-height: 160px;
+  }
+
+  #page-home .appliance-card-premium {
+    min-width: 132px;
+    padding: 10px;
+  }
+
+  #page-home .why-card {
+    padding: 18px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  #page-home .category-grid {
+    gap: 8px;
+  }
+
+  #page-home .category-card span,
+  #page-home .appliance-name-premium,
+  #page-home .why-card p {
+    font-size: 12px;
+  }
+
+  #page-home .offer-card {
+    width: 200px;
+  }
+
+  #page-home .appliance-card-premium {
+    min-width: 126px;
+  }
+}

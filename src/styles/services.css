@@ -493,7 +493,8 @@ body.dark-mode .filters-sidebar {
   align-items: center;
   justify-content: flex-start;
   gap: 16px;
-  padding: 14px 24px 24px; /* Reduced top padding, but kept bottom padding for shadows */
+  padding: 14px 24px 24px;
+  /* Reduced top padding, but kept bottom padding for shadows */
   margin: 0 auto 32px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -520,7 +521,8 @@ body.dark-mode .filters-sidebar {
   align-items: center;
   height: 48px;
   gap: 12px;
-  padding: 0 20px 0 10px; /* Less padding on the left to hug the circular icon nicely */
+  padding: 0 20px 0 10px;
+  /* Less padding on the left to hug the circular icon nicely */
   border-radius: 100px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);

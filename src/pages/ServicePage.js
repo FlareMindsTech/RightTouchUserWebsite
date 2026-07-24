@@ -14,13 +14,15 @@ import {
   Cpu,
   Paintbrush,
   ChevronRight,
-  LayoutGrid
+  LayoutGrid,
+  ShoppingBag,
+  Clock,
+  Share2,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import '../styles/services.css';
+import './ServicePage.css';
 
-
-const ServicesPage = ({
+const ServicePage = ({
   isActive,
   onNavigate,
   onOpenServiceDetail,
@@ -42,7 +44,6 @@ const ServicesPage = ({
   const [categories, setCategories] = useState(initialCategories);
   const [allServices, setAllServices] = useState(initialAllServices);
   const [filteredServices, setFilteredServices] = useState([]);
-  const [localSearchQuery, setLocalSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(isGlobalLoading);
   const [error] = useState(null);
@@ -52,23 +53,34 @@ const ServicesPage = ({
     priceRange: 'all',
     rating: 0,
   });
-  const [visibleCount, setVisibleCount] = useState(8);
+  const [visibleCount, setVisibleCount] = useState(9);
+  const [shuffledCategories, setShuffledCategories] = useState([]);
+  const [hoveredCard, setHoveredCard] = useState(null);
 
-  // Sync with global props
+  // Shuffle function
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   useEffect(() => {
     setCategories(initialCategories);
     setAllServices(initialAllServices);
     setLoading(isGlobalLoading);
+    if (initialCategories.length > 0) {
+      setShuffledCategories(shuffleArray(initialCategories));
+    }
   }, [initialCategories, initialAllServices, isGlobalLoading]);
 
-  // Prioritize navbar/global searchQuery for services page filtering
-  const effectiveSearchQuery = (searchQuery || localSearchQuery || '').trim().toLowerCase();
+  const effectiveSearchQuery = (searchQuery || '').trim().toLowerCase();
 
-  // Unified filtering logic
   useEffect(() => {
     let result = allServices;
 
-    // 1. Filter by category
     if (selectedCategory) {
       result = result.filter(s => {
         const sCatId = s.categoryId?._id || s.categoryId;
@@ -76,7 +88,6 @@ const ServicesPage = ({
       });
     }
 
-    // 2. Filter by Price Range
     if (filters.priceRange !== 'all') {
       result = result.filter(s => {
         const price = s.discountedPrice || s.serviceCost;
@@ -87,12 +98,10 @@ const ServicesPage = ({
       });
     }
 
-    // 3. Filter by Rating
     if (filters.rating > 0) {
       result = result.filter(s => (s.ratingSummary?.averageRating || 0) >= filters.rating);
     }
 
-    // 4. Filter by search query
     if (effectiveSearchQuery) {
       result = result.filter(item => {
         const name = (item.serviceName || '').toLowerCase();
@@ -105,12 +114,9 @@ const ServicesPage = ({
     }
 
     setFilteredServices(result);
-    setVisibleCount(8); // Reset visibility when filters change
+    setVisibleCount(9);
   }, [selectedCategory, allServices, effectiveSearchQuery, filters]);
 
-
-
-  // Sync state with URL category
   useEffect(() => {
     if (categories.length > 0) {
       if (categoryIdFromUrl) {
@@ -124,16 +130,14 @@ const ServicesPage = ({
     }
   }, [categoryIdFromUrl, categories]);
 
-  // Handle category selection via URL
   const handleCategoryClick = (category) => {
     if (!category) {
-      navigate('/services'); // Reset to all
+      navigate('/services');
     } else {
       navigate(`/services?category=${category._id}`);
     }
   };
 
-  // Handle service click
   const handleServiceClick = (service) => {
     const categoryName = service.categoryId?.category || selectedCategory?.category || 'AC';
     navigate(`/product-services?type=${encodeURIComponent(categoryName)}&serviceId=${service._id}`);
@@ -209,91 +213,95 @@ const ServicesPage = ({
 
   const getCategoryIcon = (categoryName) => {
     const name = categoryName?.toLowerCase() || '';
-    if (name.includes('solar')) return <Sun size={18} />;
-    if (name.includes('ac') || name.includes('air')) return <Wind size={18} />;
-    if (name.includes('electric')) return <Zap size={18} />;
-    if (name.includes('plumb')) return <Droplets size={18} />;
-    if (name.includes('clean')) return <Sparkles size={18} />;
-    if (name.includes('paint')) return <Paintbrush size={18} />;
-    if (name.includes('appliance') || name.includes('repair')) return <Cpu size={18} />;
-    return <Wrench size={18} />;
+    if (name.includes('solar')) return <Sun size={16} />;
+    if (name.includes('ac') || name.includes('air')) return <Wind size={16} />;
+    if (name.includes('electric')) return <Zap size={16} />;
+    if (name.includes('plumb')) return <Droplets size={16} />;
+    if (name.includes('clean')) return <Sparkles size={16} />;
+    if (name.includes('paint')) return <Paintbrush size={16} />;
+    if (name.includes('appliance') || name.includes('repair')) return <Cpu size={16} />;
+    return <Wrench size={16} />;
   };
 
-  const TopCategoryBar = () => (
-    <div className="top-category-bar">
-      <div
-        className={`top-cat-item ${!selectedCategory ? 'active' : ''}`}
-        onClick={() => handleCategoryClick(null)}
-      >
-        <div className="top-cat-icon"><LayoutGrid size={20} /></div>
-        <span className="top-cat-label">All Services</span>
-      </div>
-      {categories.map(cat => (
-        <div
-          key={cat._id}
-          className={`top-cat-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
-          onClick={() => handleCategoryClick(cat)}
+  const getCategoryColor = (categoryName) => {
+    const name = categoryName?.toLowerCase() || '';
+    if (name.includes('solar')) return '#F39C12';
+    if (name.includes('ac') || name.includes('air')) return '#3498DB';
+    if (name.includes('electric')) return '#E74C3C';
+    if (name.includes('plumb')) return '#1ABC9C';
+    if (name.includes('clean')) return '#9B59B6';
+    if (name.includes('paint')) return '#E67E22';
+    if (name.includes('appliance') || name.includes('repair')) return '#2ECC71';
+    return '#0B7C4D';
+  };
+
+  const CategoryNav = () => (
+    <div className="category-nav">
+      <div className="category-nav-scroll">
+        <button
+          className={`category-nav-item ${!selectedCategory ? 'active' : ''}`}
+          onClick={() => handleCategoryClick(null)}
         >
-          <div className="top-cat-icon">
-            {cat.image ? (
-              <img src={cat.image} alt={cat.category} className="top-cat-img" />
-            ) : (
-              getCategoryIcon(cat.category)
-            )}
+          <div className="category-nav-icon">
+            <LayoutGrid size={16} />
           </div>
-          <span className="top-cat-label">{cat.category}</span>
-        </div>
-      ))}
+          <span>All Services</span>
+        </button>
+        {shuffledCategories.map(cat => (
+          <button
+            key={cat._id}
+            className={`category-nav-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+            onClick={() => handleCategoryClick(cat)}
+          >
+            <div className="category-nav-icon" style={{ background: selectedCategory?._id === cat._id ? 'rgba(255,255,255,0.2)' : getCategoryColor(cat.category) + '20' }}>
+              {cat.image ? (
+                <img src={cat.image} alt={cat.category} />
+              ) : (
+                getCategoryIcon(cat.category)
+              )}
+            </div>
+            <span>{cat.category}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 
-  const FilterContent = () => (
-    <div className="filter-content-inner">
-      <div className="filter-section">
-        <h4 className="section-title">Browse Categories</h4>
-        <div className="category-menu">
-          <div
-            className={`menu-item ${!selectedCategory ? 'active' : ''}`}
+  const FilterPanel = () => (
+    <div className="filter-panel-modern">
+      <div className="filter-group-modern">
+        <h4 className="filter-group-label">Categories</h4>
+        <div className="filter-list">
+          <button
+            className={`filter-item ${!selectedCategory ? 'active' : ''}`}
             onClick={() => handleCategoryClick(null)}
           >
-            <div className="menu-icon"><LayoutGrid size={18} /></div>
-            <span className="menu-label">All Services</span>
-            <ChevronRight className="menu-chevron" size={14} />
-          </div>
-          {categories.map(cat => (
-            <div
+            <LayoutGrid size={16} />
+            <span>All Services</span>
+            <ChevronRight size={14} />
+          </button>
+          {shuffledCategories.map(cat => (
+            <button
               key={cat._id}
-              className={`menu-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+              className={`filter-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
               onClick={() => handleCategoryClick(cat)}
             >
-              <div className="menu-icon">{getCategoryIcon(cat.category)}</div>
-              <span className="menu-label">{cat.category}</span>
-              <ChevronRight className="menu-chevron" size={14} />
-            </div>
+              {getCategoryIcon(cat.category)}
+              <span>{cat.category}</span>
+              <ChevronRight size={14} />
+            </button>
           ))}
         </div>
       </div>
-
-      {selectedCategory && (
-        <button className="reset-all-btn" onClick={clearAllFilters}>
-          <X size={16} /> Reset Categories
-        </button>
-      )}
     </div>
   );
 
-
   if (loading && isActive) {
     return (
-      <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
-        <div className="services-hero">
-          <h1>Loading <span className="accent">Services...</span></h1>
-        </div>
-        <div className="section-wrap">
-          <div className="loading-spinner" style={{ textAlign: 'center', padding: '50px' }}>
-            <div className="spinner"></div>
-            <p>Fetching available services...</p>
-          </div>
+      <section className={`page ${isActive ? '' : 'hidden'}`}>
+        <div className="loader-wrapper">
+          <div className="loader-spinner"></div>
+          <p className="loader-text">Loading services...</p>
         </div>
       </section>
     );
@@ -301,283 +309,318 @@ const ServicesPage = ({
 
   if (error && isActive) {
     return (
-      <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
-        <div className="services-hero">
-          <h1><span className="accent">Oops!</span></h1>
-          <p>{error}</p>
-        </div>
-        <div className="section-wrap">
-          <div style={{ textAlign: 'center' }}>
-            <button className="retry-button" onClick={() => window.location.reload()}>Try Again</button>
-          </div>
+      <section className={`page ${isActive ? '' : 'hidden'}`}>
+        <div className="error-wrapper">
+          <div className="error-emoji">😕</div>
+          <h2 className="error-heading">Something went wrong</h2>
+          <p className="error-desc">{error}</p>
+          <button className="error-btn" onClick={() => window.location.reload()}>
+            Try Again
+          </button>
         </div>
       </section>
     );
   }
 
-
-
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
-      {/* Mobile Search - Keeping it compact */}
-      <div className="services-mobile-container mobile-only" style={{ padding: '0 16px', marginTop: '12px' }}>
-        <div className="search-pill-container" style={{ margin: 0 }}>
-          <Search className="search-pill-icon" size={20} />
-          <input
-            type="text"
-            className="search-pill-input"
-            placeholder="Search for services"
-            value={localSearchQuery}
-            onChange={(e) => setLocalSearchQuery(e.target.value)}
-          />
-        </div>
+      {/* Mobile Filter */}
+      <div className="mobile-toolbar mobile-only">
+        <button className="toolbar-filter" onClick={() => setShowMobileFilters(true)}>
+          <Filter size={16} />
+          <span>Filter</span>
+          {(selectedCategory || filters.priceRange !== 'all' || filters.rating > 0) && (
+            <span className="toolbar-dot">•</span>
+          )}
+        </button>
+        <span className="toolbar-count">{filteredServices.length} services</span>
       </div>
 
-      <div className="section-wrap">
-        {/* Mobile Filter Bar */}
-        <div className="mobile-filter-bar mobile-only">
-          <div className="filter-toggle-btn" onClick={() => setShowMobileFilters(true)}>
-            <Filter size={18} />
-            <span>Filters {(selectedCategory || filters.priceRange !== 'all' || filters.rating > 0) && "•"}</span>
-          </div>
-          <p className="results-count-text">
-            {filteredServices.length} {filteredServices.length === 1 ? 'Service' : 'Services'} Found
-          </p>
-        </div>
+      {/* Category Navigation */}
+      <CategoryNav />
 
-        <div className="services-layout-wrapper">
-          {/* Main Content Area */}
-          <main className="services-results-main full-width">
-            <TopCategoryBar />
+      <div className="content-area">
+        <main className="main-content-area">
+          {filteredServices.length > 0 ? (
+            <>
+              {/* Grid View Only - No List toggle */}
+              <div className="service-grid">
+                {filteredServices.slice(0, visibleCount).map((service, index) => {
+                  const isHovered = hoveredCard === service._id;
+                  const discount = service.serviceCost && service.discountedPrice 
+                    ? Math.round(((service.serviceCost - service.discountedPrice) / service.serviceCost) * 100)
+                    : 0;
 
-
-
-            {filteredServices.length > 0 ? (
-              <div className="services-results-container">
-                {/* Desktop View (Massive Cards) */}
-                <div className="massive-list desktop-only">
-                  {filteredServices.slice(0, visibleCount).map(service => (
-                    <div key={service._id} className="massive-section-wrap">
-                      <div className="massive-card">
-                        <div className="massive-card-content">
-                          <h3 className="massive-card-title">{service.serviceName}</h3>
-                          <div className="massive-card-rating">
-                            <Star size={16} className="star-icon" />
-                            <span>
-                              {service.ratingSummary?.averageRating || 0.0} ({service.ratingSummary?.totalRatings || 0} reviews)
-                            </span>
-                          </div>
-                          <div className="massive-card-price">
-                            ₹{service.discountedPrice || service.serviceCost} •
-                          </div>
-                          <ul className="massive-card-description">
-                            {(service.description?.split(',') || []).slice(0, 3).map((item, idx) => (
-                              <li key={idx}>{item.trim()}</li>
-                            ))}
-                          </ul>
-                          <div className="massive-card-link" onClick={() => handleServiceClick(service)}>
-                            View details
-                          </div>
+                  return (
+                  <div 
+                    key={service._id} 
+                    className={`service-card-modern ${isHovered ? 'hovered' : ''}`}
+                    onMouseEnter={() => setHoveredCard(service._id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="card-image" onClick={() => handleServiceClick(service)}>
+                      {service.serviceImages?.[0] ? (
+                        <img src={service.serviceImages[0]} alt={service.serviceName} loading="lazy" />
+                      ) : (
+                        <div className="card-image-placeholder">
+                          <Hammer size={28} />
                         </div>
-                        <div className="massive-card-right">
-                          <div className="massive-card-image">
-                            {service.serviceImages?.[0] ? (
-                              <img src={service.serviceImages[0]} alt={service.serviceName} loading="lazy" />
-                            ) : (
-                              <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
-                                <Wrench size={40} />
-                              </div>
-                            )}
-                          </div>
-                          {isInCart && isInCart(service._id) ? (
-                            <div className="massive-cart-controls" onClick={(e) => e.stopPropagation()}>
-                              <div className="massive-quantity-container">
-                                <button
-                                  className="massive-qty-btn"
-                                  onClick={() => handleDecrementService(service)}
-                                  aria-label={`Decrease quantity for ${service.serviceName}`}
-                                >
-                                  -
-                                </button>
-                                <span className="massive-qty-value">{getServiceQuantity(service._id)}</span>
-                                <button
-                                  className="massive-qty-btn"
-                                  onClick={() => handleIncrementService(service)}
-                                  aria-label={`Increase quantity for ${service.serviceName}`}
-                                >
-                                  +
-                                </button>
-                              </div>
-                              <button
-                                className="massive-add-btn massive-remove-btn"
-                                onClick={() => confirmAndRemoveService(service)}
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              className="massive-add-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleIncrementService(service);
-                              }}
-                            >
-                              Add
-                            </button>
+                      )}
+                      {discount > 0 && (
+                        <div className="discount-badge">-{discount}%</div>
+                      )}
+                      <div className="card-image-overlay">
+                        <button className="card-view-link">Quick View</button>
+                      </div>
+                      <button className="share-btn" onClick={(e) => {
+                        e.stopPropagation();
+                        if (navigator.share) {
+                          navigator.share({
+                            title: service.serviceName,
+                            text: service.description,
+                            url: window.location.href
+                          });
+                        }
+                      }}>
+                        <Share2 size={16} />
+                      </button>
+                    </div>
+
+                    <div className="card-body" onClick={() => handleServiceClick(service)}>
+                      <div className="card-header">
+                        <h3 className="card-title">{service.serviceName}</h3>
+                        <span className="card-category" style={{ background: getCategoryColor(service.categoryId?.category) + '20', color: getCategoryColor(service.categoryId?.category) }}>
+                          {service.categoryId?.category || 'Service'}
+                        </span>
+                      </div>
+
+                      <div className="card-meta">
+                        <div className="card-rating">
+                          <Star size={14} className="star-gold" fill="#F1C40F" />
+                          <span className="rating-value">{service.ratingSummary?.averageRating || 0}</span>
+                          <span className="card-review-count">
+                            ({service.ratingSummary?.totalRatings || 0} reviews)
+                          </span>
+                        </div>
+                        <div className="card-duration">
+                          <Clock size={14} />
+                          <span>{service.duration || 'Flexible'}</span>
+                        </div>
+                      </div>
+
+                      <div className="card-price">
+                        <span className="price-current">₹{service.discountedPrice || service.serviceCost}</span>
+                        {service.serviceCost > (service.discountedPrice || 0) && (
+                          <span className="price-original">₹{service.serviceCost}</span>
+                        )}
+                        {service.serviceCost > (service.discountedPrice || 0) && (
+                          <span className="price-save">Save ₹{service.serviceCost - (service.discountedPrice || service.serviceCost)}</span>
+                        )}
+                      </div>
+
+                      {service.serviceHighlights?.length > 0 && (
+                        <div className="card-features">
+                          {service.serviceHighlights.slice(0, 3).map((item, idx) => (
+                            <span key={idx} className="card-feature">{item}</span>
+                          ))}
+                          {service.serviceHighlights.length > 3 && (
+                            <span className="card-feature more">+{service.serviceHighlights.length - 3} more</span>
                           )}
                         </div>
+                      )}
+                    </div>
+
+                    <div className="card-actions" onClick={(e) => e.stopPropagation()}>
+                      {isInCart && isInCart(service._id) ? (
+                        <>
+                          <div className="qty-control-modern">
+                            <button
+                              className="qty-btn-modern"
+                              onClick={() => handleDecrementService(service)}
+                            >
+                              −
+                            </button>
+                            <span className="qty-value-modern">
+                              {getServiceQuantity(service._id)}
+                            </span>
+                            <button
+                              className="qty-btn-modern"
+                              onClick={() => handleIncrementService(service)}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            className="action-btn action-remove"
+                            onClick={() => confirmAndRemoveService(service)}
+                          >
+                            <X size={14} /> Remove
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="action-btn action-add"
+                          onClick={() => handleIncrementService(service)}
+                        >
+                          <ShoppingBag size={16} /> Add to Cart
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )})}
+              </div>
+
+              {/* Mobile Compact Cards */}
+              <div className="mobile-compact-grid mobile-only">
+                {filteredServices.slice(0, visibleCount).map(service => {
+                  const discount = service.serviceCost && service.discountedPrice 
+                    ? Math.round(((service.serviceCost - service.discountedPrice) / service.serviceCost) * 100)
+                    : 0;
+                  return (
+                  <div
+                    key={service._id}
+                    className="mobile-compact-card"
+                    onClick={() => handleServiceClick(service)}
+                  >
+                    <div className="compact-card-image">
+                      {service.serviceImages?.[0] ? (
+                        <img src={service.serviceImages[0]} alt={service.serviceName} />
+                      ) : (
+                        <Wrench size={18} />
+                      )}
+                      {discount > 0 && (
+                        <div className="compact-discount">-{discount}%</div>
+                      )}
+                      <div className="compact-card-overlay">
+                        <span>View</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Mobile View (Compact Cards) */}
-                <div className="compact-service-grid mobile-only">
-                  {filteredServices.slice(0, visibleCount).map(service => (
-                    <div
-                      key={service._id}
-                      className="compact-service-card"
-                      onClick={() => handleServiceClick(service)}
-                    >
-                      <div className="compact-image-box">
-                        {service.serviceImages?.[0] ? (
-                          <img src={service.serviceImages[0]} alt={service.serviceName} className="compact-img" />
-                        ) : (
-                          <Hammer size={18} />
+                    <div className="compact-card-info">
+                      <h4 className="compact-card-title">{service.serviceName}</h4>
+                      <div className="compact-card-price">
+                        ₹{service.discountedPrice || service.serviceCost}
+                        {service.serviceCost > (service.discountedPrice || 0) && (
+                          <span className="compact-original">₹{service.serviceCost}</span>
                         )}
                       </div>
-                      <div className="compact-info">
-                        <h4 className="compact-name">{service.serviceName}</h4>
-                        {service.serviceCost && (
-                          <p className="compact-subtitle">₹{service.discountedPrice || service.serviceCost}</p>
-                        )}
+                      <div className="compact-card-rating">
+                        <Star size={10} className="star-gold" fill="#F1C40F" />
+                        <span>{service.ratingSummary?.averageRating || 0}</span>
                       </div>
-                      <div className="compact-card-actions" onClick={(e) => e.stopPropagation()}>
-                        {isInCart && isInCart(service._id) ? (
-                          <>
-                            <div className="compact-quantity-container">
-                              <button
-                                className="compact-qty-btn"
-                                onClick={() => handleDecrementService(service)}
-                                aria-label={`Decrease quantity for ${service.serviceName}`}
-                              >
-                                -
-                              </button>
-                              <span className="compact-qty-value">{getServiceQuantity(service._id)}</span>
-                              <button
-                                className="compact-qty-btn"
-                                onClick={() => handleIncrementService(service)}
-                                aria-label={`Increase quantity for ${service.serviceName}`}
-                              >
-                                +
-                              </button>
-                            </div>
-                            <button
-                              className="compact-remove-btn"
-                              onClick={() => confirmAndRemoveService(service)}
-                            >
-                              Remove
-                            </button>
-                          </>
-                        ) : (
+                    </div>
+                    <div className="compact-card-action" onClick={(e) => e.stopPropagation()}>
+                      {isInCart && isInCart(service._id) ? (
+                        <div className="compact-qty">
                           <button
-                            className="compact-add-btn"
+                            className="compact-qty-btn"
+                            onClick={() => handleDecrementService(service)}
+                          >
+                            −
+                          </button>
+                          <span className="compact-qty-value">
+                            {getServiceQuantity(service._id)}
+                          </span>
+                          <button
+                            className="compact-qty-btn"
                             onClick={() => handleIncrementService(service)}
                           >
-                            Add
+                            +
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <button
+                          className="compact-add-btn"
+                          onClick={() => handleIncrementService(service)}
+                        >
+                          Add to Cart
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
-
-                {/* Show More Button */}
-                {visibleCount < filteredServices.length && (
-                  <div className="load-more-container">
-                    <button
-                      className="load-more-btn"
-                      onClick={() => setVisibleCount(prev => prev + 8)}
-                    >
-                      Show More Services
-                    </button>
                   </div>
-                )}
+                )})}
               </div>
-            ) : (
-              <div className="no-services-message">
-                <Search size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px', opacity: 0.5 }} />
-                <h3>No matches found</h3>
-                <p>
-                  Try adjusting your filters or search query to find what you're looking for.
-                </p>
-                <button className="clear-search-btn" onClick={clearAllFilters}>
-                  Reset All Filters
-                </button>
+
+              {/* Load More */}
+              {visibleCount < filteredServices.length && (
+                <div className="load-more-wrapper">
+                  <button
+                    className="load-more-btn-modern"
+                    onClick={() => setVisibleCount(prev => prev + 9)}
+                  >
+                    <span>Load More Services</span>
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="empty-state-modern">
+              <div className="empty-icon-wrapper">
+                <Search size={48} />
               </div>
-            )}
-          </main>
-        </div>
+              <h3 className="empty-heading">No services found</h3>
+              <p className="empty-desc">
+                We couldn't find any services matching your criteria.
+              </p>
+              <button className="empty-action" onClick={clearAllFilters}>
+                Reset Filters
+              </button>
+            </div>
+          )}
+        </main>
       </div>
 
-      {/* Mobile Filters Drawer */}
+      {/* Mobile Filter Drawer */}
       {showMobileFilters && (
-        <div className="filters-drawer-overlay" onClick={() => setShowMobileFilters(false)}>
-          <div className="filters-drawer-content mobile-filter-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="drawer-header">
-              <h3>Filters</h3>
-              <button className="drawer-close" onClick={() => setShowMobileFilters(false)}>
+        <div className="drawer-overlay-modern" onClick={() => setShowMobileFilters(false)}>
+          <div className="drawer-modern" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header-modern">
+              <h3 className="drawer-title-modern">Filters</h3>
+              <button className="drawer-close-modern" onClick={() => setShowMobileFilters(false)}>
                 <X size={24} />
               </button>
             </div>
-            <div className="drawer-body">
-              <FilterContent />
+            <div className="drawer-body-modern">
+              <FilterPanel />
             </div>
-            <div className="mobile-filter-actions">
+            <div className="drawer-footer-modern">
               <button
-                className="clear-filters-btn"
-                style={{ flex: 1, marginTop: 0 }}
+                className="drawer-btn-secondary"
                 onClick={() => {
                   clearAllFilters();
                   setShowMobileFilters(false);
                 }}
               >
-                Reset
+                Reset All
               </button>
               <button
-                className="apply-filters-btn"
+                className="drawer-btn-primary"
                 onClick={() => setShowMobileFilters(false)}
               >
-                Show Results
+                Apply
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Custom Confirm Dialog */}
+      {/* Confirm Dialog */}
       {confirmDialog.open && (
-        <div className="confirm-overlay" onClick={handleCancelRemove}>
-          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="confirm-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-                <path d="M9 6V4h6v2" />
-              </svg>
+        <div className="dialog-overlay-modern" onClick={handleCancelRemove}>
+          <div className="dialog-modern" onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-icon-modern">
+              <X size={28} />
             </div>
-            <h3 className="confirm-title">Remove from Cart?</h3>
-            <p className="confirm-message">
+            <h3 className="dialog-title-modern">Remove from cart?</h3>
+            <p className="dialog-desc-modern">
               <strong>{confirmDialog.service?.serviceName}</strong> will be removed from your cart.
             </p>
-            <div className="confirm-actions">
-              <button className="confirm-btn confirm-cancel" onClick={handleCancelRemove}>
-                Keep It
+            <div className="dialog-actions-modern">
+              <button className="dialog-btn-cancel" onClick={handleCancelRemove}>
+                Keep
               </button>
-              <button className="confirm-btn confirm-remove" onClick={handleConfirmRemove}>
+              <button className="dialog-btn-confirm" onClick={handleConfirmRemove}>
                 Remove
               </button>
             </div>
@@ -588,4 +631,4 @@ const ServicesPage = ({
   );
 };
 
-export default ServicesPage;
+export default ServicePage;

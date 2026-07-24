@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   MdOutlineLocationOn,
   MdChevronLeft,
@@ -284,7 +284,7 @@ const CheckoutPage = ({
                   <label className="terms-checkbox">
                     <input type="checkbox" checked={termsAgreed} onChange={(e) => setTermsAgreed(e.target.checked)} />
                     <span className="checkmark">{termsAgreed ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}</span>
-                    I have read and agree to the Terms & Conditions and Privacy Policy.
+                    I have read and agree to the <Link to="/terms-of-service" style={{ color: 'var(--green)', fontWeight: '600' }}>Terms & Conditions</Link> and <Link to="/privacy-policy" style={{ color: 'var(--green)', fontWeight: '600' }}>Privacy Policy</Link>.
                   </label>
                   <button 
                     className="payment-btn" 

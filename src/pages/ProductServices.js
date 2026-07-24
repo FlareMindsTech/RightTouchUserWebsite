@@ -11,13 +11,10 @@ import {
   Clock,
   Zap,
   Info,
-  Hammer,
-  ClipboardList,
-  AlertCircle,
-  Truck,
-  Box
+  Hammer
 } from 'lucide-react';
 import { getServiceById } from '../services/serviceService';
+import './ProductServices.css'; // Import the CSS
 
 const ProductServices = ({
   isActive,
@@ -89,8 +86,6 @@ const ProductServices = ({
         if (cached) {
           setService(cached);
           setLoading(false);
-          // Optional: Still fetch in background to get full details if needed
-          // but for now, this is production-level caching
           return;
         }
       }
@@ -246,36 +241,15 @@ const ProductServices = ({
       )}
 
       <section className={`page ${isActive ? '' : 'hidden'}`} id="page-product-services">
-        <style>{`
-          .hero-grid {
-            display: grid;
-            gap: 30px;
-            grid-template-columns: 1fr;
-          }
-          .hg-media { order: 1; }
-          .hg-price { order: 2; margin-top: 10px; margin-bottom: 20px; }
-          .hg-details { order: 3; }
-
-          @media (min-width: 992px) {
-            .hero-grid {
-              grid-template-columns: minmax(0, 1fr) 380px;
-              gap: 40px;
-              align-items: start;
-            }
-            .hg-media { grid-column: 1; grid-row: 1; order: unset; }
-            .hg-price { grid-column: 2; grid-row: 1 / 4; position: sticky; top: 90px; order: unset; margin: 0; }
-            .hg-details { grid-column: 1; grid-row: 2; order: unset; margin-top: -10px; }
-          }
-        `}</style>
-        
         {/* Detail Header */}
-        <div className="services-hero" style={{ textAlign: 'left' }}>
-          <button className="back-btn-simple" onClick={handleBack} style={{ marginBottom: '15px' }}>
+        <div className="services-hero">
+          <button className="back-btn-simple" onClick={handleBack}>
             <ChevronLeft size={20} /> Back
           </button>
-          <div className="service-detail-hero-content hero-grid">
-            {/* Service Image Section */}
-            <div className="service-detail-image-wrap hg-media" style={{ width: '100%', margin: 0 }}>
+          
+          <div className="service-detail-hero-content">
+            {/* Left Column: Service Image Section */}
+            <div className="service-detail-image-wrap">
               {service.serviceImages?.[0] ? (
                 <img src={service.serviceImages[0]} alt={service.serviceName} className="service-main-img" />
               ) : (
@@ -283,62 +257,46 @@ const ProductServices = ({
                   <Hammer size={60} />
                 </div>
               )}
-              <div className="service-badges-overlay">
-              </div>
             </div>
 
-            <div className="hg-details">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                <h1 style={{ fontSize: '28px', margin: 0 }}>{service.serviceName}</h1>
-              </div>
+            {/* Right Column: Title, Ratings, Price & Booking Controls */}
+            <div className="price-card-sticky">
+              {/* Title & Rating */}
+              <h1 className="service-title">{service.serviceName}</h1>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontWeight: '700' }}>
-                  <Star size={18} fill="#f59e0b" />
+              <div className="rating-wrapper">
+                <div className="rating-stars">
+                  <Star className="star-icon" />
                   <span>{service.ratingSummary?.averageRating || 0}</span>
-                  <span style={{ color: '#64748b', fontWeight: '500', fontSize: '14px' }}>
+                  <span className="rating-count">
                     ({service.ratingSummary?.totalRatings || 0} reviews)
                   </span>
                 </div>
-                <span className="accent" style={{ background: 'var(--green-bg)', padding: '4px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: '600' }}>
+                <span className="service-badge">
                   {service.serviceType || 'Service'}
                 </span>
               </div>
-              <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '700px' }}>{service.description}</p>
 
-              {service.supportedBrands && service.supportedBrands.length > 0 && (
-                <div style={{ marginTop: '15px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Supported Brands: </span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
-                    {service.supportedBrands.map(brand => (
-                      <span key={brand} style={{ background: '#f1f5f9', padding: '2px 10px', borderRadius: '4px', fontSize: '12px', color: '#475569' }}>{brand}</span>
-                    ))}
-                  </div>
+              {/* Price & Savings */}
+              <div className="price-section">
+                <div className="price-main">
+                  <span className="price-current">₹{service.discountedPrice || service.serviceCost}</span>
+                  {service.serviceCost > (service.discountedPrice || 0) && (
+                    <>
+                      <span className="price-original">₹{service.serviceCost}</span>
+                      <span className="price-discount">{service.serviceDiscountPercentage}% OFF</span>
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="price-card-sticky hg-price" style={{ width: '100%', margin: 0 }}>
-              <div style={{ marginBottom: '20px' }}>
-                <span style={{ fontSize: '32px', fontWeight: '800', color: 'var(--green)' }}>₹{service.discountedPrice || service.serviceCost}</span>
-                {service.serviceCost > (service.discountedPrice || 0) && (
-                  <div style={{ marginTop: '4px' }}>
-                    <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: '8px' }}>₹{service.serviceCost}</span>
-                    <span style={{ color: '#ef4444', fontWeight: '700', fontSize: '14px' }}>{service.serviceDiscountPercentage}% OFF</span>
-                  </div>
-                )}
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '15px', marginBottom: '15px' }}>
-                {/* Minimum Visit Charge removed */}
                 {service.discountAmount > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--green)' }}>
-                    <span>You Save</span>
-                    <span>₹{service.discountAmount}</span>
+                  <div className="price-savings">
+                    You Save ₹{service.discountAmount}
                   </div>
                 )}
               </div>
 
+              {/* Action Buttons */}
               {isInCart(service._id) ? (
                 <div className="massive-cart-controls" onClick={(e) => e.stopPropagation()}>
                   <div className="massive-quantity-container">
@@ -372,10 +330,11 @@ const ProductServices = ({
                     handleIncrementService(service);
                   }}
                 >
-                  Add
+                  Add to Cart
                 </button>
               )}
 
+              {/* Duration Box */}
               <div className="detail-feature-bar">
                 <div className="feature-item">
                   <Clock size={18} className="feature-icon" />
@@ -384,23 +343,45 @@ const ProductServices = ({
                     <p className="feature-value">{service.duration || 'Flexible'}</p>
                   </div>
                 </div>
-                {/* Availability block removed */}
               </div>
+
+              {/* Supported Brands */}
+              {service.supportedBrands && service.supportedBrands.length > 0 && (
+                <div className="brands-section">
+                  <span className="brands-label">Supported Brands</span>
+                  <div className="brands-list">
+                    {service.supportedBrands.map(brand => (
+                      <span key={brand} className="brand-tag">{brand}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="detail-section-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))', gap: '30px', marginTop: '30px' }}>
+        {/* Full-Width Service Description Card */}
+        {service.description && (
+          <div className="detail-card-new description-card">
+            <h3 className="detail-card-title">
+              <Info size={22} className="icon-info" /> About This Service
+            </h3>
+            <p className="service-description">
+              {service.description}
+            </p>
+          </div>
+        )}
 
+        <div className="detail-section-grid">
           {/* What's Included */}
           <div className="detail-card-new">
             <h3 className="detail-card-title">
-              <CheckCircle2 size={24} color="var(--green)" /> What's Included
+              <CheckCircle2 size={24} className="icon-success" /> What's Included
             </h3>
             <ul className="detail-list">
               {(expandedSections.included ? service.whatIncluded : service.whatIncluded?.slice(0, 4))?.map((item, idx) => (
                 <li key={idx} className="detail-list-item">
-                  <Check className="detail-list-icon" size={16} color="var(--green)" />
+                  <Check className="detail-list-icon icon-success" size={16} />
                   {item}
                 </li>
               ))}
@@ -415,12 +396,12 @@ const ProductServices = ({
           {/* What's Not Included */}
           <div className="detail-card-new">
             <h3 className="detail-card-title">
-              <XCircle size={24} color="#ef4444" /> What's Not Included
+              <XCircle size={24} className="icon-error" /> What's Not Included
             </h3>
             <ul className="detail-list">
               {(expandedSections.notIncluded ? service.whatNotIncluded : service.whatNotIncluded?.slice(0, 4))?.map((item, idx) => (
                 <li key={idx} className="detail-list-item">
-                  <X className="detail-list-icon" size={16} color="#ef4444" />
+                  <X className="detail-list-icon icon-error" size={16} />
                   {item}
                 </li>
               ))}
@@ -432,80 +413,15 @@ const ProductServices = ({
             )}
           </div>
 
-          {/* Rectify Method (How it works) - HIDDEN 
-        <div className="detail-card-new" style={{ background: '#f0f9ff', borderColor: '#bae6fd' }}>
-          <h3 className="detail-card-title" style={{ color: '#0369a1' }}>
-            <Hammer size={24} /> How it works (Rectify Method)
-          </h3>
-          <div className="timeline-container-v2">
-            {service.rectifyMethod?.map((step, idx) => (
-              <div key={idx} className="timeline-step-v2">
-                <div className="timeline-line-v2"></div>
-                <div className="timeline-marker-v2">{idx + 1}</div>
-                <div className="timeline-content-v2">
-                  <p className="timeline-text-v2">{step}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        */}
-
-          {/* Service Checklist - HIDDEN
-        <div className="detail-card-new">
-          <h3 className="detail-card-title">
-            <ClipboardList size={24} color="var(--green)" /> Service Checklist
-          </h3>
-          <div className="checklist-grid">
-            {(expandedSections.checklist ? service.serviceChecklist : service.serviceChecklist?.slice(0, 6))?.map((item, idx) => (
-              <div key={idx} className="checklist-item">
-                <div className="checklist-dot"></div>
-                {item}
-              </div>
-            ))}
-          </div>
-          {service.serviceChecklist?.length > 6 && (
-            <button className="show-more-toggle" onClick={() => toggleSection('checklist')}>
-              {expandedSections.checklist ? 'Show Less' : `+${service.serviceChecklist.length - 6} More`}
-            </button>
-          )}
-        </div>
-        */}
-
-          {/* Fault Reasons & Tools - HIDDEN
-        <div className="detail-card-new" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: '#991b1b', fontSize: '14px', fontWeight: '800' }}>
-              <AlertCircle size={18} /> Common Fault Reasons
-            </h4>
-            <div className="tech-chip-group">
-              {service.faultReasons?.map(reason => (
-                <span key={reason} className="tech-chip fault">{reason}</span>
-              ))}
-            </div>
-          </div>
-          <div>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: '#1e293b', fontSize: '14px', fontWeight: '800' }}>
-              <Box size={18} /> Tools & Equipment Used
-            </h4>
-            <div className="tech-chip-group">
-              {service.toolsEquipments?.map(tool => (
-                <span key={tool} className="tech-chip tool">{tool}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-        */}
-
           {/* Service Highlights & Warranty */}
-          <div className="detail-card-new" style={{ background: 'var(--bg-input)', gridColumn: '1 / -1' }}>
+          <div className="detail-card-new highlight-card">
             <h3 className="detail-card-title">
-              <Zap size={24} color="#3b82f6" /> Service Highlights & Policies
+              <Zap size={24} className="icon-info" /> Service Highlights & Policies
             </h3>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start' }}>
-              <div style={{ flex: '1 1 min(100%, 300px)' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+            <div className="highlights-grid">
+              <div className="highlights-left">
+                <div className="highlights-badges">
                   {service.serviceHighlights?.map((item, idx) => (
                     <span key={idx} className="highlight-badge">
                       {item}
@@ -513,20 +429,20 @@ const ProductServices = ({
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: service.requiresSpareParts ? '#f59e0b' : '#22c55e', fontWeight: '600', flexWrap: 'wrap' }}>
-                  <Info size={18} style={{ flexShrink: 0 }} />
-                  <span style={{ flex: 1 }}>{service.requiresSpareParts ? 'This service may require spare parts (extra cost)' : 'No additional spare parts typically required'}</span>
+                <div className="spare-parts-info">
+                  <Info size={18} />
+                  <span>{service.requiresSpareParts ? 'This service may require spare parts (extra cost)' : 'No additional spare parts typically required'}</span>
                 </div>
               </div>
 
-              <div style={{ flex: '1 1 min(100%, 300px)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <div className="warranty-box-new" style={{ margin: 0 }}>
-                  <ShieldCheck size={20} /> Service Warranty: {service.serviceWarranty || '15'} Days
+              <div className="highlights-right">
+                <div className="warranty-box-new">
+                  <ShieldCheck size={20} /> Service Warranty: {String(service.serviceWarranty || '15').toLowerCase().includes('day') ? service.serviceWarranty : `${service.serviceWarranty || '15'} Days`}
                 </div>
 
                 {service.cancellationPolicy && (
-                  <div style={{ padding: '15px', border: '1px dashed #cbd5e1', borderRadius: '12px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', background: 'white' }}>
-                    <strong style={{ color: '#1e293b' }}>Cancellation Policy:</strong> {service.cancellationPolicy}
+                  <div className="cancellation-policy">
+                    <strong>Cancellation Policy:</strong> {service.cancellationPolicy}
                   </div>
                 )}
               </div>
@@ -535,56 +451,22 @@ const ProductServices = ({
         </div>
 
         {/* FAQs Section */}
-        <div className="section-wrap" style={{ padding: '40px 20px' }}>
-          <h2 style={{ marginBottom: '24px', fontSize: '24px' }}>Frequently Asked <span className="accent">Questions</span></h2>
-          <div style={{ maxWidth: '800px' }}>
+        <div className="section-wrap">
+          <h2 className="faq-title">Frequently Asked <span className="accent-text">Questions</span></h2>
+          <div className="faq-container">
             {customFAQs.length > 0 ? customFAQs.map((faq, idx) => (
-              <div key={idx} style={{
-                marginBottom: '12px',
-                border: '1px solid var(--border)',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                background: 'var(--bg-card)'
-              }}>
+              <div key={idx} className="faq-item">
                 <button
-                  style={{
-                    width: '100%',
-                    padding: '16px 18px',
-                    background: openFaqIndex === idx ? 'var(--green-bg)' : 'transparent',
-                    border: 'none',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    color: 'var(--text-primary)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    transition: 'all 0.2s ease'
-                  }}
+                  className={`faq-question-btn ${openFaqIndex === idx ? 'active' : ''}`}
                   onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
                 >
-                  <span style={{ flex: 1, paddingRight: '10px' }}>{faq.question}</span>
-                  <span style={{
-                    color: 'var(--green)',
-                    fontSize: '22px',
-                    fontWeight: '400',
-                    lineHeight: '1',
-                    transform: openFaqIndex === idx ? 'rotate(0deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s ease'
-                  }}>
+                  <span>{faq.question}</span>
+                  <span className="faq-toggle-icon">
                     {openFaqIndex === idx ? '−' : '+'}
                   </span>
                 </button>
                 {openFaqIndex === idx && (
-                  <div style={{
-                    padding: '16px 18px',
-                    background: 'var(--bg-input)',
-                    borderTop: '1px solid var(--border)',
-                    fontSize: '14px',
-                    color: 'var(--text-secondary)',
-                    lineHeight: '1.7'
-                  }}>
+                  <div className="faq-answer">
                     {faq.answer}
                   </div>
                 )}
@@ -594,50 +476,18 @@ const ProductServices = ({
               const a = typeof faq === 'string' ? "Please contact support for details." : faq.answer;
 
               return (
-                <div key={idx} style={{
-                  marginBottom: '12px',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  background: 'var(--bg-card)'
-                }}>
+                <div key={idx} className="faq-item">
                   <button
-                    style={{
-                      width: '100%',
-                      padding: '16px 18px',
-                      background: openFaqIndex === idx ? 'var(--green-bg)' : 'transparent',
-                      border: 'none',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      transition: 'all 0.2s ease'
-                    }}
+                    className={`faq-question-btn ${openFaqIndex === idx ? 'active' : ''}`}
                     onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
                   >
-                    <span style={{ flex: 1, paddingRight: '10px' }}>{q}</span>
-                    <span style={{
-                      color: 'var(--green)',
-                      fontSize: '22px',
-                      fontWeight: '400',
-                      lineHeight: '1'
-                    }}>
+                    <span>{q}</span>
+                    <span className="faq-toggle-icon">
                       {openFaqIndex === idx ? '−' : '+'}
                     </span>
                   </button>
                   {openFaqIndex === idx && (
-                    <div style={{
-                      padding: '16px 18px',
-                      background: 'var(--bg-input)',
-                      borderTop: '1px solid var(--border)',
-                      fontSize: '14px',
-                      color: 'var(--text-secondary)',
-                      lineHeight: '1.7'
-                    }}>
+                    <div className="faq-answer">
                       {a}
                     </div>
                   )}

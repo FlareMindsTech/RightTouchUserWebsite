@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './AuthDialog.css';
 import { signup, verifyOTP } from '../services/authServices';
 
@@ -215,7 +216,7 @@ const RegisterDialog = ({
                   className="custom-checkbox"
                 />
                 <label className="checkbox-label-text">
-                  I agree to the <span className="legal-link">Terms and Services</span>
+                  I agree to the <Link to="/terms-of-service" className="legal-link" onClick={onClose}>Terms and Services</Link>
                 </label>
               </div>
               {errors.termsAndServices && <span className="error-text">{errors.termsAndServices}</span>}
@@ -232,7 +233,7 @@ const RegisterDialog = ({
                   className="custom-checkbox"
                 />
                 <label className="checkbox-label-text">
-                  I agree to the <span className="legal-link">Privacy Policy</span>
+                  I agree to the <Link to="/privacy-policy" className="legal-link" onClick={onClose}>Privacy Policy</Link>
                 </label>
               </div>
               {errors.privacyPolicy && <span className="error-text">{errors.privacyPolicy}</span>}

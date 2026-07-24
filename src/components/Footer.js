@@ -85,6 +85,7 @@ const Footer = ({ currentUser, onLoginClick, serviceCategories = [] }) => {
                                 )}
                                 <li><Link to="/help">Contact Support</Link></li>
                                 <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+                                <li><Link to="/terms-of-service">Terms of Service</Link></li>
                             </ul>
                         </div>
 
@@ -95,14 +96,14 @@ const Footer = ({ currentUser, onLoginClick, serviceCategories = [] }) => {
                                 <Phone size={18} className="icon" />
                                 <div className="text">
                                     <p className="label">Call us at</p>
-                                    <p className="value">+91 73051 07148</p>
+                                    <a href="tel:+917305107148" className="value">+91 73051 07148</a>
                                 </div>
                             </div>
                             <div className="contact-item">
                                 <Mail size={18} className="icon" />
                                 <div className="text">
                                     <p className="label">Email us at</p>
-                                    <p className="value">support@righttouch.com</p>
+                                    <a href="mailto:support@righttouchservice.com" className="value">support@righttouchservice.com</a>
                                 </div>
                             </div>
                             <div className="contact-item">

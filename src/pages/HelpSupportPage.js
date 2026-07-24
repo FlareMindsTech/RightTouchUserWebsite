@@ -46,7 +46,7 @@ export default function HelpSupportPage({ showToast }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [openItem, setOpenItem] = useState(null); // "catIdx-itemIdx"
-  const supportWhatsApp = 'https://wa.me/918000000000?text=Hi%20Right%20Touch%2C%20I%20need%20help%20with%20my%20booking.';
+  const supportWhatsApp = 'https://wa.me/917305107148?text=Hi%20Right%20Touch%2C%20I%20need%20help%20with%20my%20booking.';
 
   const toggleItem = (key) => setOpenItem(prev => prev === key ? null : key);
 
@@ -91,18 +91,25 @@ export default function HelpSupportPage({ showToast }) {
       <div className="hs-content">
         {/* Contact Cards */}
         <div className="hs-contact-grid">
-          <a href="tel:+918000000000" className="hs-contact-card hs-phone">
+          <a href="tel:+917305107148" className="hs-contact-card hs-phone">
             <MdOutlinePhone size={24} />
             <div>
               <div className="hs-contact-label">Call Us</div>
-              <div className="hs-contact-detail">+91 80000 00000</div>
+              <div className="hs-contact-detail">+91 73051 07148</div>
             </div>
           </a>
-          <a href="mailto:support@righttouch.in" className="hs-contact-card hs-email">
+          <a href="mailto:support@righttouchservice.com" className="hs-contact-card hs-email">
             <MdOutlineEmail size={24} />
             <div>
-              <div className="hs-contact-label">Email</div>
-              <div className="hs-contact-detail">support@righttouch.in</div>
+              <div className="hs-contact-label">Support Email</div>
+              <div className="hs-contact-detail">support@righttouchservice.com</div>
+            </div>
+          </a>
+          <a href="mailto:admin@righttouchservice.com" className="hs-contact-card hs-email">
+            <MdOutlineEmail size={24} />
+            <div>
+              <div className="hs-contact-label">Admin Email</div>
+              <div className="hs-contact-detail">admin@righttouchservice.com</div>
             </div>
           </a>
         </div>

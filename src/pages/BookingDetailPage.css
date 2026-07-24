@@ -3,7 +3,7 @@
   margin: 0 auto;
   background: var(--bg-page);
   min-height: 100vh;
-  padding-bottom: 140px; /* Added more space for the sticky footer */
+  padding-bottom: 220px; /* Added more space for the taller sticky footer */
   animation: pageFadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   position: relative;
 }
@@ -435,10 +435,11 @@ body.dark-mode .bio-text {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(15px);
-  padding: 16px 24px 32px;
+  padding: 16px 24px 24px;
   display: flex;
+  flex-direction: column;
   gap: 12px;
   box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
   z-index: 200;
@@ -448,7 +449,34 @@ body.dark-mode .bio-text {
 }
 
 body.dark-mode .action-footer-v2 {
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.action-buttons-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.rebook-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--bg-input, #e2e8f0);
+  color: var(--text-primary, #1e293b);
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: var(--radius-lg, 12px);
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rebook-btn:hover {
+  background: var(--border, #cbd5e1);
+  transform: translateY(-1px);
 }
 
 .btn-v2 {

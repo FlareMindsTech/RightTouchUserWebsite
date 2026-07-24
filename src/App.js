@@ -25,6 +25,7 @@ import RatingsPage from './pages/RatingsPage';
 import ReportPage from './pages/ReportPage';
 import HelpSupportPage from './pages/HelpSupportPage';
 import AboutPage from './pages/AboutPage';
+import LegalPage from './pages/LegalPage';
 import { MdSearch, MdShoppingCart } from 'react-icons/md';
 import logo from './assets/logo.png';
 import { getAllCategories } from './services/categoryService';
@@ -99,6 +100,12 @@ function App() {
       timeoutIds.forEach(id => clearTimeout(id));
     };
   }, [location.pathname, location.hash, location.search]);
+
+  // Clear global search query on route change
+  useEffect(() => {
+    setGlobalSearchQuery('');
+  }, [location.pathname, location.hash, location.search]);
+
 
   const formatCartItem = useCallback((cartItem) => {
     const detail = cartItem.item || {};
@@ -622,6 +629,8 @@ function App() {
           <Route path="/report" element={<ReportPage showToast={showToast} />} />
           <Route path="/help" element={<HelpSupportPage showToast={showToast} />} />
           <Route path="/about" element={<AboutPage isActive={currentPage === 'about'} />} />
+          <Route path="/privacy-policy" element={<LegalPage isActive={currentPage === 'privacy-policy'} defaultTab="privacy" />} />
+          <Route path="/terms-of-service" element={<LegalPage isActive={currentPage === 'terms-of-service'} defaultTab="terms" />} />
         </Routes>
       </main>
 

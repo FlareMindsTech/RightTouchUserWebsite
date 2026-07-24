@@ -13,6 +13,7 @@ import {
 } from 'react-icons/md';
 import './BookingDetailPage.css';
 import InvoiceModal from '../components/InvoiceModal';
+import { createRating } from '../services/ratingService';
 
 const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService, isPaidBooking, paymentLoading, canShowPayNow, handlePayButtonClick, canRate, showInvoice, setShowInvoice, currentUser }) => {
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -20,14 +21,45 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
   const [ratingLoading, setRatingLoading] = useState(false);
 
   const handleSubmitRating = async () => {
+    if (!ratingForm.comment.trim()) {
+      showToast('Please enter a comment.', 'error');
+      return;
+    }
     setRatingLoading(true);
-    // Simulate an API call
-    setTimeout(() => {
+    try {
+      const isServiceBooking = isService !== undefined ? isService : (booking.serviceId || booking.technicianId || booking.scheduledAt || booking.itemId?.serviceName ? true : false);
+      const bookingType = isServiceBooking ? "service" : "product";
+      
+      const payload = {
+        bookingId: booking._id,
+        bookingType,
+        rates: ratingForm.rates,
+        comment: ratingForm.comment.trim()
+      };
+
+      if (isServiceBooking) {
+        payload.serviceId = booking.serviceId?._id || booking.serviceId || booking.itemId?._id || booking.itemId;
+        if (booking.technicianId) {
+          payload.technicianId = booking.technicianId?._id || booking.technicianId;
+        }
+      } else {
+        payload.productId = booking.productId?._id || booking.productId || booking.itemId?._id || booking.itemId;
+      }
+
+      const response = await createRating(payload);
+      if (response?.success) {
+        showToast('Thank you for your rating!', 'success');
+        setShowRatingModal(false);
+        setRatingForm({ rates: 5, comment: '' }); // reset
+      } else {
+        showToast(response?.message || 'Failed to submit rating', 'error');
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      showToast(error.message || 'Failed to submit rating', 'error');
+    } finally {
       setRatingLoading(false);
-      setShowRatingModal(false);
-      showToast('Thank you for your rating!', 'success');
-      setRatingForm({ rates: 5, comment: '' }); // reset
-    }, 800);
+    }
   };
 
   if (!booking) return null;
@@ -265,43 +297,42 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
         </div>
       )}
 
-      {/* Rebook Section */}
-      <div style={{ padding: '0 24px 120px' }}>
-        <button className="rebook-btn" onClick={handleRebook} style={{ width: '100%', padding: '16px', background: '#e2e8f0', color: '#1e293b', border: 'none', borderRadius: '16px', fontWeight: '800', cursor: 'pointer' }}>
-          Book Service Again
-        </button>
-      </div>
-
       {/* Action Footer (Sticky) */}
       <div className="action-footer-v2">
-        <button className="btn-v2 secondary" onClick={() => {
-          if (details.professionalMobile && details.professionalMobile !== 'Not available') {
-            navigator.clipboard.writeText(details.professionalMobile);
-            showToast('Technician number copied!');
-            setTimeout(() => {
-              window.location.href = `tel:${details.professionalMobile}`;
-            }, 500);
-          } else {
-            showToast('Contact not available');
-          }
-        }}>
-          <MdCall /> Call
-        </button>
+        <div className="action-buttons-row">
+          <button className="btn-v2 secondary" onClick={() => {
+            if (details.professionalMobile && details.professionalMobile !== 'Not available') {
+              navigator.clipboard.writeText(details.professionalMobile);
+              showToast('Technician number copied!');
+              setTimeout(() => {
+                window.location.href = `tel:${details.professionalMobile}`;
+              }, 500);
+            } else {
+              showToast('Contact not available');
+            }
+          }}>
+            <MdCall /> Call
+          </button>
 
-        <button
-          className={`btn-v2 primary ${canShowPayNow ? 'enabled' : 'disabled'}`}
-          onClick={handlePayButtonClick}
-          disabled={paymentLoading || (!canShowPayNow && !isPaidBooking)}
-        >
-          <MdPayment />
-          {paymentLoading ? '...' : (isPaidBooking ? 'Invoice' : 'Pay Now')}
-        </button>
+          <button
+            className={`btn-v2 primary ${canShowPayNow ? 'enabled' : 'disabled'}`}
+            onClick={handlePayButtonClick}
+            disabled={paymentLoading || (!canShowPayNow && !isPaidBooking)}
+          >
+            <MdPayment />
+            {paymentLoading ? '...' : (isPaidBooking ? 'Invoice' : 'Pay Now')}
+          </button>
 
-        <button
-          className="btn-v2 secondary"
-          onClick={() => canRate ? setShowRatingModal(true) : showToast('Rate after completion')}
-        >
-          <MdStarOutline /> Rate
+          <button
+            className="btn-v2 secondary"
+            onClick={() => canRate ? setShowRatingModal(true) : showToast('Rate after completion')}
+          >
+            <MdStarOutline /> Rate
+          </button>
+        </div>
+
+        <button className="rebook-btn" onClick={handleRebook}>
+          Book Service Again
         </button>
       </div>
 

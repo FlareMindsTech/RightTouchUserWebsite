@@ -24,26 +24,31 @@
   display: block;
 }
 
-
+/* ═══════════════════════════════════════════════════════
+   PAGE WRAPPER - FULL WIDTH
+═══════════════════════════════════════════════════════ */
 .page-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-top: 5%;
+  max-width: 100%;
+  margin: 0;
+  padding-top: 80px;
   padding-bottom: 32px;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 40px;
+  padding-right: 40px;
   min-height: 100vh;
   min-height: 100dvh;
+  background: var(--bg-secondary);
 }
 
 .page {
   animation: pageFadeIn 0.3s ease;
   width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
 }
 
 .section-wrap {
   width: 100%;
+  max-width: 100%;
   overflow: hidden;
 }
 
@@ -52,7 +57,6 @@
     opacity: 0;
     transform: translateY(8px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -255,4 +259,141 @@ body.dark-mode .global-mobile-header {
 
 body.dark .gmh-cart-badge {
   border-color: var(--bg-card);
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS - FULL WIDTH
+═══════════════════════════════════════════════════════ */
+
+/* Large Desktop (1600px+) */
+@media (min-width: 1600px) {
+  .page-wrapper {
+    padding-left: 80px;
+    padding-right: 80px;
+    padding-top: 80px;
+  }
+}
+
+/* Desktop (1200px - 1599px) */
+@media (max-width: 1599px) and (min-width: 1200px) {
+  .page-wrapper {
+    padding-left: 48px;
+    padding-right: 48px;
+    padding-top: 80px;
+  }
+}
+
+/* Small Desktop / Large Tablet (1024px - 1199px) */
+@media (max-width: 1199px) and (min-width: 1024px) {
+  .page-wrapper {
+    padding-left: 32px;
+    padding-right: 32px;
+    padding-top: 72px;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .page-wrapper {
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 72px;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+  
+  .mobile-only {
+    display: block;
+  }
+}
+
+/* Mobile (480px - 767px) */
+@media (max-width: 767px) and (min-width: 480px) {
+  .page-wrapper {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 64px;
+    padding-bottom: 100px;
+  }
+  
+  .gmh-search input {
+    width: 80px;
+    font-size: 13px;
+  }
+  
+  .gmh-search {
+    padding: 6px 10px;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+  
+  .mobile-only {
+    display: block;
+  }
+}
+
+/* Small Mobile (below 480px) */
+@media (max-width: 479px) {
+  .page-wrapper {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 60px;
+    padding-bottom: 90px;
+  }
+  
+  .gmh-search {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    max-width: 110px;
+    padding: 5px 8px;
+    gap: 6px;
+  }
+
+  .gmh-search input {
+    width: 100%;
+    font-size: 12px;
+  }
+  
+  .gmh-title {
+    font-size: 17px;
+  }
+  
+  .gmh-logo {
+    height: 28px;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+  
+  .mobile-only {
+    display: block;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCROLLBAR STYLING
+═══════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-input);
+  border-radius: 50px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 50px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
