@@ -15,3 +15,9 @@ export const getCustomerBookings = () =>
 
 export const getBookingSchedule = () =>
   apiClient(ENDPOINTS.SERVICE_BOOKING.GET_SCHEDULE);
+
+export const bookAgain = (data) =>
+  apiClient(ENDPOINTS.SERVICE_BOOKING.BOOK_AGAIN, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });

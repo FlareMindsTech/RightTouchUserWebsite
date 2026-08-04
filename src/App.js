@@ -33,6 +33,7 @@ import { getAllServices } from './services/serviceService';
 import { getAllProducts } from './services/productService';
 import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
 import { RtAlertContainer, rtAlert } from './components/RtAlert';
+import ConfirmModal from './components/ConfirmModal';
 
 function App() {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ function App() {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Search state
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
@@ -420,8 +422,13 @@ function App() {
   };
 
   const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     safeStorage.removeItem('currentUser');
     setCurrentUser(null);
+    setShowLogoutConfirm(false);
     showToast('Logged out successfully');
   };
 
@@ -663,12 +670,27 @@ function App() {
         onShowToast={showToast}
       />
 
-      <RegisterDialog
+<RegisterDialog
         isOpen={showRegisterDialog}
         onClose={() => setShowRegisterDialog(false)}
         onRegisterSuccess={handleRegisterSuccess}
-        onNavigateToLogin={openLoginFromRegister}
+        onNavigateToLogin={openRegisterFromLogin}
         onShowToast={showToast}
+      />
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        icon="🚪"
+        iconBg="#fef3c7"
+        iconColor="#f59e0b"
+        title="Sign Out?"
+        desc="Are you sure you want to sign out of your account?"
+        confirmLabel="Sign Out"
+        cancelLabel="Cancel"
+        confirmClass="cm-confirm-warning"
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
       />
 
       <RtAlertContainer />

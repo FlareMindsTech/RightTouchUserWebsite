@@ -22,6 +22,9 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   const [customTip, setCustomTip] = useState('');
   const [showAddressPopup, setShowAddressPopup] = useState(false);
   const [showContactPopup, setShowContactPopup] = useState(false);
+  const [showConfirmOrderModal, setShowConfirmOrderModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [bookingSuccessData, setBookingSuccessData] = useState(null);
   const [locationSearch, setLocationSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
@@ -92,6 +95,17 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     }
   ];
 
+  // Auto-close success modal after 3 seconds
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+        setBookingSuccessData(null);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal]);
 
   const fetchSlots = useCallback(async () => {
     setLoadingSlots(true);
@@ -149,9 +163,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     setScheduledItemId(item.originalId);
     setFaultReason(item.faultProblem || '');
     setIsInstant(!item.scheduledAt);
-    
-    // If it's already scheduled, try to pre-select the day/time (optional complexity)
-    // For now, simple clear or keep current if valid
     fetchSlots();
   };
 
@@ -286,7 +297,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
         const { latitude, longitude } = position.coords;
 
         try {
-          // Direct frontend call to Nominatim (as requested: only frontend)
           const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`;
           
           const response = await fetch(nominatimUrl, {
@@ -303,7 +313,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           const addr = result.address || {};
           console.log('[Geocoding] Extracted Address Object:', addr);
           
-          // Construct a human-readable address line
           const details = [
             addr.house_number,
             addr.road,
@@ -410,8 +419,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       ? `${newAddressForm.addressLine.trim()} (Landmark: ${newAddressForm.landmark.trim()})`
       : newAddressForm.addressLine.trim();
 
-    /* Name and mobile removed from form as per user request - will use profile details */
-
     setIsSavingAddress(true);
     try {
       const payload = {
@@ -422,7 +429,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
         mobileNumber: currentUser.mobileNumber || currentUser.identifier || '',
         latitude: parseFloat(newAddressForm.latitude) || 0,
         longitude: parseFloat(newAddressForm.longitude) || 0,
-        isDefault: true // Automatically set new addresses as default
+        isDefault: true
       };
       const response = await createAddress(payload);
 
@@ -443,11 +450,9 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       setShowAddAddressForm(false);
       showToast('Address added successfully');
 
-      // Close modal if we're just adding/changing address, or proceed to checkout
       if (pendingCheckout) {
         setShowAddressPopup(false);
-        setPendingCheckout(false);
-        await startCheckout();
+        setShowConfirmOrderModal(true);
       } else {
         setShowAddressPopup(false);
         setLocationSearch('');
@@ -469,7 +474,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   };
 
   const getTax = () => {
-    return Math.round(getSubtotal() * 0.08); // 8% tax
+    return Math.round(getSubtotal() * 0.08);
   };
 
   const getTipAmount = () => {
@@ -481,10 +486,10 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     return getSubtotal() + getTax() + getTipAmount();
   };
 
-
   const startCheckout = async () => {
     if (!addressForm.id) {
       showToast('Please select a delivery address');
+      setShowConfirmOrderModal(false);
       setShowAddressPopup(true);
       return;
     }
@@ -492,7 +497,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     const isCartValid = await validateCartBeforeCheckout();
     if (!isCartValid) return;
 
-    // Check for past-dated schedules
     const now = new Date();
     const pastDatedItems = cartItems.filter(item => {
       if (!item.scheduledAt) return false;
@@ -508,7 +512,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
     setLoading(true);
     try {
-      // 1. Create Booking / Checkout First
       const checkoutRes = await checkout({
         addressId: addressForm.id,
         paymentMethod: 'razorpay',
@@ -521,67 +524,40 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
         return;
       }
 
-      showToast('Booking created! Redirecting to payment...');
-
-      // Extract bookingId from the response robustly
       const bookingData = checkoutRes.result || checkoutRes;
       let bookingId = null;
 
       if (Array.isArray(bookingData)) {
-        // If it's an array of created bookings, take the first one's ID
         bookingId = bookingData[0]?._id || bookingData[0];
       } else if (bookingData && typeof bookingData === 'object') {
-        // Try direct IDs first
         bookingId = bookingData._id || bookingData.bookingId || bookingData.id ||
           bookingData.booking?._id || bookingData.data?._id || bookingData.data?.bookingId;
 
-        // Try 'bookings' array
         if (!bookingId && Array.isArray(bookingData.bookings) && bookingData.bookings.length > 0) {
           bookingId = bookingData.bookings[0]?._id || bookingData.bookings[0];
         }
-
-        // Try serviceBookings or productBookings arrays (as seen in the console log payload)
         if (!bookingId && Array.isArray(bookingData.serviceBookings) && bookingData.serviceBookings.length > 0) {
            bookingId = bookingData.serviceBookings[0]?._id || bookingData.serviceBookings[0];
         }
-        
         if (!bookingId && Array.isArray(bookingData.productBookings) && bookingData.productBookings.length > 0) {
            bookingId = bookingData.productBookings[0]?._id || bookingData.productBookings[0];
         }
-
-        // Check if checkoutRes itself has bookingId (some APIs place it at top level)
         if (!bookingId) {
           bookingId = checkoutRes.bookingId || checkoutRes.id || checkoutRes._id;
         }
-
-        // Additional fail-safe: Check nested booking objects inside properties 
-        if (!bookingId && bookingData.data && Array.isArray(bookingData.data.bookings) && bookingData.data.bookings.length > 0) {
-          bookingId = bookingData.data.bookings[0]?._id || bookingData.data.bookings[0];
-        }
       }
 
-      console.log('Checkout complete. BookingData:', bookingData, 'Extracted bookingId:', bookingId);
+      const displayRef = bookingId ? `#RT-${String(bookingId).slice(-6).toUpperCase()}` : '#RT-SUCCESS';
 
-      if (!bookingId) {
-        // Display what we got so user/developer can see what's wrong if it fails
-        const debugInfo = typeof bookingData === 'object' ? JSON.stringify(bookingData).substring(0, 50) : String(bookingData);
-        console.error(`ID missing in response (${debugInfo})`);
-        showToast('Booking created successfully, preparing payment...');
-        
-        // Refresh cart and redirect
-        fetchCart();
-        navigate('/bookings');
-        setLoading(false);
-        return;
-      }
+      setBookingSuccessData({
+        bookingId: displayRef
+      });
 
-      // Payment Flow Removed as per user request
-      // We just log success, fetch the cart, and navigate to bookings.
-      showToast('Booking placed successfully!');
+      setShowConfirmOrderModal(false);
+      setPendingCheckout(false);
+      setShowSuccessModal(true);
       fetchCart();
-      navigate('/bookings');
       setLoading(false);
-      return;
 
     } catch (error) {
       console.error('Checkout Error:', error);
@@ -598,7 +574,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   const handleCheckout = async () => {
     if (loading) return;
 
-    // 1. Check Profile Completion (Mandatory: First Name & Phone)
     const hasFirstName = currentUser?.fname || profileData?.fname;
     const hasPhone = currentUser?.mobileNumber || currentUser?.identifier || profileData?.mobileNumber;
 
@@ -620,13 +595,12 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
     setPendingCheckout(true);
 
-    // Auto-select default if available and proceed
-    if (addressForm.id) {
-      await startCheckout();
-    } else {
+    if (!addressForm.id && addresses.length === 0) {
       setShowAddressPopup(true);
       setShowAddAddressForm(false);
       setLocationSearch('');
+    } else {
+      setShowConfirmOrderModal(true);
     }
   };
 
@@ -721,7 +695,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                       <span className="service-badge">{item.itemType}</span>
                       <p className="cart-item-price">₹{item.price}</p>
                       
-                      {/* Schedule Info for Service */}
                       {(item.itemType === 'service' || item.itemId?.category === 'service') && (
                         <div className="item-schedule-info">
                           <button 
@@ -835,7 +808,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                   <h3 className="address-popup-heading">Schedule Your Service</h3>
                   
                   <div className="schedule-form-container">
-                    {/* Instant vs Scheduled */}
                     <div className="booking-type-toggle">
                       <button 
                         className={`toggle-btn ${isInstant ? 'active' : ''}`}
@@ -857,7 +829,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                           <div className="slots-loading">Loading slots...</div>
                         ) : (
                           <>
-                            {/* Days Selection */}
                             <div className="days-selection">
                               <label className="section-label">Select Day</label>
                               <div className="days-grid">
@@ -874,7 +845,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                               </div>
                             </div>
 
-                            {/* Time Slots Selection */}
                             <div className="time-slots-selection">
                               <label className="section-label">Select Time Slot</label>
                               <div className="slots-grid">
@@ -894,7 +864,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                       </>
                     )}
 
-                    {/* Fault Reason Sections */}
                     <div className="fault-reason-input">
                       <label className="section-label">Describe the Problem (Optional)</label>
                       
@@ -944,7 +913,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
               <div className="address-popup-overlay location-overlay-premium" onClick={resetAddressPopupState}>
                 <div className="address-popup location-popup-premium" onClick={(e) => e.stopPropagation()}>
 
-                  {/* Header with Search */}
                   <div className="location-header-premium">
                     <button className="location-back-btn" onClick={resetAddressPopupState}>
                       <MdArrowBack />
@@ -965,7 +933,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="location-actions-premium">
                     <button className="use-current-loc-btn" onClick={handleUseCurrentLocation} disabled={isLocating}>
                       <MdMyLocation className="loc-icon-gps" />
@@ -1074,7 +1041,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                     </div>
                   )}
 
-                  {/* Address List */}
                   <div className="location-list-premium">
                     {getFilteredAddresses().length > 0 && (
                       <>
@@ -1183,10 +1149,130 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                     </button>
                   </div>
 
-                  {/* Attribution */}
                   <div className="google-attribution-premium">
                     <p>Location search by <span>OpenStreetMap</span></p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Confirm Order Modal */}
+            {showConfirmOrderModal && (
+              <div className="address-popup-overlay confirm-order-overlay" onClick={() => setShowConfirmOrderModal(false)}>
+                <div className="confirm-order-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="confirm-order-header">
+                    <h3>Confirm Your Order</h3>
+                    <button className="confirm-order-close" onClick={() => setShowConfirmOrderModal(false)}>
+                      <MdClose />
+                    </button>
+                  </div>
+
+                  <div className="confirm-order-body">
+                    <div className="confirm-address-card">
+                      <div className="confirm-address-icon-box">
+                        <MdOutlineLocationOn />
+                      </div>
+                      <div className="confirm-address-content">
+                        <div className="confirm-address-top-row">
+                          <div className="confirm-address-title-group">
+                            <span className="confirm-address-label">{addressForm.label || 'Home'}</span>
+                            <span className="confirm-address-badge">DELIVERY ADDRESS</span>
+                          </div>
+                          <button
+                            className="confirm-change-addr-btn"
+                            onClick={() => {
+                              setShowConfirmOrderModal(false);
+                              setShowAddressPopup(true);
+                            }}
+                          >
+                            Change
+                          </button>
+                        </div>
+                        {addressForm.id ? (
+                          <>
+                            <p className="confirm-address-text">{addressForm.addressLine}</p>
+                            {addressForm.phone && <p className="confirm-address-phone">📞 {addressForm.phone}</p>}
+                          </>
+                        ) : (
+                          <p className="confirm-address-text warning-text">No address selected. Click change to select one.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="confirm-items-section">
+                      <div className="confirm-section-title-row">
+                        <span className="confirm-section-title">ITEMS ({cartItems.length})</span>
+                      </div>
+                      <div className="confirm-items-list">
+                        {cartItems.map((item, idx) => (
+                          <div key={`confirm-item-${item.id || idx}`} className="confirm-item-card">
+                            <div className="confirm-item-main">
+                              <div className="confirm-item-left-details">
+                                {item.image ? (
+                                  <img src={item.image} alt={item.name} className="confirm-item-img" />
+                                ) : (
+                                  <div className="confirm-item-img-placeholder">🛒</div>
+                                )}
+                                <div className="confirm-item-info">
+                                  <span className="confirm-item-name">{item.name}</span>
+                                  <span className="confirm-item-qty">Qty: {item.quantity || 1}</span>
+                                </div>
+                              </div>
+                              <span className="confirm-item-price">₹{(item.price * (item.quantity || 1)).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="confirm-summary-box">
+                      <div className="confirm-summary-row">
+                        <span>Subtotal</span>
+                        <span>₹{getSubtotal().toFixed(2)}</span>
+                      </div>
+                      <div className="confirm-summary-row">
+                        <span>Taxes & Fee</span>
+                        <span>₹{getTax().toFixed(2)}</span>
+                      </div>
+                      {getTipAmount() > 0 && (
+                        <div className="confirm-summary-row">
+                          <span>Tip</span>
+                          <span>₹{getTipAmount().toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="confirm-summary-row total">
+                        <span>Total Amount</span>
+                        <span>₹{getTotal().toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="confirm-order-footer">
+                    <button
+                      className="confirm-place-order-btn"
+                      onClick={startCheckout}
+                      disabled={loading || !addressForm.id}
+                    >
+                      {loading ? 'Processing...' : `Place Order • ₹${getTotal().toFixed(2)}`}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Simple Booking Confirmed Toast - Auto Closes after 3 seconds */}
+            {showSuccessModal && (
+              <div className="success-toast-overlay">
+                <div className="success-toast">
+                  <div className="success-toast-icon">✅</div>
+                  <div className="success-toast-content">
+                    <h3 className="success-toast-title">Booking Confirmed!</h3>
+                    <p className="success-toast-subtitle">Your order has been placed successfully</p>
+                    {bookingSuccessData?.bookingId && (
+                      <span className="success-toast-ref">{bookingSuccessData.bookingId}</span>
+                    )}
+                  </div>
+                  <div className="success-toast-progress"></div>
                 </div>
               </div>
             )}

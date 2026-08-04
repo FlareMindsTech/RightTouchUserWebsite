@@ -5,7 +5,7 @@
 
 .app-toast-success-title,
 .app-toast-success-icon {
-  color: #166534;
+  color: #1E8449;
 }
 
 .app-toast-error-title,
@@ -15,7 +15,7 @@
 
 body.dark-mode .app-toast-success-title,
 body.dark-mode .app-toast-success-icon {
-  color: #86efac;
+  color: #A9DFBF;
 }
 
 body.dark-mode .app-toast-error-title,
@@ -52,9 +52,9 @@ body.dark-mode .app-toast-error-icon {
 }
 
 .custom-toast.success {
-  border-left-color: #22c55e;
-  background: #f0fdf4;
-  color: #166534;
+  border-left-color: #27AE60;
+  background: #EAFAF1;
+  color: #1E8449;
 }
 
 .custom-toast.error {
@@ -71,8 +71,8 @@ body.dark-mode .custom-toast {
 
 body.dark-mode .custom-toast.success {
   background: #064e3b;
-  color: #d1fae5;
-  border-left-color: #10b981;
+  color: #D5F5E3;
+  border-left-color: #27AE60;
 }
 
 body.dark-mode .custom-toast.error {

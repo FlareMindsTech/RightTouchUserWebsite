@@ -73,6 +73,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     addressLine: '',
     city: '',
     state: '',
+    pincode: '',
     landmark: '',
     houseNo: '',
     latitude: '',
@@ -163,28 +164,40 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     e.preventDefault();
     setLoading(true);
 
-    // Construct descriptive address line
-    const baseAddr = addrFormData.addressLine.trim();
-    const house = addrFormData.houseNo?.trim() || '';
-    const ldmrk = addrFormData.landmark?.trim() || '';
+    const isEdit = Boolean(editingAddressId);
+    const baseAddr = (addrFormData.addressLine || '').trim();
 
+    // Compose houseNo + landmark into addressLine ONLY when creating a new
+    // address. On edit the saved addressLine already contains them.
     let descriptiveAddress = baseAddr;
-    if (house) descriptiveAddress = `${house}, ${descriptiveAddress}`;
-    if (ldmrk) descriptiveAddress = `${descriptiveAddress} (Landmark: ${ldmrk})`;
+    if (!isEdit) {
+      const house = addrFormData.houseNo?.trim() || '';
+      const ldmrk = addrFormData.landmark?.trim() || '';
+      if (house) descriptiveAddress = `${house}, ${descriptiveAddress}`;
+      if (ldmrk) descriptiveAddress = `${descriptiveAddress} (Landmark: ${ldmrk})`;
+    }
 
     try {
       const payload = {
-        ...addrFormData,
+        name: (addrFormData.name || '').trim(),
+        mobileNumber: (addrFormData.mobileNumber || '').trim(),
+        label: addrFormData.label || 'home',
         addressLine: descriptiveAddress,
-        id: editingAddressId // Backend uses 'id' for updates
+        city: addrFormData.city || undefined,
+        state: addrFormData.state || undefined,
+        pincode: addrFormData.pincode || undefined,
+        latitude: addrFormData.latitude || 0,
+        longitude: addrFormData.longitude || 0,
+        isDefault: Boolean(addrFormData.isDefault),
+        ...(isEdit ? { id: editingAddressId } : {})
       };
 
-      const response = editingAddressId
+      const response = isEdit
         ? await updateAddress(payload)
         : await createAddress(payload);
 
       if (response?.success) {
-        showToast(editingAddressId ? 'Address updated' : 'Address added');
+        showToast(isEdit ? 'Address updated' : 'Address added');
         setIsAddingAddr(false);
         setEditingAddressId(null);
         fetchAddresses();
@@ -202,14 +215,12 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const handleSetDefault = async (id) => {
     setLoading(true);
     try {
-      // Find the address and update it with isDefault: true
-      const addr = addresses.find(a => a._id === id);
-      if (addr) {
-        const response = await updateAddress({ ...addr, id, isDefault: true });
-        if (response?.success) {
-          showToast('Default address updated');
-          fetchAddresses();
-        }
+      const response = await updateAddress({ id, isDefault: true });
+      if (response?.success) {
+        showToast('Default address updated');
+        fetchAddresses();
+      } else {
+        showToast(response?.message || 'Failed to set default address');
       }
     } catch (err) {
       showToast('Failed to set default address');
@@ -236,6 +247,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
+  // ===== LOCATION SEARCH (same as CartPage) =====
   const handleLocationSearch = async (query) => {
     setLocationSearch(query);
     if (query.length < 3) {
@@ -249,11 +261,13 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       setLocationSuggestions(response?.result || []);
     } catch (error) {
       console.error('Location search failed:', error);
+      setLocationSuggestions([]);
     } finally {
       setIsSearchingLocation(false);
     }
   };
 
+  // ===== USE CURRENT LOCATION (same as CartPage – direct Nominatim fetch) =====
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
       showToast('Geolocation is not supported');
@@ -264,32 +278,46 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        try {
-          const response = await reverseAddress(latitude, longitude);
-          const result = response?.result;
-          const addr = result?.address || {};
 
-          const composed = [
+        try {
+          // Direct Nominatim reverse geocoding (matching CartPage)
+          const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`;
+          const response = await fetch(nominatimUrl, {
+            headers: { 'User-Agent': 'RightTouchApp/1.0 (contact@yourapp.com)' }
+          });
+
+          if (!response.ok) throw new Error(`Nominatim error: ${response.status}`);
+
+          const result = await response.json();
+          const addr = result.address || {};
+          const details = [
             addr.house_number,
             addr.road,
             addr.neighbourhood,
             addr.suburb,
             addr.city_district,
             addr.town,
-            addr.village
+            addr.village,
+            addr.municipality,
+            addr.county
           ].filter(Boolean).join(', ');
 
-          const finalAddress = result?.display_name || composed || 'Pinned Location';
+          const finalAddressLine = result.display_name || details || 'Pinned Location';
+          const finalCity = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.state_district || addr.suburb || '';
+          const finalState = addr.state || addr.state_district || '';
+          const finalPincode = addr.postcode || '';
 
           setAddrFormData(prev => ({
             ...prev,
-            addressLine: finalAddress,
-            city: addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.suburb || '',
-            state: addr.state || '',
-            pincode: addr.postcode || '',
+            addressLine: finalAddressLine,
+            city: finalCity,
+            state: finalState,
+            pincode: finalPincode,
             latitude: latitude.toString(),
             longitude: longitude.toString()
           }));
+
+          setLocationSearch(result.display_name || finalAddressLine);
           setAddressStep('form');
         } catch (error) {
           console.error('Reverse geocoding error:', error);
@@ -307,6 +335,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     );
   };
 
+  // ===== SELECT LOCATION FROM SUGGESTION (same as CartPage) =====
   const selectLocation = (suggestion) => {
     const addr = suggestion.address || {};
     const composed = [
@@ -323,13 +352,15 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       city: addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.suburb || '',
       state: addr.state || '',
       pincode: addr.postcode || '',
-      latitude: suggestion.lat,
-      longitude: suggestion.lon
+      latitude: suggestion.lat || '',
+      longitude: suggestion.lon || ''
     }));
+    setLocationSearch(suggestion.display_name || '');
     setAddressStep('form');
   };
 
   const openAddModal = () => {
+    setEditingAddressId(null);
     setAddrFormData({
       name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : '',
       mobileNumber: currentUser?.mobileNumber || currentUser?.identifier || '',
@@ -339,6 +370,9 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       state: '',
       pincode: '',
       landmark: '',
+      houseNo: '',
+      latitude: '',
+      longitude: '',
       isDefault: addresses.length === 0
     });
     setAddressStep('picker');
@@ -441,9 +475,18 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
 
   const handleEditAddress = (addr) => {
     setAddrFormData({
-      ...addr,
-      houseNo: addr.houseNo || '', // Ensure houseNo exists in state
-      landmark: addr.landmark || ''
+      name: addr.name || '',
+      mobileNumber: addr.mobileNumber || addr.phone || '',
+      label: addr.label || 'home',
+      addressLine: addr.addressLine || addr.address || '',
+      city: addr.city || '',
+      state: addr.state || '',
+      pincode: addr.pincode || '',
+      latitude: addr.latitude ?? '',
+      longitude: addr.longitude ?? '',
+      houseNo: '',
+      landmark: '',
+      isDefault: Boolean(addr.isDefault)
     });
     setEditingAddressId(addr._id);
     setIsAddingAddr(true);
@@ -652,26 +695,31 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                       </div>
                     </div>
 
-                    <div className="input-group">
-                      <label>House / Flat / Block No.</label>
-                      <input
-                        type="text"
-                        value={addrFormData.houseNo || ''}
-                        onChange={(e) => setAddrFormData({ ...addrFormData, houseNo: e.target.value })}
-                        placeholder="e.g. Flat 101, Block B"
-                        required
-                      />
-                    </div>
+                    {/* Only show House No & Landmark when adding new address */}
+                    {!editingAddressId && (
+                      <>
+                        <div className="input-group">
+                          <label>House / Flat / Block No.</label>
+                          <input
+                            type="text"
+                            value={addrFormData.houseNo || ''}
+                            onChange={(e) => setAddrFormData({ ...addrFormData, houseNo: e.target.value })}
+                            placeholder="e.g. Flat 101, Block B"
+                            required
+                          />
+                        </div>
 
-                    <div className="input-group">
-                      <label>Landmark (Optional)</label>
-                      <input
-                        type="text"
-                        value={addrFormData.landmark}
-                        onChange={(e) => setAddrFormData({ ...addrFormData, landmark: e.target.value })}
-                        placeholder="e.g. Near Central Park"
-                      />
-                    </div>
+                        <div className="input-group">
+                          <label>Landmark (Optional)</label>
+                          <input
+                            type="text"
+                            value={addrFormData.landmark}
+                            onChange={(e) => setAddrFormData({ ...addrFormData, landmark: e.target.value })}
+                            placeholder="e.g. Near Central Park"
+                          />
+                        </div>
+                      </>
+                    )}
 
                     <div className="input-group">
                       <label>Save as</label>

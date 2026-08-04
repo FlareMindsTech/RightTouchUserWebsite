@@ -92,7 +92,7 @@
 .search-box:focus-within {
   border-color: var(--green);
   background: var(--bg-card);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.12);
 }
 
 .search-icon {

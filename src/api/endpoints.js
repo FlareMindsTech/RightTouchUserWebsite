@@ -20,7 +20,9 @@ export const ENDPOINTS = {
     GET_DEFAULT: "/api/addresses/default",
     UPDATE: "/api/addresses",
     SET_DEFAULT: "/api/addresses/default",
-    DELETE: "/api/addresses"
+    DELETE: "/api/addresses",
+    SEARCH: "/api/addresses/search",
+    REVERSE: "/api/addresses/reverse"
   },
 
   CART: {
@@ -53,7 +55,8 @@ export const ENDPOINTS = {
     GET_ALL: "/api/user/service/booking",
     CANCEL: (id) => `/api/user/booking/cancel/${id}`,
     GET_CUSTOMER_BOOKINGS: "/api/user/booking/getCustomerBookings",
-    GET_SCHEDULE: "/api/user/service/booking/schedule"
+    GET_SCHEDULE: "/api/user/service/booking/schedule",
+    BOOK_AGAIN: "/api/user/booking/book-again"
   },
 
   PRODUCT_BOOKING: {

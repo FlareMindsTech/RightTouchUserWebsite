@@ -9,9 +9,10 @@ import {
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import BookingDetailPage from './BookingDetailPage';
-import { getCustomerBookings, getBookings } from '../services/bookingService';
-import { createPaymentOrder, verifyPayment } from '../services/paymentService';
+import { getCustomerBookings, getBookings, bookAgain } from '../services/bookingService';
+import { createPaymentOrder, verifyPayment, loadRazorpayScript } from '../services/paymentService';
 import { safeParseDate } from '../utils/browserUtils';
+import ConfirmModal from '../components/ConfirmModal';
 import './BookingsPage.css';
 
 const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentUser }) => {
@@ -26,6 +27,9 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   const [visibleHistoryCount, setVisibleHistoryCount] = useState(5);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [showRebookConfirm, setShowRebookConfirm] = useState(false);
+  const [rebookLoading, setRebookLoading] = useState(false);
+  const [bookingToRebook, setBookingToRebook] = useState(null);
   const fetchedRef = useRef(false);
 
   const handleBack = () => {
@@ -121,7 +125,9 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
 
     // Consolidated Filter Logic
     if (activeHistoryFilter !== 'ALL') {
-      if (['PAID', 'UNPAID'].includes(activeHistoryFilter)) {
+      if (activeHistoryFilter === 'COMPLETED') {
+        if (status !== 'COMPLETED' || paymentStatus === 'PAID') return false;
+      } else if (['PAID', 'UNPAID'].includes(activeHistoryFilter)) {
         if (paymentStatus !== activeHistoryFilter) return false;
       } else {
         if (status !== activeHistoryFilter) return false;
@@ -155,19 +161,21 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
         showToast('Booking link copied to clipboard');
       }
     } else if (type === 'Rebook') {
-      const serviceName = data?.serviceId?.serviceName || data?.serviceName;
-      if (serviceName) {
-        navigate(`/services?search=${encodeURIComponent(serviceName)}`);
-      } else {
-        navigate('/services');
-      }
+      setBookingToRebook(data);
+      setShowRebookConfirm(true);
     }
-  }, [navigate, showToast]);
+  }, [showToast]);
   
   const handlePayNow = async (booking) => {
     if (paymentLoading) return;
     setPaymentLoading(true);
     try {
+      if (!window.Razorpay) {
+        const loaded = await loadRazorpayScript();
+        if (!loaded) {
+          throw new Error('Failed to load Razorpay SDK');
+        }
+      }
       const bookingId = booking._id;
       
       // 1. Create Razorpay Order
@@ -295,7 +303,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   if (selectedBooking) {
     const status = (selectedBooking.status || '').toUpperCase();
     const isPaid = (selectedBooking.paymentStatus || '').toUpperCase() === 'PAID';
-    const canPay = status === 'COMPLETED' && !isPaid;
+    const canPay = status !== 'CANCELLED' && status !== 'EXPIRED' && !isPaid;
 
     return (
       <BookingDetailPage
@@ -325,7 +333,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     const serviceName = booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking';
     const status = (booking.status || 'PENDING').toUpperCase();
     const paymentStatus = (booking?.paymentStatus || '').toUpperCase();
-    const isPaymentPending = status === 'COMPLETED' && paymentStatus !== 'PAID';
+    const isPaymentPending = status !== 'CANCELLED' && status !== 'EXPIRED' && paymentStatus !== 'PAID';
     const paymentLabel = paymentStatus === 'PAID' ? 'PAID' : 'UNPAID';
     const date = booking.scheduledAt ? safeParseDate(booking.scheduledAt).toLocaleDateString('en-IN', {
       day: 'numeric',
@@ -522,6 +530,50 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={showRebookConfirm}
+        icon="🔄"
+        iconBg="#e0f2fe"
+        iconColor="#0284c7"
+        title="Book Service Again?"
+        desc={`Are you sure you want to book this service again?`}
+        confirmLabel="Book Again"
+        cancelLabel="Cancel"
+        confirmClass="cm-confirm-success"
+        loading={rebookLoading}
+        onConfirm={async () => {
+          if (!bookingToRebook) return;
+          setRebookLoading(true);
+          try {
+            const payload = {
+              previousBookingId: bookingToRebook._id,
+              bookingType: 'instant',
+              faultProblem: bookingToRebook.faultProblem || '',
+              addressId: bookingToRebook.addressId || bookingToRebook.addressSnapShot?._id || bookingToRebook.addressSnapShot?.addressId || ''
+            };
+            const res = await bookAgain(payload);
+            if (res?.success) {
+              showToast('Booking created successfully!', 'success');
+              setShowRebookConfirm(false);
+              setBookingToRebook(null);
+              await fetchMyBookings();
+              setSelectedBooking(null);
+            } else {
+              showToast(res?.message || 'Failed to create booking', 'error');
+            }
+          } catch (err) {
+            console.error('Rebook Error:', err);
+            showToast(err.message || 'Failed to create booking', 'error');
+          } finally {
+            setRebookLoading(false);
+          }
+        }}
+        onCancel={() => {
+          setShowRebookConfirm(false);
+          setBookingToRebook(null);
+        }}
+      />
     </section>
   );
 };

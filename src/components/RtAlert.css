@@ -96,8 +96,8 @@
   border: 2px solid #2DB84B;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 0 0 2px #fff;
   z-index: 2;
-  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #d4f7dc 100%);
-  color: #15803d;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #D5F5E3 100%);
+  color: #1E8449;
   transition: transform 0.3s ease;
 }
 .rt-alert:hover .rt-alert-icon {
@@ -160,7 +160,7 @@
   right: 10px;
   background: transparent;
   border: none;
-  color: #86efac;
+  color: #A9DFBF;
   font-size: 0.85rem;
   width: 26px;
   height: 26px;
@@ -217,8 +217,8 @@
 .rt-confirm-yes {
   background: #2DB84B;
   color: #fff;
-  border: 1.5px solid #4ade80;
-  box-shadow: 0 3px 0 #166534;
+  border: 1.5px solid #52BE80;
+  box-shadow: 0 3px 0 #1E8449;
 }
 .rt-confirm-yes:hover  { background: #22a040; transform: translateY(-1px); }
 .rt-confirm-yes:active { transform: translateY(2px); box-shadow: none; }

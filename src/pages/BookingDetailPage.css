@@ -3,7 +3,7 @@
   margin: 0 auto;
   background: var(--bg-page);
   min-height: 100vh;
-  padding-bottom: 220px; /* Added more space for the taller sticky footer */
+  padding-bottom: 40px;
   animation: pageFadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   position: relative;
 }
@@ -431,21 +431,18 @@ body.dark-mode .bio-text {
 
 /* Sticky Footer */
 .action-footer-v2 {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(15px);
   padding: 16px 24px 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
-  z-index: 200;
+  box-shadow: var(--shadow-md);
   border-top: 1px solid var(--border);
   max-width: 900px;
-  margin: 0 auto;
+  margin: 24px 16px 40px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
 }
 
 body.dark-mode .action-footer-v2 {
@@ -673,4 +670,13 @@ body.dark-mode .action-footer-v2 {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+}
+
+.btn-v2.primary.disabled,
+.btn-v2.primary:disabled {
+  background: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
 }

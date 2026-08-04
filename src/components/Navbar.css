@@ -103,7 +103,7 @@
   .mobile-search:focus-within {
     background: var(--bg-card);
     border-color: var(--green);
-    box-shadow: 0 0 0 3px rgba(11, 124, 77, 0.08);
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.08);
     max-width: 200px;
   }
 
