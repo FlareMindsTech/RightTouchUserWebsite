@@ -20,6 +20,8 @@ import {
   Share2,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { shareItem } from '../utils/share';
+import { formatPriceSmart } from '../utils/format';
 import './ServicePage.css';
 
 const ServicePage = ({
@@ -375,13 +377,11 @@ const ServicePage = ({
                       </div>
                       <button className="share-btn" onClick={(e) => {
                         e.stopPropagation();
-                        if (navigator.share) {
-                          navigator.share({
-                            title: service.serviceName,
-                            text: service.description,
-                            url: window.location.href
-                          });
-                        }
+                        shareItem({
+                          title: service.serviceName,
+                          text: service.description || service.serviceName,
+                          url: `${window.location.origin}/product-services?serviceId=${service._id}`
+                        }, showToast);
                       }}>
                         <Share2 size={16} />
                       </button>
@@ -409,13 +409,13 @@ const ServicePage = ({
                         </div>
                       </div>
 
-                      <div className="card-price">
-                        <span className="price-current">₹{service.discountedPrice || service.serviceCost}</span>
+<div className="card-price">
+                        <span className="price-current">��{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
                         {service.serviceCost > (service.discountedPrice || 0) && (
-                          <span className="price-original">₹{service.serviceCost}</span>
+                          <span className="price-original">��{formatPriceSmart(service.serviceCost)}</span>
                         )}
                         {service.serviceCost > (service.discountedPrice || 0) && (
-                          <span className="price-save">Save ₹{service.serviceCost - (service.discountedPrice || service.serviceCost)}</span>
+                          <span className="price-save">Save ₹{formatPriceSmart(service.serviceCost - (service.discountedPrice || service.serviceCost))}</span>
                         )}
                       </div>
 
@@ -498,10 +498,10 @@ const ServicePage = ({
                     </div>
                     <div className="compact-card-info">
                       <h4 className="compact-card-title">{service.serviceName}</h4>
-                      <div className="compact-card-price">
-                        ₹{service.discountedPrice || service.serviceCost}
+<div className="compact-card-price">
+                        ₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}
                         {service.serviceCost > (service.discountedPrice || 0) && (
-                          <span className="compact-original">₹{service.serviceCost}</span>
+                          <span className="compact-original">��{formatPriceSmart(service.serviceCost)}</span>
                         )}
                       </div>
                       <div className="compact-card-rating">

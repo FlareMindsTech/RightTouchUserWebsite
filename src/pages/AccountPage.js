@@ -1,48 +1,57 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   MdEdit,
   MdOutlineChevronRight,
   MdOutlineLocationOn,
   MdClose,
-  MdMoreVert,
-  MdStarOutline,
-  MdDeleteOutline,
-  MdCheck,
   MdLogin,
   MdOutlineStarOutline,
   MdArrowBack,
   MdPlace,
-  MdMyLocation,
-  MdOutlineEdit
+  MdMyLocation
 } from 'react-icons/md';
 import {
   LuClipboardList,
   LuHeadphones,
   LuBookOpen,
-  LuPlus,
-  LuLogOut,
-  LuSearch
+  LuLogOut
 } from 'react-icons/lu';
 import './AccountPage.css';
+import './CartPage.css';
 import ConfirmModal from '../components/ConfirmModal';
+import AddressModal from '../components/AddressModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   getMyAddresses,
   createAddress,
   updateAddress,
-  deleteAddress,
   searchAddress,
-  reverseAddress
+  reverseAddress,
+  getCurrentUserLocation
 } from '../services/addressService';
 import { getMyProfile, updateProfile, deleteMyAccount } from '../services/userService';
+
+const mapAddressToSelection = (addr) => {
+  let displayAddress = addr?.addressLine || addr?.address || '';
+  if (!displayAddress || displayAddress.toLowerCase().includes('pinned location')) {
+    const parts = [addr?.city, addr?.state, addr?.pincode].filter(Boolean);
+    if (parts.length > 0) displayAddress = parts.join(', ');
+    else displayAddress = 'Pinned Location';
+  }
+  return {
+    id: addr?._id,
+    name: addr?.name || '',
+    label: addr?.label || addr?.type || 'Address',
+    addressLine: displayAddress,
+    phone: addr?.mobileNumber || addr?.phone || ''
+  };
+};
 
 const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [isAddingAddr, setIsAddingAddr] = useState(false);
   const [profileData, setProfileData] = useState(currentUser || {});
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState([]);
@@ -50,13 +59,10 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     open: false,
     action: null
   });
-  const [addrLimit, setAddrLimit] = useState(3);
-  const [addressStep, setAddressStep] = useState('picker'); // 'picker' or 'form'
   const [locationSearch, setLocationSearch] = useState('');
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [editingAddressId, setEditingAddressId] = useState(null);
   const fetchedRef = useRef(false);
 
   const [editFormData, setEditFormData] = useState({
@@ -66,20 +72,144 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     gender: ''
   });
 
-  const [addrFormData, setAddrFormData] = useState({
+  const [addressForm, setAddressForm] = useState({
     name: '',
-    mobileNumber: '',
-    label: 'home',
+    label: '',
+    addressLine: 'No address added yet.',
+    phone: '',
+    id: null
+  });
+  const [newAddressForm, setNewAddressForm] = useState({
+    name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : '',
+    mobileNumber: currentUser?.mobileNumber || currentUser?.identifier || '',
+    label: 'Home',
     addressLine: '',
     city: '',
     state: '',
     pincode: '',
-    landmark: '',
-    houseNo: '',
     latitude: '',
     longitude: '',
+    landmark: '',
     isDefault: false
   });
+  const [showAddAddressForm, setShowAddAddressForm] = useState(false);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await getMyProfile();
+      if (response?.success && response.result) {
+        setProfileData(response.result);
+        setEditFormData({
+          fname: response.result.fname || '',
+          lname: response.result.lname || '',
+          email: response.result.email || '',
+          gender: response.result.gender || '',
+          mobileNumber: response.result.mobileNumber || response.result.identifier || ''
+        });
+        localStorage.setItem('currentUser', JSON.stringify(response.result));
+        window.dispatchEvent(new Event('userProfileUpdated'));
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchAddresses = useCallback(async () => {
+    try {
+      const response = await getMyAddresses();
+      const addrList = response?.result || response?.data || response || [];
+      if (Array.isArray(addrList)) {
+        setAddresses(addrList);
+        const defaultAddr = addrList.find((a) => a.isDefault);
+        if (defaultAddr) {
+          setAddressForm(mapAddressToSelection(defaultAddr));
+        } else if (addrList.length > 0) {
+          setAddressForm(mapAddressToSelection(addrList[0]));
+        } else {
+          setAddressForm({
+            name: '',
+            label: '',
+            addressLine: 'No address added yet.',
+            phone: '',
+            id: null
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch addresses:", err);
+    }
+  }, []);
+
+  const getFilteredAddresses = () => {
+    const query = locationSearch.trim().toLowerCase();
+    if (!query) return addresses;
+
+    return addresses.filter((addr) => (
+      [addr.name, addr.address, addr.city, addr.state, addr.landmark, addr.label]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(query)
+    ));
+  };
+
+  const resetAddressPopupState = () => {
+    setShowAddressModal(false);
+    setLocationSearch('');
+    setLocationSuggestions([]);
+    setShowAddAddressForm(false);
+  };
+
+  const handleSaveNewAddress = async () => {
+    if (!newAddressForm.addressLine.trim()) {
+      showToast('Please enter a valid address');
+      return;
+    }
+
+    const finalAddressLine = newAddressForm.landmark.trim()
+      ? `${newAddressForm.addressLine.trim()} (Landmark: ${newAddressForm.landmark.trim()})`
+      : newAddressForm.addressLine.trim();
+
+    setIsSavingAddress(true);
+    try {
+      const payload = {
+        ...newAddressForm,
+        addressLine: finalAddressLine,
+        label: newAddressForm.label.toLowerCase(),
+        name: currentUser?.name || currentUser?.fname || 'User',
+        mobileNumber: currentUser?.mobileNumber || currentUser?.identifier || '',
+        latitude: parseFloat(newAddressForm.latitude) || 0,
+        longitude: parseFloat(newAddressForm.longitude) || 0,
+        isDefault: true
+      };
+      const response = await createAddress(payload);
+
+      if (!response?.success) {
+        showToast(response?.message || 'Failed to add address');
+        return;
+      }
+
+      const created = response?.result && !Array.isArray(response.result)
+        ? response.result
+        : null;
+
+      if (created?._id) {
+        setAddressForm(mapAddressToSelection(created));
+      }
+
+      await fetchAddresses();
+      setShowAddAddressForm(false);
+      showToast('Address saved successfully');
+    } catch (error) {
+      console.error('Failed to save address:', error);
+      showToast('Error saving address');
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
 
   // Handle URL parameters for auto-editing
   useEffect(() => {
@@ -104,42 +234,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     if (!isActive) {
       fetchedRef.current = false;
     }
-  }, [currentUser?._id, isActive]);
-
-  const fetchProfile = async () => {
-    setLoading(true);
-    try {
-      const response = await getMyProfile();
-      if (response?.success && response.result) {
-        setProfileData(response.result);
-        setEditFormData({
-          fname: response.result.fname || '',
-          lname: response.result.lname || '',
-          email: response.result.email || '',
-          gender: response.result.gender || '',
-          mobileNumber: response.result.mobileNumber || response.result.identifier || ''
-        });
-        localStorage.setItem('currentUser', JSON.stringify(response.result));
-        window.dispatchEvent(new Event('userProfileUpdated'));
-      }
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAddresses = async () => {
-    try {
-      const response = await getMyAddresses();
-      const addrList = response?.result || response?.data || response || [];
-      if (Array.isArray(addrList)) {
-        setAddresses(addrList);
-      }
-    } catch (err) {
-      console.error("Failed to fetch addresses:", err);
-    }
-  };
+  }, [currentUser?._id, isActive, fetchProfile, fetchAddresses]);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -160,226 +255,91 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
-  const handleSaveAddress = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // ===== LOCATION SEARCH (debounced, same as CartPage) =====
+  useEffect(() => {
+    if (!showAddressModal) return;
 
-    const isEdit = Boolean(editingAddressId);
-    const baseAddr = (addrFormData.addressLine || '').trim();
-
-    // Compose houseNo + landmark into addressLine ONLY when creating a new
-    // address. On edit the saved addressLine already contains them.
-    let descriptiveAddress = baseAddr;
-    if (!isEdit) {
-      const house = addrFormData.houseNo?.trim() || '';
-      const ldmrk = addrFormData.landmark?.trim() || '';
-      if (house) descriptiveAddress = `${house}, ${descriptiveAddress}`;
-      if (ldmrk) descriptiveAddress = `${descriptiveAddress} (Landmark: ${ldmrk})`;
-    }
-
-    try {
-      const payload = {
-        name: (addrFormData.name || '').trim(),
-        mobileNumber: (addrFormData.mobileNumber || '').trim(),
-        label: addrFormData.label || 'home',
-        addressLine: descriptiveAddress,
-        city: addrFormData.city || undefined,
-        state: addrFormData.state || undefined,
-        pincode: addrFormData.pincode || undefined,
-        latitude: addrFormData.latitude || 0,
-        longitude: addrFormData.longitude || 0,
-        isDefault: Boolean(addrFormData.isDefault),
-        ...(isEdit ? { id: editingAddressId } : {})
-      };
-
-      const response = isEdit
-        ? await updateAddress(payload)
-        : await createAddress(payload);
-
-      if (response?.success) {
-        showToast(isEdit ? 'Address updated' : 'Address added');
-        setIsAddingAddr(false);
-        setEditingAddressId(null);
-        fetchAddresses();
-      } else {
-        showToast(response?.message || 'Failed to save address');
-      }
-    } catch (err) {
-      showToast('Error saving address');
-      console.error('Save Address Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSetDefault = async (id) => {
-    setLoading(true);
-    try {
-      const response = await updateAddress({ id, isDefault: true });
-      if (response?.success) {
-        showToast('Default address updated');
-        fetchAddresses();
-      } else {
-        showToast(response?.message || 'Failed to set default address');
-      }
-    } catch (err) {
-      showToast('Failed to set default address');
-    } finally {
-      setLoading(false);
-      setActiveDropdown(null);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this address?')) return;
-    setLoading(true);
-    try {
-      const response = await deleteAddress({ id });
-      if (response?.success) {
-        showToast('Address deleted');
-        fetchAddresses();
-      }
-    } catch (err) {
-      showToast('Failed to delete address');
-    } finally {
-      setLoading(false);
-      setActiveDropdown(null);
-    }
-  };
-
-  // ===== LOCATION SEARCH (same as CartPage) =====
-  const handleLocationSearch = async (query) => {
-    setLocationSearch(query);
-    if (query.length < 3) {
+    const searchTerm = locationSearch.trim();
+    if (searchTerm.length < 3) {
       setLocationSuggestions([]);
-      return;
-    }
-
-    setIsSearchingLocation(true);
-    try {
-      const response = await searchAddress(query);
-      setLocationSuggestions(response?.result || []);
-    } catch (error) {
-      console.error('Location search failed:', error);
-      setLocationSuggestions([]);
-    } finally {
       setIsSearchingLocation(false);
-    }
-  };
-
-  // ===== USE CURRENT LOCATION (same as CartPage – direct Nominatim fetch) =====
-  const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      showToast('Geolocation is not supported');
       return;
     }
 
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-
-        try {
-          // Direct Nominatim reverse geocoding (matching CartPage)
-          const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`;
-          const response = await fetch(nominatimUrl, {
-            headers: { 'User-Agent': 'RightTouchApp/1.0 (contact@yourapp.com)' }
-          });
-
-          if (!response.ok) throw new Error(`Nominatim error: ${response.status}`);
-
-          const result = await response.json();
-          const addr = result.address || {};
-          const details = [
-            addr.house_number,
-            addr.road,
-            addr.neighbourhood,
-            addr.suburb,
-            addr.city_district,
-            addr.town,
-            addr.village,
-            addr.municipality,
-            addr.county
-          ].filter(Boolean).join(', ');
-
-          const finalAddressLine = result.display_name || details || 'Pinned Location';
-          const finalCity = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.state_district || addr.suburb || '';
-          const finalState = addr.state || addr.state_district || '';
-          const finalPincode = addr.postcode || '';
-
-          setAddrFormData(prev => ({
-            ...prev,
-            addressLine: finalAddressLine,
-            city: finalCity,
-            state: finalState,
-            pincode: finalPincode,
-            latitude: latitude.toString(),
-            longitude: longitude.toString()
-          }));
-
-          setLocationSearch(result.display_name || finalAddressLine);
-          setAddressStep('form');
-        } catch (error) {
-          console.error('Reverse geocoding error:', error);
-          setAddressStep('form');
-          showToast('Location found. Please fill details manually.');
-        } finally {
-          setIsLocating(false);
+    const controller = new AbortController();
+    const debounceId = setTimeout(async () => {
+      setIsSearchingLocation(true);
+      try {
+        const response = await searchAddress(searchTerm);
+        const data = response?.result;
+        setLocationSuggestions(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Location search failed:', error);
+          setLocationSuggestions([]);
         }
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        showToast('Unable to retrieve your location');
-        setIsLocating(false);
+      } finally {
+        setIsSearchingLocation(false);
       }
-    );
+    }, 350);
+
+    return () => {
+      controller.abort();
+      clearTimeout(debounceId);
+    };
+  }, [locationSearch, showAddressModal]);
+
+  // ===== USE CURRENT LOCATION =====
+  const handleUseCurrentLocation = async () => {
+    setIsLocating(true);
+    try {
+      const coords = await getCurrentUserLocation();
+      const location = await reverseAddress(coords.latitude, coords.longitude);
+
+      setNewAddressForm((prev) => ({
+        ...prev,
+        addressLine: location.addressLine || prev.addressLine,
+        city: location.city || coords.city || prev.city,
+        state: location.state || coords.state || prev.state,
+        pincode: location.pincode || coords.pincode || prev.pincode,
+        latitude: (location.latitude || coords.latitude).toString(),
+        longitude: (location.longitude || coords.longitude).toString()
+      }));
+
+      setLocationSearch(location.addressLine || '');
+      setShowAddAddressForm(true);
+      showToast('Current location detected successfully');
+    } catch (error) {
+      console.error('Geolocation error:', error);
+      showToast(error.message || 'Unable to retrieve your location');
+    } finally {
+      setIsLocating(false);
+    }
   };
 
   // ===== SELECT LOCATION FROM SUGGESTION (same as CartPage) =====
-  const selectLocation = (suggestion) => {
-    const addr = suggestion.address || {};
-    const composed = [
-      addr.house_number,
-      addr.road,
-      addr.neighbourhood,
-      addr.suburb,
-      addr.city_district
+  const applyLocationToAddressForm = (suggestion) => {
+    const addressMeta = suggestion?.address || {};
+    const composedAddress = [
+      addressMeta.house_number,
+      addressMeta.road,
+      addressMeta.neighbourhood,
+      addressMeta.suburb,
+      addressMeta.city_district
     ].filter(Boolean).join(', ');
 
-    setAddrFormData(prev => ({
+    setNewAddressForm((prev) => ({
       ...prev,
-      addressLine: suggestion.display_name || composed,
-      city: addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.suburb || '',
-      state: addr.state || '',
-      pincode: addr.postcode || '',
-      latitude: suggestion.lat || '',
-      longitude: suggestion.lon || ''
+      addressLine: suggestion?.display_name || composedAddress || prev.addressLine,
+      city: addressMeta.city || addressMeta.town || addressMeta.village || addressMeta.municipality || addressMeta.county || addressMeta.state_district || addressMeta.suburb || prev.city,
+      state: addressMeta.state || prev.state,
+      pincode: addressMeta.postcode || prev.pincode,
+      latitude: suggestion?.lat || prev.latitude,
+      longitude: suggestion?.lon || prev.longitude
     }));
-    setLocationSearch(suggestion.display_name || '');
-    setAddressStep('form');
-  };
 
-  const openAddModal = () => {
-    setEditingAddressId(null);
-    setAddrFormData({
-      name: currentUser?.fname ? `${currentUser.fname} ${currentUser.lname || ''}`.trim() : '',
-      mobileNumber: currentUser?.mobileNumber || currentUser?.identifier || '',
-      label: 'home',
-      addressLine: '',
-      city: '',
-      state: '',
-      pincode: '',
-      landmark: '',
-      houseNo: '',
-      latitude: '',
-      longitude: '',
-      isDefault: addresses.length === 0
-    });
-    setAddressStep('picker');
-    setLocationSearch('');
-    setLocationSuggestions([]);
-    setShowAddressModal(true);
-    setActiveDropdown(null);
+    setShowAddAddressForm(true);
+    showToast('Location selected. Review and save address.');
   };
 
   const handleLoginClick = () => {
@@ -425,6 +385,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const openDeleteAccountConfirm = () => {
     if (!currentUser) return;
     setConfirmDialog({ open: true, action: 'delete-account' });
@@ -473,26 +434,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
-  const handleEditAddress = (addr) => {
-    setAddrFormData({
-      name: addr.name || '',
-      mobileNumber: addr.mobileNumber || addr.phone || '',
-      label: addr.label || 'home',
-      addressLine: addr.addressLine || addr.address || '',
-      city: addr.city || '',
-      state: addr.state || '',
-      pincode: addr.pincode || '',
-      latitude: addr.latitude ?? '',
-      longitude: addr.longitude ?? '',
-      houseNo: '',
-      landmark: '',
-      isDefault: Boolean(addr.isDefault)
-    });
-    setEditingAddressId(addr._id);
-    setIsAddingAddr(true);
-    setAddressStep('form'); // Edit directly shows form
-    setActiveDropdown(null);
-  };
+
 
   return (
     <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
@@ -590,251 +532,20 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       </div>
 
       {/* Address Management Modal */}
-      {showAddressModal && (
-        <div className="modal-backdrop" onClick={() => { setShowAddressModal(false); setIsAddingAddr(false); setActiveDropdown(null); }}>
-          <div className="address-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="address-modal-header">
-              <div className="header-left">
-                {isAddingAddr && addressStep === 'form' ? (
-                  <button className="back-btn-simple" onClick={() => setAddressStep('picker')}>
-                    <MdArrowBack />
-                  </button>
-                ) : isAddingAddr ? (
-                  <button className="back-btn-simple" onClick={() => setIsAddingAddr(false)}>
-                    <MdArrowBack />
-                  </button>
-                ) : null}
-                <h2>{isAddingAddr ? (addressStep === 'picker' ? 'Select Location' : 'Address Details') : 'Manage Address'}</h2>
-              </div>
-              <button className="modal-close" onClick={() => {
-                setShowAddressModal(false);
-                setIsAddingAddr(false);
-                setActiveDropdown(null);
-              }}>
-                <MdClose />
-              </button>
-            </div>
-
-            {isAddingAddr ? (
-              <div className="address-flow-container">
-                {addressStep === 'picker' ? (
-                  <div className="location-picker-step">
-                    <div className="search-input-wrapper">
-                      <LuSearch className="search-icon" />
-                      <input
-                        type="text"
-                        placeholder="Search for area, street name..."
-                        value={locationSearch}
-                        onChange={(e) => handleLocationSearch(e.target.value)}
-                        autoFocus
-                      />
-                      {isSearchingLocation && <div className="search-loader"></div>}
-                    </div>
-
-                    <button
-                      className={`current-location-btn ${isLocating ? 'locating' : ''}`}
-                      onClick={handleUseCurrentLocation}
-                      disabled={isLocating}
-                    >
-                      <MdMyLocation className="gps-icon" />
-                      <span>{isLocating ? 'Detecting location...' : 'Use Current Location'}</span>
-                    </button>
-
-                    <div className="location-suggestions">
-                      {locationSuggestions.map((suggestion, idx) => (
-                        <div
-                          key={idx}
-                          className="suggestion-item"
-                          onClick={() => selectLocation(suggestion)}
-                        >
-                          <MdPlace className="item-icon" />
-                          <div className="item-info">
-                            <p className="item-display">{suggestion.display_name}</p>
-                          </div>
-                        </div>
-                      ))}
-                      {locationSearch.length >= 3 && locationSuggestions.length === 0 && !isSearchingLocation && (
-                        <div className="no-suggestions">No locations found. Try a different search.</div>
-                      )}
-                    </div>
-
-                    <div className="picker-footer">
-                      <p className="osm-attribution">Location search by <b>OpenStreetMap</b></p>
-                    </div>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSaveAddress} className="address-form-premium fade-in">
-                    <div className="selected-location-preview">
-                      <MdPlace className="preview-icon" />
-                      <div className="preview-text">
-                        <p className="preview-addr">{addrFormData.addressLine}</p>
-                        <button type="button" className="change-loc-btn" onClick={() => setAddressStep('picker')}>Change</button>
-                      </div>
-                    </div>
-
-                    <div className="form-grid">
-                      <div className="input-group">
-                        <label>Full Name</label>
-                        <input
-                          type="text"
-                          value={addrFormData.name}
-                          onChange={(e) => setAddrFormData({ ...addrFormData, name: e.target.value })}
-                          placeholder="e.g. John Doe"
-                          required
-                        />
-                      </div>
-                      <div className="input-group">
-                        <label>Mobile Number</label>
-                        <input
-                          type="tel"
-                          value={addrFormData.mobileNumber}
-                          onChange={(e) => setAddrFormData({ ...addrFormData, mobileNumber: e.target.value })}
-                          placeholder="10-digit mobile number"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Only show House No & Landmark when adding new address */}
-                    {!editingAddressId && (
-                      <>
-                        <div className="input-group">
-                          <label>House / Flat / Block No.</label>
-                          <input
-                            type="text"
-                            value={addrFormData.houseNo || ''}
-                            onChange={(e) => setAddrFormData({ ...addrFormData, houseNo: e.target.value })}
-                            placeholder="e.g. Flat 101, Block B"
-                            required
-                          />
-                        </div>
-
-                        <div className="input-group">
-                          <label>Landmark (Optional)</label>
-                          <input
-                            type="text"
-                            value={addrFormData.landmark}
-                            onChange={(e) => setAddrFormData({ ...addrFormData, landmark: e.target.value })}
-                            placeholder="e.g. Near Central Park"
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div className="input-group">
-                      <label>Save as</label>
-                      <div className="type-selector">
-                        {['home', 'office', 'other'].map(label => (
-                          <button
-                            key={label}
-                            type="button"
-                            className={`type-btn ${addrFormData.label === label ? 'active' : ''}`}
-                            onClick={() => setAddrFormData({ ...addrFormData, label })}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button type="submit" className="save-addr-btn" disabled={loading}>
-                      {loading ? 'Saving...' : 'Save Address & Proceed'}
-                    </button>
-                  </form>
-                )}
-              </div>
-            ) : (
-              <>
-                <button className="add-address-btn" onClick={openAddModal}>
-                  <LuPlus className="add-icon" />
-                  Add New Address
-                </button>
-
-                <div className="address-list">
-                  {addresses.length === 0 ? (
-                    <div className="empty-addresses">
-                      <MdOutlineLocationOn size={48} />
-                      <p>No addresses saved yet</p>
-                    </div>
-                  ) : (
-                    <>
-                      {addresses.slice(0, addrLimit).map((address) => (
-                        <div key={address._id} className={`address-card ${address.isDefault ? 'is-default' : ''}`}>
-                          <div className="address-card-header">
-                            <div className="header-left-group">
-                              <div className="address-badge">
-                                <MdPlace className="badge-icon" />
-                                <span>{address.label || 'home'}</span>
-                              </div>
-                              <h4 className="addr-name">{address.name || 'User'}</h4>
-                            </div>
-
-                            <div className="header-right-group">
-                              {address.isDefault && (
-                                <span className="default-tag">
-                                  <MdCheck /> Default
-                                </span>
-                              )}
-                              <div className="address-card-actions">
-                                <button
-                                  className="three-dots-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveDropdown(activeDropdown === address._id ? null : address._id);
-                                  }}
-                                >
-                                  <MdMoreVert />
-                                </button>
-
-                                {activeDropdown === address._id && (
-                                  <div className="dropdown-menu">
-                                    {!address.isDefault && (
-                                      <button className="dropdown-item" onClick={() => handleSetDefault(address._id)}>
-                                        <MdStarOutline className="dropdown-icon" />
-                                        <span>Set as Default</span>
-                                      </button>
-                                    )}
-                                    <button className="dropdown-item" onClick={() => handleEditAddress(address)}>
-                                      <MdOutlineEdit className="dropdown-icon" />
-                                      <span>Edit Address</span>
-                                    </button>
-                                    <button className="dropdown-item delete" onClick={() => handleDelete(address._id)}>
-                                      <MdDeleteOutline className="dropdown-icon" />
-                                      <span>Delete</span>
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="address-content">
-                            <p className="addr-text">{address.addressLine || address.address}</p>
-                            {address.mobileNumber && (
-                              <p className="addr-phone">
-                                <MdLogin size={14} style={{ opacity: 0.7 }} /> {address.mobileNumber}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-
-                      {addresses.length > 3 && (
-                        <button
-                          className="view-more-addr-btn"
-                          onClick={() => setAddrLimit(addrLimit >= addresses.length ? 3 : addresses.length)}
-                        >
-                          {addrLimit >= addresses.length ? 'Show Less' : `View More (${addresses.length - 3} more)`}
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <AddressModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        currentUser={currentUser}
+        onSelectAddress={(formattedLine, addrObj) => {
+          if (addrObj) {
+            setAddressForm(mapAddressToSelection(addrObj));
+          } else if (formattedLine) {
+            setAddressForm((prev) => ({ ...prev, addressLine: formattedLine }));
+          }
+          fetchAddresses();
+        }}
+        showToast={showToast}
+      />
 
       {confirmDialog.open && (
         <ConfirmModal

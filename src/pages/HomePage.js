@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Wind,
@@ -12,7 +12,12 @@ import {
     CircleDollarSign,
     RotateCcw,
     ArrowRight,
+    Share2,
 } from 'lucide-react';
+import { getMyAddresses } from '../services/addressService';
+import AddressModal from '../components/AddressModal';
+import { shareItem } from '../utils/share';
+import { formatPriceSmart } from '../utils/format';
 import '../styles/home.css';
 
 // --- Static Data ---
@@ -38,13 +43,13 @@ const CategoryIcon = ({ category }) => {
             <img
                 src={category.image}
                 alt={category.category}
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 loading="lazy"
             />
         );
     }
     return (
-        <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--green)' }}>
+        <span style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--green)' }}>
             {category.category?.charAt(0) || '?'}
         </span>
     );
@@ -65,7 +70,9 @@ const filterBySearch = (items, query) => {
 
 const HomePage = ({
     isActive,
+    currentUser,
     searchQuery,
+    showToast,
     serviceCategories: initialServiceCategories = [],
     productCategories: initialProductCategories = [],
     services: initialServices = [],
@@ -78,6 +85,7 @@ const HomePage = ({
     const [loading, setLoading] = useState(isGlobalLoading);
     const [userAddress, setUserAddress] = useState('');
     const [locationLoading, setLocationLoading] = useState(true);
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
     useEffect(() => {
         setServiceCategories([...initialServiceCategories].sort((a, b) => b.category.localeCompare(a.category)));
@@ -86,53 +94,50 @@ const HomePage = ({
         setLoading(isGlobalLoading);
     }, [initialServiceCategories, initialProductCategories, initialServices, isGlobalLoading]);
 
-    // Detect real user location
-    const detectLocation = useCallback(() => {
-        if (!navigator.geolocation) {
-            setUserAddress('Location unavailable');
+    // Load the user's default saved address (only)
+    useEffect(() => {
+        if (!currentUser?._id) {
+            setUserAddress('Login to set your address');
             setLocationLoading(false);
             return;
         }
 
         setLocationLoading(true);
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                try {
-                    const { latitude, longitude } = pos.coords;
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+        let cancelled = false;
 
-                    const res = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-                        { signal: controller.signal }
-                    );
-                    clearTimeout(timeoutId);
-                    const data = await res.json();
-                    const addr = data.address || {};
-                    const area = addr.suburb || addr.neighbourhood || addr.village || addr.town || addr.city_district || '';
-                    const city = addr.city || addr.town || addr.state_district || addr.state || '';
-                    const fullAddr = area && city ? `${area}, ${city}` : area || city || 'Unknown area';
-                    setUserAddress(fullAddr);
-                } catch (err) {
-                    console.warn('[HomePage] Location fetch error:', err);
-                    setUserAddress('Location unavailable');
-                } finally {
-                    setLocationLoading(false);
+        const loadDefaultAddress = async () => {
+            try {
+                const response = await getMyAddresses();
+                if (cancelled) return;
+                const addrList = response?.result || response?.data || response || [];
+                const list = Array.isArray(addrList) ? addrList : [];
+                const defaultAddr = list.find((a) => a.isDefault) || list[0];
+
+                if (defaultAddr) {
+                    const line = defaultAddr.addressLine || defaultAddr.address || '';
+                    const rest = [defaultAddr.city, defaultAddr.state, defaultAddr.pincode].filter(Boolean).join(', ');
+                    setUserAddress(line || rest || 'No address saved');
+                } else {
+                    setUserAddress('No address saved');
                 }
-            },
-            (err) => {
-                console.warn('[HomePage] Geolocation error:', err);
-                const msg = err.code === 1 ? 'Permission denied' : 'Slow connection';
-                setUserAddress(msg);
-                setLocationLoading(false);
-            },
-            { timeout: 10000, maximumAge: 300000, enableHighAccuracy: false }
-        );
-    }, []);
+            } catch (err) {
+                console.warn('[HomePage] Failed to load default address:', err);
+                if (!cancelled) setUserAddress('Address unavailable');
+            } finally {
+                if (!cancelled) setLocationLoading(false);
+            }
+        };
 
-    useEffect(() => {
-        detectLocation();
-    }, [detectLocation]);
+        loadDefaultAddress();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentUser?._id, isActive]);
+
+    const handleLocationClick = () => {
+        setIsAddressModalOpen(true);
+    };
 
     // Filtered data
     const filteredServiceCategories = filterBySearch(serviceCategories, searchQuery);
@@ -185,14 +190,18 @@ const HomePage = ({
     // --- Render ---
     return (
         <section className="home-page" id="page-home">
-            {/* ===== LOCATION BAR - No Change Button ===== */}
-            <div className="location-bar">
+            {/* ===== LOCATION BAR - Shows default saved address, click to manage ===== */}
+            <div className="location-bar" onClick={handleLocationClick} role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleLocationClick(); }}>
                 <div className="location-left">
                     <MapPin size={20} className="location-pin" />
                     <div className="location-text">
-                        <strong>Current Location</strong>
+                        <strong>Delivery Address</strong>
                         <span>
-                            {locationLoading ? 'Detecting...' : userAddress}
+                            <span className="location-addr">
+                                {locationLoading ? 'Loading...' : userAddress}
+                            </span>
+                            <ChevronDown size={14} className="chevron" />
                         </span>
                     </div>
                 </div>
@@ -315,13 +324,30 @@ const HomePage = ({
                                             ) : (
                                                 <div className="service-img-placeholder"><Wrench size={28} /></div>
                                             )}
+<button className="share-btn-round" onClick={(e) => {
+                                                e.stopPropagation();
+                                                const shareData = {
+                                                    title: service.serviceName,
+                                                    text: service.description || service.serviceName,
+                                                    url: `${window.location.origin}/product-services?serviceId=${service._id}`
+                                                };
+                                                // Show native share on mobile, WhatsApp on desktop
+                                                if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                                                    shareItem(shareData, showToast);
+                                                } else {
+                                                    // For desktop or non-native share, show options
+                                                    shareItem(shareData, showToast);
+                                                }
+                                            }} aria-label="Share service">
+                                            <Share2 size={14} />
+                                        </button>
                                         </div>
                                         <div className="search-service-info">
                                             <h4 className="search-service-name">{service.serviceName}</h4>
-                                            <div className="search-service-price-block">
-                                                <span className="search-service-price">₹{service.discountedPrice || service.serviceCost}</span>
+<div className="search-service-price-block">
+                                                <span className="search-service-price">��{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
                                                 {service.serviceCost > (service.discountedPrice || 0) && (
-                                                    <span className="search-service-old-price">₹{service.serviceCost}</span>
+                                                    <span className="search-service-old-price">��{formatPriceSmart(service.serviceCost)}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -356,7 +382,7 @@ const HomePage = ({
                         <div className="category-grid">
                             {loading ? (
                                 Array(10).fill(0).map((_, i) => (
-                                    <div key={i} className="category-card skeleton" style={{ height: '100px' }} />
+                                    <div key={i} className="category-card skeleton" style={{ height: '195px' }} />
                                 ))
                             ) : (
                                 serviceCategories.map(cat => (
@@ -436,13 +462,23 @@ const HomePage = ({
                                             ) : (
                                                 <Wrench size={28} />
                                             )}
+                                            <button className="share-btn-round" onClick={(e) => {
+                                                e.stopPropagation();
+                                                shareItem({
+                                                    title: service.serviceName,
+                                                    text: service.description || service.serviceName,
+                                                    url: `${window.location.origin}/product-services?serviceId=${service._id}`
+                                                }, showToast);
+                                            }} aria-label="Share service">
+                                                <Share2 size={13} />
+                                            </button>
                                         </div>
                                         <div className="appliance-info">
                                             <span className="appliance-name">{service.serviceName}</span>
-                                            <div className="appliance-price-wrap">
-                                                <span className="appliance-price">₹{service.discountedPrice || service.serviceCost}</span>
+<div className="appliance-price-wrap">
+                                                <span className="appliance-price">��{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
                                                 {service.serviceCost > (service.discountedPrice || 0) && service.discountedPrice && (
-                                                    <span className="appliance-old-price">₹{service.serviceCost}</span>
+                                                    <span className="appliance-old-price">��{formatPriceSmart(service.serviceCost)}</span>
                                                 )}
                                             </div>
                                             <button className="appliance-book-btn">View</button>
@@ -470,6 +506,15 @@ const HomePage = ({
                     </div>
                 </>
             )}
+
+            {/* Address Selection Modal */}
+            <AddressModal
+                isOpen={isAddressModalOpen}
+                onClose={() => setIsAddressModalOpen(false)}
+                currentUser={currentUser}
+                onSelectAddress={(newAddressLine) => setUserAddress(newAddressLine)}
+                showToast={showToast}
+            />
         </section>
     );
 };

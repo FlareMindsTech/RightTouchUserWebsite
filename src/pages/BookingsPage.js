@@ -23,7 +23,8 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   const [bookingsHistory, setBookingsHistory] = useState([]);
   const [activeBookingsList, setActiveBookingsList] = useState([]);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
-  const [activeHistoryFilter, setActiveHistoryFilter] = useState('ALL'); // 'ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'PAID', 'UNPAID'
+  const [activeHistoryFilter, setActiveHistoryFilter] = useState('ALL'); // 'ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'HISTORY'
+  const [autoOpenRate, setAutoOpenRate] = useState(false);
   const [visibleHistoryCount, setVisibleHistoryCount] = useState(5);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -42,7 +43,8 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     }
   };
 
-  const handleBookingClick = (booking) => {
+  const handleBookingClick = (booking, openRate = false) => {
+    setAutoOpenRate(openRate);
     setSelectedBooking(booking);
   };
 
@@ -126,9 +128,9 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     // Consolidated Filter Logic
     if (activeHistoryFilter !== 'ALL') {
       if (activeHistoryFilter === 'COMPLETED') {
-        if (status !== 'COMPLETED' || paymentStatus === 'PAID') return false;
-      } else if (['PAID', 'UNPAID'].includes(activeHistoryFilter)) {
-        if (paymentStatus !== activeHistoryFilter) return false;
+        if (status !== 'COMPLETED') return false;
+      } else if (activeHistoryFilter === 'HISTORY') {
+        if (paymentStatus !== 'PAID') return false;
       } else {
         if (status !== activeHistoryFilter) return false;
       }
@@ -325,6 +327,8 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
         canRate={status === 'COMPLETED'}
         showInvoice={showInvoice}
         setShowInvoice={setShowInvoice}
+        autoOpenRate={autoOpenRate}
+        setAutoOpenRate={setAutoOpenRate}
       />
     );
   }
@@ -351,7 +355,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
       <div
         key={booking._id}
         className="booking-card-premium"
-        onClick={() => handleBookingClick(booking)}
+        onClick={() => handleBookingClick(booking, false)}
       >
         <div className="booking-card-header">
           <div className="booking-icon-wrapper">
@@ -407,9 +411,35 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
           )}
         </div>
 
-        <div className="booking-card-footer">
-          <span className="view-details-text">View Details</span>
-          <MdOutlineChevronRight className="arrow-icon-premium" />
+        <div className="booking-card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            {status === 'COMPLETED' && (
+              <button
+                className="rate-service-card-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBookingClick(booking, true);
+                }}
+                style={{
+                  background: 'var(--green)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  zIndex: 10
+                }}
+              >
+                Rate Service
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span className="view-details-text">View Details</span>
+            <MdOutlineChevronRight className="arrow-icon-premium" />
+          </div>
         </div>
       </div>
     );
@@ -482,7 +512,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                   </div>
                   <div className="status-filter-pills-container">
                     <div className="status-filter-pills">
-                      {['ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'PAID', 'UNPAID'].map(filter => (
+                      {['ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'HISTORY'].map(filter => (
                         <button
                           key={filter}
                           className={`filter-pill ${activeHistoryFilter === filter ? 'active' : ''}`}

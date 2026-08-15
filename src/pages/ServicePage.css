@@ -680,6 +680,7 @@
   padding: 10px 12px 12px;
   border-top: 1px solid var(--border-light);
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
   min-height: 50px;
   align-items: center;
@@ -696,6 +697,7 @@
   border: 1px solid var(--border-light);
   flex-shrink: 0;
   box-shadow: var(--shadow-sm);
+  margin-left: auto;
 }
 
 #page-services .qty-btn-modern {
@@ -731,21 +733,23 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border: none;
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 12px;
   cursor: pointer;
   transition: var(--transition);
-  flex: 1;
   min-height: 32px;
+  margin-left: auto;
 }
 
 #page-services .action-add {
   background: var(--primary-gradient);
   color: white;
   box-shadow: var(--primary-glow);
+  width: auto;
+  max-width: 130px;
 }
 
 #page-services .action-add:hover {
@@ -754,13 +758,15 @@
 }
 
 #page-services .action-remove {
-  background: #FEE2E2;
-  color: var(--error);
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 #page-services .action-remove:hover {
-  background: #FECACA;
+  background: #dc2626;
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
 }
 
 /* ===== MOBILE COMPACT CARDS ===== */

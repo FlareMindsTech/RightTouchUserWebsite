@@ -304,6 +304,135 @@
     align-items: flex-end;
     padding: 0;
   }
+
+  .otp-box {
+    width: 48px;
+    height: 52px;
+    font-size: 22px;
+    border-radius: 10px;
+  }
+
+  .otp-boxes {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .otp-box {
+    width: 42px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .otp-boxes {
+    gap: 8px;
+  }
+}
+
+/* ===================== PHONE INPUT WITH COUNTRY CODE ===================== */
+.phone-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0 14px;
+  transition: all 0.2s;
+}
+.phone-input-wrapper:focus-within {
+  border-color: #27AE60;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+.phone-input-wrapper.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+.phone-input-wrapper.error:focus-within {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+.phone-prefix {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.phone-prefix-sep {
+  width: 1px;
+  height: 22px;
+  background: #e5e7eb;
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+.phone-input-wrapper input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  padding: 13px 0 !important;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #111827;
+  outline: none;
+}
+.phone-input-wrapper input:focus {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.phone-input-wrapper input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.phone-input-wrapper input:disabled {
+  opacity: 0.6;
+}
+
+/* ===================== OTP BOXES ===================== */
+.otp-boxes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 6px 0 4px;
+}
+.otp-box {
+  width: 54px;
+  height: 58px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  outline: none;
+  caret-color: #27AE60;
+  transition: all 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.otp-box:focus {
+  border-color: #27AE60;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.15);
+  transform: translateY(-1px);
+}
+.otp-box.filled {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+.otp-boxes.error .otp-box {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+.otp-boxes.error .otp-box:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+.otp-box::placeholder {
+  color: #cbd5e1;
 }
 
 /* OTP Styles */

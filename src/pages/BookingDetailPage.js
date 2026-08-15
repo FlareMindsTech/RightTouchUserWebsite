@@ -15,14 +15,27 @@ import './BookingDetailPage.css';
 import InvoiceModal from '../components/InvoiceModal';
 import { createRating } from '../services/ratingService';
 
-const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService, isPaidBooking, paymentLoading, canShowPayNow, handlePayButtonClick, canRate, showInvoice, setShowInvoice, currentUser }) => {
+import { useEffect } from 'react';
+
+const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService, isPaidBooking, paymentLoading, canShowPayNow, handlePayButtonClick, canRate, showInvoice, setShowInvoice, currentUser, autoOpenRate, setAutoOpenRate }) => {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingForm, setRatingForm] = useState({ rates: 5, comment: '' });
   const [ratingLoading, setRatingLoading] = useState(false);
 
+  useEffect(() => {
+    if (canRate || autoOpenRate) {
+      setShowRatingModal(true);
+      if (setAutoOpenRate) setAutoOpenRate(false);
+    }
+  }, [canRate, autoOpenRate, setAutoOpenRate]);
+
   const handleSubmitRating = async () => {
     if (!ratingForm.comment.trim()) {
       showToast('Please enter a comment.', 'error');
+      return;
+    }
+    if (!ratingForm.rates || ratingForm.rates < 1) {
+      showToast('Please select a star rating.', 'error');
       return;
     }
     setRatingLoading(true);
@@ -30,33 +43,51 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
       const isServiceBooking = isService !== undefined ? isService : (booking.serviceId || booking.technicianId || booking.scheduledAt || booking.itemId?.serviceName ? true : false);
       const bookingType = isServiceBooking ? "service" : "product";
       
+      // Extract IDs properly - backend expects ObjectIds
+      const bookingId = booking._id || booking.id;
+      let serviceId = booking.serviceId?._id || booking.serviceId || booking.itemId?._id || booking.itemId;
+      let technicianId = booking.technicianId?._id || booking.technicianId?.userId?._id || booking.technicianId;
+      let productId = booking.productId?._id || booking.productId || booking.itemId?._id || booking.itemId;
+
+      // If technicianId is an object, extract the ID
+      if (technicianId && typeof technicianId === 'object') {
+        technicianId = technicianId._id || technicianId.userId?._id || technicianId.id;
+      }
+      if (serviceId && typeof serviceId === 'object') {
+        serviceId = serviceId._id || serviceId.id;
+      }
+      if (productId && typeof productId === 'object') {
+        productId = productId._id || productId.id;
+      }
+
       const payload = {
-        bookingId: booking._id,
+        bookingId,
         bookingType,
         rates: ratingForm.rates,
         comment: ratingForm.comment.trim()
       };
 
       if (isServiceBooking) {
-        payload.serviceId = booking.serviceId?._id || booking.serviceId || booking.itemId?._id || booking.itemId;
-        if (booking.technicianId) {
-          payload.technicianId = booking.technicianId?._id || booking.technicianId;
-        }
+        if (serviceId) payload.serviceId = serviceId;
+        if (technicianId) payload.technicianId = technicianId;
       } else {
-        payload.productId = booking.productId?._id || booking.productId || booking.itemId?._id || booking.itemId;
+        if (productId) payload.productId = productId;
       }
 
+      console.log('[Rating] Submitting payload:', payload);
       const response = await createRating(payload);
+      console.log('[Rating] Response:', response);
+      
       if (response?.success) {
         showToast('Thank you for your rating!', 'success');
         setShowRatingModal(false);
-        setRatingForm({ rates: 5, comment: '' }); // reset
+        setRatingForm({ rates: 5, comment: '' });
       } else {
         showToast(response?.message || 'Failed to submit rating', 'error');
       }
     } catch (error) {
       console.error('Error submitting rating:', error);
-      showToast(error.message || 'Failed to submit rating', 'error');
+      showToast(error?.message || error?.response?.data?.message || 'Failed to submit rating', 'error');
     } finally {
       setRatingLoading(false);
     }
@@ -323,12 +354,7 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
             {paymentLoading ? '...' : (isPaidBooking ? 'Invoice' : 'Pay Now')}
           </button>
 
-          <button
-            className="btn-v2 secondary"
-            onClick={() => canRate ? setShowRatingModal(true) : showToast('Rate after completion')}
-          >
-            <MdStarOutline /> Rate
-          </button>
+
         </div>
 
         <button className="rebook-btn" onClick={handleRebook}>

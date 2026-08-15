@@ -307,17 +307,23 @@ function App() {
     }
   };
 
-  const removeFromCart = useCallback(async (itemId) => {
+const removeFromCart = useCallback(async (itemId) => {
     const originalItems = [...cartItems];
+    const itemToRemove = cartItems.find(item => item.id === itemId || item._id === itemId);
     
-    // 🚀 OPTIMISTIC UPDATE: Remove locally immediately
+    // ��� OPTIMISTIC UPDATE: Remove locally immediately
     setCartItems(prev => prev.filter(item => item.id !== itemId && item._id !== itemId));
     showToast('Item removed from cart');
+
+    // If item is optimistic (not yet synced to server), skip API call
+    if (itemToRemove?.isOptimistic) {
+      return;
+    }
 
     try {
       const response = await apiRemoveFromCart(itemId);
       if (!response?.success) {
-        // 🚀 ROLLBACK: Restore items if server fails
+        // ��� ROLLBACK: Restore items if server fails
         setCartItems(originalItems);
         showToast('Failed to remove item');
       }
@@ -500,6 +506,7 @@ function App() {
               onNavigate={handleNavigate}
               onOpenService={openServiceSheet}
               showToast={showToast}
+              currentUser={currentUser}
               searchQuery={globalSearchQuery}
               serviceCategories={serviceCategories}
               productCategories={productCategories}
@@ -513,6 +520,7 @@ function App() {
               onNavigate={handleNavigate}
               onOpenService={openServiceSheet}
               showToast={showToast}
+              currentUser={currentUser}
               searchQuery={globalSearchQuery}
               serviceCategories={serviceCategories}
               productCategories={productCategories}

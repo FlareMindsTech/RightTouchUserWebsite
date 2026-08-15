@@ -20,9 +20,7 @@ export const ENDPOINTS = {
     GET_DEFAULT: "/api/addresses/default",
     UPDATE: "/api/addresses",
     SET_DEFAULT: "/api/addresses/default",
-    DELETE: "/api/addresses",
-    SEARCH: "/api/addresses/search",
-    REVERSE: "/api/addresses/reverse"
+    DELETE: "/api/addresses"
   },
 
   CART: {

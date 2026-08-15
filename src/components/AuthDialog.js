@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './AuthDialog.css';
 import { loginCustomer, verifyLoginOTP } from '../services/authServices';
 
@@ -13,9 +13,11 @@ const AuthDialog = ({
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
+  const [otpBoxes, setOtpBoxes] = useState(['', '', '', '']);
   const [otpError, setOtpError] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
+  const otpRefs = useRef([]);
+  const formRef = useRef(null);
 
   React.useEffect(() => {
     let interval;
@@ -28,6 +30,8 @@ const AuthDialog = ({
   }, [otpSent, resendTimer]);
 
   if (!isOpen) return null;
+
+  const otp = otpBoxes.join('');
 
   const validatePhone = () => {
     const newErrors = {};
@@ -64,11 +68,43 @@ const AuthDialog = ({
     setIsLoading(false);
   };
 
-  const handleOtpChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 4) {
-      setOtp(value);
-      setOtpError('');
+  const handleOtpChange = (index, value) => {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    setOtpBoxes((prev) => {
+      const next = [...prev];
+      next[index] = digit;
+      return next;
+    });
+    setOtpError('');
+
+    if (digit && index < 3) {
+      otpRefs.current[index + 1]?.focus();
+    }
+
+    const nextOtp = [...otpBoxes];
+    nextOtp[index] = digit;
+    if (digit && nextOtp.every((d) => d !== '')) {
+      setTimeout(() => formRef.current?.requestSubmit?.(), 200);
+    }
+  };
+
+  const handleOtpKeyDown = (e, index) => {
+    if (e.key === 'Backspace' && !otpBoxes[index] && index > 0) {
+      e.preventDefault();
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4).split('');
+    const next = ['', '', '', ''];
+    digits.forEach((d, i) => { next[i] = d; });
+    setOtpBoxes(next);
+    setOtpError('');
+    otpRefs.current[Math.min(digits.length, 3)]?.focus();
+    if (digits.length === 4) {
+      setTimeout(() => formRef.current?.requestSubmit?.(), 200);
     }
   };
 
@@ -113,7 +149,7 @@ const AuthDialog = ({
         // Reset form
         setIdentifier('');
         setOtpSent(false);
-        setOtp('');
+        setOtpBoxes(['', '', '', '']);
       } else {
         setOtpError('Invalid OTP. Please try again.');
       }
@@ -136,7 +172,7 @@ const AuthDialog = ({
 
   const handleBackToLogin = () => {
     setOtpSent(false);
-    setOtp('');
+    setOtpBoxes(['', '', '', '']);
     setOtpError('');
   };
 
@@ -154,20 +190,26 @@ const AuthDialog = ({
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="auth-input-group">
               <label>Phone Number</label>
-              <input
-                type="tel"
-                placeholder="Enter your phone number"
-                value={identifier}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '');
-                  if (value.length <= 10) {
-                    setIdentifier(value);
-                    setErrors({});
-                  }
-                }}
-                className={errors.identifier ? 'error' : ''}
-                maxLength={10}
-              />
+              <div className={`phone-input-wrapper ${errors.identifier ? 'error' : ''}`}>
+                <span className="phone-prefix">+91</span>
+                <span className="phone-prefix-sep"></span>
+                <input
+                  type="tel"
+                  placeholder="10-digit mobile number"
+                  value={identifier}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 10) {
+                      setIdentifier(value);
+                      setErrors({});
+                    }
+                  }}
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  maxLength={10}
+                  autoFocus
+                />
+              </div>
               {errors.identifier && <span className="error-text">{errors.identifier}</span>}
             </div>
 
@@ -176,7 +218,7 @@ const AuthDialog = ({
             </button>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp} className="auth-form">
+          <form ref={formRef} onSubmit={handleVerifyOtp} className="auth-form">
             <div className="otp-info">
               <p>Enter the 4-digit OTP sent to</p>
               <p className="otp-phone">+91 {identifier}</p>
@@ -184,14 +226,26 @@ const AuthDialog = ({
 
             <div className="auth-input-group">
               <label>Enter OTP</label>
-              <input
-                type="text"
-                placeholder="Enter 4-digit OTP"
-                value={otp}
-                onChange={handleOtpChange}
-                className={otpError ? 'error' : ''}
-                maxLength={4}
-              />
+              <div className={`otp-boxes ${otpError ? 'error' : ''}`}>
+                {[0, 1, 2, 3].map((i) => (
+                  <input
+                    key={i}
+                    ref={(el) => { otpRefs.current[i] = el; }}
+                    type="tel"
+                    className={`otp-box ${otpBoxes[i] ? 'filled' : ''}`}
+                    value={otpBoxes[i]}
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(e, i)}
+                    onPaste={handleOtpPaste}
+                    onFocus={(e) => e.target.select()}
+                    inputMode="numeric"
+                    autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                    maxLength={1}
+                    autoFocus={i === 0}
+                    aria-label={`Digit ${i + 1}`}
+                  />
+                ))}
+              </div>
               {otpError && <span className="error-text">{otpError}</span>}
             </div>
 

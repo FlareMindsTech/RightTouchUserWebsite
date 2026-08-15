@@ -14,6 +14,7 @@ import {
   Hammer
 } from 'lucide-react';
 import { getServiceById } from '../services/serviceService';
+import { formatPriceSmart } from '../utils/format';
 import './ProductServices.css'; // Import the CSS
 
 const ProductServices = ({
@@ -280,10 +281,10 @@ const ProductServices = ({
               {/* Price & Savings */}
               <div className="price-section">
                 <div className="price-main">
-                  <span className="price-current">₹{service.discountedPrice || service.serviceCost}</span>
+                  <span className="price-current">₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
                   {service.serviceCost > (service.discountedPrice || 0) && (
                     <>
-                      <span className="price-original">₹{service.serviceCost}</span>
+                      <span className="price-original">₹{formatPriceSmart(service.serviceCost)}</span>
                       <span className="price-discount">{service.serviceDiscountPercentage}% OFF</span>
                     </>
                   )}
@@ -291,7 +292,7 @@ const ProductServices = ({
 
                 {service.discountAmount > 0 && (
                   <div className="price-savings">
-                    You Save ₹{service.discountAmount}
+                    You Save ₹{formatPriceSmart(service.discountAmount)}
                   </div>
                 )}
               </div>

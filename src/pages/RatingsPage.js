@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MdArrowBack, MdStar, MdStarBorder, MdEdit, MdDelete, MdClose, MdVerified } from 'react-icons/md';
-import { getMyRatings, updateRating, deleteRating } from '../services/ratingService';
-import ConfirmModal from '../components/ConfirmModal';
+import { MdArrowBack, MdStar, MdStarBorder, MdEdit, MdClose, MdVerified } from 'react-icons/md';
+import { getMyRatings, updateRating } from '../services/ratingService';
 import { rtAlert } from '../components/RtAlert';
 import './RatingsPage.css';
 
@@ -44,8 +43,7 @@ export default function RatingsPage({ showToast }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ rates: 0, comment: '' });
   const [editLoading, setEditLoading] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
-  const [deleteLoading, setDeleteLoading] = useState(false);
+
 
   useEffect(() => {
     fetchRatings();
@@ -95,19 +93,7 @@ export default function RatingsPage({ showToast }) {
     }
   };
 
-  const handleDelete = async () => {
-    setDeleteLoading(true);
-    try {
-      await deleteRating(deleteConfirm.id);
-      rtAlert('Review deleted', 'success');
-      setRatings(prev => prev.filter(r => r._id !== deleteConfirm.id));
-    } catch {
-      rtAlert('Error deleting review', 'error');
-    } finally {
-      setDeleteLoading(false);
-      setDeleteConfirm({ open: false, id: null });
-    }
-  };
+
 
   const avgRating = ratings.length
     ? (ratings.reduce((sum, r) => sum + (r.rates || 0), 0) / ratings.length).toFixed(1)
@@ -180,7 +166,6 @@ export default function RatingsPage({ showToast }) {
                   <ReviewCard
                     r={r}
                     onEdit={() => openEdit(r)}
-                    onDelete={() => setDeleteConfirm({ open: true, id: r._id })}
                   />
                 )}
               </div>
@@ -189,27 +174,14 @@ export default function RatingsPage({ showToast }) {
         )}
       </div>
 
-      <ConfirmModal
-        isOpen={deleteConfirm.open}
-        icon="🗑️"
-        iconBg="#fee2e2"
-        iconColor="#ef4444"
-        title="Delete Review?"
-        desc="This review will be permanently removed."
-        confirmLabel="Delete"
-        cancelLabel="Keep It"
-        confirmClass="cm-confirm-danger"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteConfirm({ open: false, id: null })}
-        loading={deleteLoading}
-      />
+
     </div>
   );
 }
 
 /* ── Sub-components ─────────────────────────────────────── */
 
-function ReviewCard({ r, onEdit, onDelete }) {
+function ReviewCard({ r, onEdit }) {
   const techName = r.technicianId?.name || r.technicianId?.fname
     ? `${r.technicianId?.fname || ''} ${r.technicianId?.lname || ''}`.trim()
     : 'Technician';
@@ -231,9 +203,6 @@ function ReviewCard({ r, onEdit, onDelete }) {
         <div className="rv-actions">
           <button className="rv-btn rv-edit-btn" onClick={onEdit} title="Edit">
             <MdEdit size={16} />
-          </button>
-          <button className="rv-btn rv-delete-btn" onClick={onDelete} title="Delete">
-            <MdDelete size={16} />
           </button>
         </div>
       </div>

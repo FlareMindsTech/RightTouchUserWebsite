@@ -132,22 +132,30 @@
   }
 
   .category-card {
-    padding: 14px 12px;
-    flex-direction: row;
+    padding: 10px 8px 12px;
+    flex-direction: column;
     gap: 8px;
+    min-height: 145px;
+    justify-content: space-between;
   }
 
   .cat-icon-wrap {
-    width: 38px;
-    height: 38px;
+    width: 100%;
+    height: 92px;
+    border-radius: 10px;
+  }
+  
+  .cat-icon-wrap img {
+    border-radius: 10px;
   }
 
   .cat-emoji {
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .category-card span {
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
   }
 
   /* SERVICE GRID — mobile exactly 2 cols */
