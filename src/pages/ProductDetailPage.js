@@ -12,6 +12,7 @@ import {
     CalendarCheck
 } from 'lucide-react';
 import { getProductById } from '../services/productService';
+import { goBackSmart } from '../utils/browserUtils';
 
 const ProductDetailPage = ({ isActive, showToast, addToCart, isInCart, removeFromCart, cartItems }) => {
     const [searchParams] = useSearchParams();
@@ -54,7 +55,7 @@ const ProductDetailPage = ({ isActive, showToast, addToCart, isInCart, removeFro
     }, [productId, isActive]);
 
     const handleBack = () => {
-        navigate('/products');
+        goBackSmart(navigate, '/products');
     };
 
     if (loading && isActive) {

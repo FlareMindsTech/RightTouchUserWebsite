@@ -40,6 +40,33 @@ export const safeParseDate = (dateVal, fallback = new Date()) => {
 /**
  * Safe wrapper for localStorage to handle Safari Private Mode errors.
  */
+/**
+ * Smart Back Navigation
+ * Tracks in-app navigation so back buttons return to the actual previous
+ * page the user came from, instead of a hard-coded destination.
+ */
+const navStack = [];
+const MAX_NAV_STACK = 60;
+
+export const trackNavigation = (path) => {
+  if (!path) return;
+  const clean = String(path).split('?')[0].replace(/\/+$/, '') || '/';
+  if (navStack[navStack.length - 1] !== clean) {
+    navStack.push(clean);
+    if (navStack.length > MAX_NAV_STACK) navStack.shift();
+  }
+};
+
+export const goBackSmart = (navigate, fallback) => {
+  if (navStack.length > 1) {
+    navStack.pop();
+    const previous = navStack.pop();
+    navigate(previous || fallback);
+  } else {
+    navigate(fallback);
+  }
+};
+
 export const safeStorage = {
   getItem: (key) => {
     try {

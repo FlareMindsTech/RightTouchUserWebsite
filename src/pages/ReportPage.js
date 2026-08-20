@@ -7,6 +7,7 @@ import {
 } from 'react-icons/md';
 import { createReport } from '../services/reportService';
 import { rtAlert } from '../components/RtAlert';
+import { goBackSmart } from '../utils/browserUtils';
 import './ReportPage.css';
 
 const CATEGORIES = [
@@ -47,7 +48,7 @@ export default function ReportPage({ showToast }) {
     <div className="rep-page">
       {/* Header */}
       <div className="rep-header">
-        <button className="rep-back-btn" onClick={() => navigate('/account')}>
+        <button className="rep-back-btn" onClick={() => goBackSmart(navigate, '/account')}>
           <MdArrowBack size={22} />
         </button>
         <div>
@@ -135,7 +136,7 @@ export default function ReportPage({ showToast }) {
             <p className="rep-step-desc">
               Thank you for letting us know. Our team will review your report within 24–48 hours.
             </p>
-            <button className="rep-submit-btn" onClick={() => navigate('/account')}>
+            <button className="rep-submit-btn" onClick={() => goBackSmart(navigate, '/account')}>
               Back to Account
             </button>
           </div>

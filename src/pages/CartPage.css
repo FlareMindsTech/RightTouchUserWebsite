@@ -551,6 +551,8 @@
   padding: 20px !important;
   margin: 0 !important;
   overflow: hidden !important;
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 /* Address Popup - Base */
@@ -567,6 +569,8 @@
   animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   position: relative !important;
   margin: auto !important;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0) !important;
 }
 
 @keyframes modalIn {

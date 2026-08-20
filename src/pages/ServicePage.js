@@ -234,7 +234,7 @@ const ServicePage = ({
     if (name.includes('clean')) return '#9B59B6';
     if (name.includes('paint')) return '#E67E22';
     if (name.includes('appliance') || name.includes('repair')) return '#2ECC71';
-    return '#0B7C4D';
+    return '#22ba73';
   };
 
   const CategoryNav = () => (
@@ -409,10 +409,10 @@ const ServicePage = ({
                         </div>
                       </div>
 
-<div className="card-price">
-                        <span className="price-current">��{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
+                      <div className="card-price">
+                        <span className="price-current">₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
                         {service.serviceCost > (service.discountedPrice || 0) && (
-                          <span className="price-original">��{formatPriceSmart(service.serviceCost)}</span>
+                          <span className="price-original">₹{formatPriceSmart(service.serviceCost)}</span>
                         )}
                         {service.serviceCost > (service.discountedPrice || 0) && (
                           <span className="price-save">Save ₹{formatPriceSmart(service.serviceCost - (service.discountedPrice || service.serviceCost))}</span>

@@ -12,6 +12,8 @@ import {
 import { getMyAddresses, createAddress, updateAddress } from '../services/addressService';
 import { checkout } from '../services/cartService';
 import { createPaymentOrder, verifyPayment } from '../services/paymentService';
+import { resolveRazorpayKey } from '../utils/razorpay';
+import { goBackSmart } from '../utils/browserUtils';
 import './CheckoutPage.css';
 
 const CheckoutPage = ({ 
@@ -170,7 +172,7 @@ const CheckoutPage = ({
       <div className="checkout-container">
         {/* Back button or header */}
         <div className="checkout-header">
-          <button onClick={() => onNavigate?.('cart') || navigateInternal('/cart')} className="back-btn">
+          <button onClick={() => goBackSmart(navigateInternal, '/cart')} className="back-btn">
             <MdChevronLeft />
             
           </button>
@@ -365,8 +367,13 @@ const CheckoutPage = ({
                         currency = "INR" 
                       } = orderRes.result;
                       
-                      // ✅ Always use backend key first
-                      const finalKey = (keyId || key || process.env.REACT_APP_RAZORPAY_KEY_ID || "").trim();
+                      // ✅ .env key is the primary source (switch it to switch test/live).
+                      // If it mismatches the key the order was created with, the
+                      // server key wins with a loud console error (utils/razorpay.js).
+                      const finalKey = resolveRazorpayKey({
+                        envKey: process.env.REACT_APP_RAZORPAY_KEY_ID,
+                        serverKey: keyId || key,
+                      });
                       const finalOrderId = (orderId || "").trim();
                       const finalCurrency = String(currency).toUpperCase();
 
@@ -377,14 +384,11 @@ const CheckoutPage = ({
                       if (!finalOrderId) throw new Error('Razorpay Order ID is missing');
                       if (!rawAmount) throw new Error('Payment amount is missing');
 
-                      // 3. Amount unit handling (Rupees to Paise)
-                      let amountInPaise = Math.round(Number(rawAmount) * 100);
-                      
-                      // Safety: If rawAmount > 5000 and total matches, it might be already in paise
-                      if (Number(rawAmount) > 5000 && Number(rawAmount) === Math.round(total * 100)) {
-                         console.warn('[Razorpay] Amount from server seems to be already in paise:', rawAmount);
-                         amountInPaise = Math.round(Number(rawAmount));
-                      }
+                      // 3. Server always returns the amount in PAISE (Razorpay
+                      // Checkout SDK expects paise). Never multiply — a heuristic
+                      // mismatch would send a 100x amount to checkout and
+                      // Razorpay rejects the order (400).
+                      const amountInPaise = Math.round(Number(rawAmount));
 
                       if (amountInPaise < 100) {
                         throw new Error('Minimum payment amount is ₹1.00');

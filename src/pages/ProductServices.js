@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { getServiceById } from '../services/serviceService';
 import { formatPriceSmart } from '../utils/format';
+import { goBackSmart } from '../utils/browserUtils';
 import './ProductServices.css'; // Import the CSS
 
 const ProductServices = ({
@@ -116,7 +117,7 @@ const ProductServices = ({
   }, [serviceId, isActive, allServices]);
 
   const handleBack = () => {
-    navigate('/services');
+    goBackSmart(navigate, '/services');
   };
 
   const getCartItemForService = (serviceId) => {
@@ -318,7 +319,7 @@ const ProductServices = ({
                     </button>
                   </div>
                   <button
-                    className="massive-add-btn massive-remove-btn"
+                    className="massive-remove-btn"
                     onClick={() => confirmAndRemoveService(service)}
                   >
                     Remove

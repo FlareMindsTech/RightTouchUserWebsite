@@ -711,7 +711,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
             {/* Contact Edit Popup */}
             {showContactPopup && (
               <div className="address-popup-overlay" onClick={() => setShowContactPopup(false)}>
-                <div className="address-popup" onClick={(e) => e.stopPropagation()}>
+                <div className="address-popup" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
                   <button className="address-popup-close" onClick={() => setShowContactPopup(false)}>
                     <MdClose />
                   </button>
@@ -865,8 +865,8 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
               isOpen={showAddressPopup}
               onClose={() => {
                 setShowAddressPopup(false);
-                if (pendingCheckout && addressForm.id) {
-                  startCheckout();
+                if (pendingCheckout) {
+                  setShowConfirmOrderModal(true);
                 }
               }}
               currentUser={currentUser}
@@ -879,7 +879,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                 fetchAddresses();
                 if (pendingCheckout) {
                   setShowAddressPopup(false);
-                  startCheckout();
+                  setShowConfirmOrderModal(true);
                 }
               }}
               showToast={showToast}
@@ -887,11 +887,25 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
             {/* Confirm Order Modal */}
             {showConfirmOrderModal && (
-              <div className="address-popup-overlay confirm-order-overlay" onClick={() => setShowConfirmOrderModal(false)}>
+              <div className="address-popup-overlay confirm-order-overlay" onClick={() => {
+                if (!loading) {
+                  setShowConfirmOrderModal(false);
+                  setPendingCheckout(false);
+                }
+              }}>
                 <div className="confirm-order-modal" onClick={(e) => e.stopPropagation()}>
                   <div className="confirm-order-header">
                     <h3>Confirm Your Order</h3>
-                    <button className="confirm-order-close" onClick={() => setShowConfirmOrderModal(false)}>
+                    <button 
+                      className="confirm-order-close" 
+                      onClick={() => {
+                        if (!loading) {
+                          setShowConfirmOrderModal(false);
+                          setPendingCheckout(false);
+                        }
+                      }}
+                      disabled={loading}
+                    >
                       <MdClose />
                     </button>
                   </div>
@@ -910,9 +924,12 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                           <button
                             className="confirm-change-addr-btn"
                             onClick={() => {
-                              setShowConfirmOrderModal(false);
-                              setShowAddressPopup(true);
+                              if (!loading) {
+                                setShowConfirmOrderModal(false);
+                                setShowAddressPopup(true);
+                              }
                             }}
+                            disabled={loading}
                           >
                             Change
                           </button>

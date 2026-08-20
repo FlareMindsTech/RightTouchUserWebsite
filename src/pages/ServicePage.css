@@ -1,11 +1,11 @@
 /* ServicePage.css - Professional E-Commerce UI (Enhanced) */
 
 :root {
-  --primary: #0B7C4D;
-  --primary-light: #E8F5EF;
-  --primary-dark: #065F3A;
-  --primary-gradient: linear-gradient(135deg, #0B7C4D 0%, #065F3A 100%);
-  --primary-glow: 0 4px 20px rgba(11, 124, 77, 0.3);
+  --primary: #22ba73;
+  --primary-light: #f0fdf4;
+  --primary-dark: #1db16c;
+  --primary-gradient: linear-gradient(135deg, #22ba73 0%, #1db16c 100%);
+  --primary-glow: 0 4px 20px rgba(34, 186, 115, 0.3);
   
   --secondary: #00CEC9;
   --secondary-light: #81ECEC;
@@ -27,7 +27,7 @@
   --border-light: #E8E9EC;
   --border-medium: #DFE0E4;
   
-  --success: #0B7C4D;
+  --success: #22ba73;
   --error: #E17055;
   --warning: #FDCB6E;
   --info: #74B9FF;
@@ -681,9 +681,9 @@
   border-top: 1px solid var(--border-light);
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  min-height: 50px;
   align-items: center;
+  gap: 10px;
+  min-height: 50px;
   background: var(--bg-secondary);
   flex-shrink: 0;
 }
@@ -691,13 +691,16 @@
 #page-services .qty-control-modern {
   display: flex;
   align-items: center;
+  justify-content: center;
   background: var(--bg-card);
   border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid var(--border-light);
   flex-shrink: 0;
   box-shadow: var(--shadow-sm);
-  margin-left: auto;
+  margin: 0 0 0 auto;
+  height: 34px;
+  box-sizing: border-box;
 }
 
 #page-services .qty-btn-modern {
@@ -713,6 +716,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
 }
 
 #page-services .qty-btn-modern:hover {
@@ -726,22 +732,29 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
-}
-
-#page-services .action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 32px;
+  line-height: 1;
+}
+
+#page-services .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 14px;
-  border: none;
+  padding: 0 14px;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 12px;
   cursor: pointer;
   transition: var(--transition);
-  min-height: 32px;
-  margin-left: auto;
+  height: 34px;
+  box-sizing: border-box;
+  margin: 0;
+  line-height: 1;
 }
 
 #page-services .action-add {
@@ -750,6 +763,7 @@
   box-shadow: var(--primary-glow);
   width: auto;
   max-width: 130px;
+  margin-left: auto;
 }
 
 #page-services .action-add:hover {
@@ -760,13 +774,15 @@
 #page-services .action-remove {
   background: #ef4444;
   color: white;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
 }
 
 #page-services .action-remove:hover {
   background: #dc2626;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  border-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
 }
 
 /* ===== MOBILE COMPACT CARDS ===== */

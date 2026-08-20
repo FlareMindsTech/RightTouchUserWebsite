@@ -11,6 +11,7 @@ import {
 } from 'react-icons/md';
 import { SiVisa, SiMastercard, SiPhonepe, SiPaytm } from 'react-icons/si';
 import { useNavigate } from 'react-router-dom';
+import { goBackSmart } from '../utils/browserUtils';
 import './PaymentMethodsPage.css';
 
 const PaymentMethodsPage = ({ isActive, showToast }) => {
@@ -38,7 +39,7 @@ const PaymentMethodsPage = ({ isActive, showToast }) => {
     };
 
     const handleBack = () => {
-        navigate('/account');
+        goBackSmart(navigate, '/account');
     };
 
     const handleDeleteCard = (id) => {

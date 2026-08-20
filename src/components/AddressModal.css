@@ -22,6 +22,8 @@
   margin: 0 !important;
   overflow: hidden !important;
   animation: overlayFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 @keyframes overlayFadeIn {
@@ -45,16 +47,18 @@
   position: relative !important;
   margin: auto !important;
   animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0) !important;
 }
 
 @keyframes modalSlideUp {
   0% { 
     opacity: 0; 
-    transform: translateY(30px) scale(0.96); 
+    transform: translateY(30px) scale(0.96) translate3d(0, 0, 0); 
   }
   100% { 
     opacity: 1; 
-    transform: translateY(0) scale(1); 
+    transform: translateY(0) scale(1) translate3d(0, 0, 0); 
   }
 }
 
@@ -366,7 +370,8 @@
   color: #9ca3af !important;
   text-transform: uppercase !important;
   letter-spacing: 0.8px !important;
-  margin: 12px 0 10px !important;
+  margin: 16px 0 10px 4px !important;
+  padding-left: 2px !important;
 }
 
 /* -------------------- Address Cards -------------------- */

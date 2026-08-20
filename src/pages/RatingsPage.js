@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MdArrowBack, MdStar, MdStarBorder, MdEdit, MdClose, MdVerified } from 'react-icons/md';
 import { getMyRatings, updateRating } from '../services/ratingService';
 import { rtAlert } from '../components/RtAlert';
+import { goBackSmart } from '../utils/browserUtils';
 import './RatingsPage.css';
 
 const StarDisplay = ({ value, size = 18 }) => (
@@ -103,7 +104,7 @@ export default function RatingsPage({ showToast }) {
     <div className="rp-page">
       {/* Header */}
       <div className="rp-header">
-        <button className="rp-back-btn" onClick={() => navigate('/account')}>
+        <button className="rp-back-btn" onClick={() => goBackSmart(navigate, '/account')}>
           <MdArrowBack size={22} />
         </button>
         <div>

@@ -21,3 +21,11 @@ export const bookAgain = (data) =>
     method: "POST",
     body: JSON.stringify(data)
   });
+
+export const getCompletedServices = () =>
+  apiClient(ENDPOINTS.SERVICE_BOOKING.GET_COMPLETED);
+
+export const deleteAllBookings = () =>
+  apiClient(ENDPOINTS.SERVICE_BOOKING.DELETE_ALL, {
+    method: "DELETE"
+  });

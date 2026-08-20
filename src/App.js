@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
-import { safeStorage } from './utils/browserUtils';
+import { safeStorage, trackNavigation } from './utils/browserUtils';
 // Import components
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
@@ -107,6 +107,11 @@ function App() {
   useEffect(() => {
     setGlobalSearchQuery('');
   }, [location.pathname, location.hash, location.search]);
+
+  // Track in-app navigation history for smart back buttons
+  useEffect(() => {
+    trackNavigation(location.pathname + location.search);
+  }, [location.pathname, location.search]);
 
 
   const formatCartItem = useCallback((cartItem) => {

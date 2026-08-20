@@ -14,6 +14,7 @@ import {
   MdDeleteForever
 } from 'react-icons/md';
 import { deleteMyAccount } from '../services/userService';
+import { goBackSmart } from '../utils/browserUtils';
 
 const SettingsPage = ({ isActive, isDarkMode, onToggleDarkMode, showToast }) => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const SettingsPage = ({ isActive, isDarkMode, onToggleDarkMode, showToast }) => 
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleBack = () => {
-    navigate('/account');
+    goBackSmart(navigate, '/account');
   };
 
   const handleToggleDarkMode = () => {

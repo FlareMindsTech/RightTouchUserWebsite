@@ -26,23 +26,24 @@ export const shareItem = async ({ title, text, url }, showToast) => {
 
   // Fallback: Copy to clipboard
   try {
+    const textToCopy = `${shareTitle}\n${shareText}\n\n${shareUrl}`;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(textToCopy);
     } else {
       const textArea = document.createElement('textarea');
-      textArea.value = shareUrl;
+      textArea.value = textToCopy;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
     }
     if (typeof showToast === 'function') {
-      showToast('Link copied to clipboard!');
+      showToast('Share details copied to clipboard!');
     } else {
-      alert('Link copied to clipboard!');
+      alert('Share details copied to clipboard!');
     }
   } catch (err) {
-    console.error('Failed to copy link:', err);
+    console.error('Failed to copy share text:', err);
   }
 };
 

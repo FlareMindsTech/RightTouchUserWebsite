@@ -1,8 +1,11 @@
 export const ENDPOINTS = {
   AUTH: {
-    SIGNUP: "/api/user/signup",
-    RESEND_OTP: "/api/user/resend-otp",
-    VERIFY_OTP: "/api/user/verify-otp",
+    SIGNUP: "/api/user/signup/customer",
+    REQUEST_LOGIN_OTP: "/api/user/auth/login/request-otp",
+    VERIFY_LOGIN_OTP: "/api/user/auth/login/verify-otp",
+    RESEND_OTP: "/api/user/auth/login/request-otp",
+    VERIFY_OTP: "/api/user/signup/customer/verify-otp",
+    ACCEPT_TERMS: "/api/user/auth/accept-terms",
     LOGIN_CUSTOMER: "/api/user/login/customer",
     LOGIN_CUSTOMER_VERIFY: "/api/user/login/customer/verify-otp"
   },
@@ -26,7 +29,7 @@ export const ENDPOINTS = {
   CART: {
     ADD: "/api/user/cart/add",
     GET_MY_CART: "/api/user/cart/my-cart",
-    GET_BY_ID: (id) => `/api/user/cart/${id}`,
+    GET_BY_ID: (id) => `/api/user/carts/${id}`,
     UPDATE: "/api/user/cart/update",
     REMOVE: (id) => `/api/user/cart/remove/${id}`,
     SET_SCHEDULE: "/api/user/cart/set-schedule",
@@ -50,11 +53,15 @@ export const ENDPOINTS = {
   },
 
   SERVICE_BOOKING: {
-    GET_ALL: "/api/user/service/booking",
+    GET_ALL: "/api/user/booking/getCustomerBookings",
     CANCEL: (id) => `/api/user/booking/cancel/${id}`,
     GET_CUSTOMER_BOOKINGS: "/api/user/booking/getCustomerBookings",
-    GET_SCHEDULE: "/api/user/service/booking/schedule",
-    BOOK_AGAIN: "/api/user/booking/book-again"
+    GET_COMPLETED: "/api/user/booking/completed-services",
+    GET_REASONS: "/api/user/booking/reasons",
+    GET_SCHEDULE: "/api/user/booking/schedule",
+    GET_SLOTS: "/api/user/booking/slots",
+    BOOK_AGAIN: "/api/user/booking/book-again",
+    DELETE_ALL: "/api/user/booking/deleteAll"
   },
 
   PRODUCT_BOOKING: {
@@ -65,7 +72,6 @@ export const ENDPOINTS = {
 
   RATING: {
     CREATE: "/api/user/rating",
-    GET_ALL: "/api/user/getAllRatings",
     GET_MY_RATINGS: "/api/user/get-my-ratings",
     GET_BY_ID: (id) => `/api/user/getRatingById/${id}`,
     UPDATE: (id) => `/api/user/updateRating/${id}`,
@@ -74,19 +80,23 @@ export const ENDPOINTS = {
 
   REPORT: {
     CREATE: "/api/user/report",
-    GET_ALL: "/api/user/getAllReports",
+    GET_ALL: "/api/user/get-my-reports",
     GET_BY_ID: (id) => `/api/user/getReportById/${id}`
   },
 
   PAYMENT: {
     CREATE_ORDER: "/api/user/payment/order",
     VERIFY: "/api/user/payment/verify",
-    WEBHOOK_RAZORPAY: "/api/user/payment/webhook/razorpay",
-    UPDATE_STATUS: (paymentId) => `/payment/${paymentId}/status`
+    GET_BY_BOOKING: (id) => `/api/user/payment/${id}`
   },
 
   CANCELLATION: {
     BOOKING_CANCEL: (id) => `/api/user/booking/cancel/${id}`,
-    GET_REASONS: "/api/user/cancellation/reasons"
+    GET_REASONS: "/api/user/booking/reasons"
+  },
+
+  ZONE: {
+    RESOLVE: "/api/zones/resolve",
+    CHECK_SERVICE: "/api/zones/check-service"
   }
 };

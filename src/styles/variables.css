@@ -2,10 +2,10 @@
    ROOT VARIABLES & RESET
 ═══════════════════════════════════════════════════════ */
 :root {
-  --green: #27AE60;
-  --green-dark: #1E8449;
-  --green-light: #D5F5E3;
-  --green-bg: #EAFAF1;
+  --green: #22ba73;
+  --green-dark: #1db16c;
+  --green-light: #e6fcf0;
+  --green-bg: #f0fdf4;
   --text-primary: #111827;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;

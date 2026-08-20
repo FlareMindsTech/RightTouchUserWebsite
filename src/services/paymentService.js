@@ -13,6 +13,9 @@ export const verifyPayment = (data) =>
     body: JSON.stringify(data)
   });
 
+export const getPaymentByBooking = (bookingId) =>
+  apiClient(ENDPOINTS.PAYMENT.GET_BY_BOOKING(bookingId));
+
 export const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     const script = document.createElement("script");

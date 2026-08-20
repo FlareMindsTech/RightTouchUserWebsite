@@ -5,6 +5,7 @@ import {
   MdOutlinePhone, MdOutlineEmail,
   MdCheckCircle, MdBook, MdLiveTv
 } from 'react-icons/md';
+import { goBackSmart } from '../utils/browserUtils';
 import './HelpSupportPage.css';
 
 const FAQS = [
@@ -61,7 +62,7 @@ export default function HelpSupportPage({ showToast }) {
     <div className="hs-page">
       {/* Header */}
       <div className="hs-header">
-        <button className="hs-back-btn" onClick={() => navigate('/account')}>
+        <button className="hs-back-btn" onClick={() => goBackSmart(navigate, '/account')}>
           <MdArrowBack size={22} />
         </button>
         <div>

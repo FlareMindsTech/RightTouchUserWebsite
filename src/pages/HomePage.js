@@ -345,9 +345,9 @@ const HomePage = ({
                                         <div className="search-service-info">
                                             <h4 className="search-service-name">{service.serviceName}</h4>
 <div className="search-service-price-block">
-                                                <span className="search-service-price">��{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
+                                                <span className="search-service-price">₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
                                                 {service.serviceCost > (service.discountedPrice || 0) && (
-                                                    <span className="search-service-old-price">��{formatPriceSmart(service.serviceCost)}</span>
+                                                    <span className="search-service-old-price">₹{formatPriceSmart(service.serviceCost)}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -475,10 +475,10 @@ const HomePage = ({
                                         </div>
                                         <div className="appliance-info">
                                             <span className="appliance-name">{service.serviceName}</span>
-<div className="appliance-price-wrap">
-                                                <span className="appliance-price">��{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
+                                            <div className="appliance-price-wrap">
+                                                <span className="appliance-price">₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
                                                 {service.serviceCost > (service.discountedPrice || 0) && service.discountedPrice && (
-                                                    <span className="appliance-old-price">��{formatPriceSmart(service.serviceCost)}</span>
+                                                    <span className="appliance-old-price">₹{formatPriceSmart(service.serviceCost)}</span>
                                                 )}
                                             </div>
                                             <button className="appliance-book-btn">View</button>

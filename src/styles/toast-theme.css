@@ -26,7 +26,7 @@ body.dark-mode .app-toast-error-icon {
 /* Custom Toast System Layout */
 .toast-container {
   position: fixed;
-  top: 20px;
+  top: 85px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;

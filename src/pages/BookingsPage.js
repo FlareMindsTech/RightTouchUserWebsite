@@ -12,6 +12,8 @@ import BookingDetailPage from './BookingDetailPage';
 import { getCustomerBookings, getBookings, bookAgain } from '../services/bookingService';
 import { createPaymentOrder, verifyPayment, loadRazorpayScript } from '../services/paymentService';
 import { safeParseDate } from '../utils/browserUtils';
+import { goBackSmart } from '../utils/browserUtils';
+import { resolveRazorpayKey } from '../utils/razorpay';
 import ConfirmModal from '../components/ConfirmModal';
 import './BookingsPage.css';
 
@@ -39,7 +41,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     } else if (onBack) {
       onBack();
     } else {
-      navigate('/account');
+      goBackSmart(navigate, '/account');
     }
   };
 
@@ -149,18 +151,34 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
 
   const handleAction = useCallback((type, data) => {
     if (type === 'Share') {
-      const shareUrl = window.location.origin;
-      const shareText = `Check out my booking for ${data?.serviceId?.serviceName || 'RightTouch Service'}`;
-      
+      const serviceName = data?.serviceId?.serviceName || data?.itemId?.serviceName || data?.cartId?.items?.[0]?.item?.name || 'RightTouch Service';
+      const categoryName = data?.serviceId?.categoryId?.category || data?.itemId?.categoryId?.category || '';
+      const serviceId = data?.serviceId?._id || (typeof data?.serviceId === 'string' ? data?.serviceId : null);
+      const bookingRef = (data?._id || '').slice(-6).toUpperCase();
+
+      const shareUrl = serviceId && categoryName
+        ? `${window.location.origin}/product-services?type=${encodeURIComponent(categoryName)}&serviceId=${serviceId}`
+        : window.location.origin;
+
+      const sharePayload = {
+        title: `RightTouch – ${serviceName}`,
+        text: `I booked "${serviceName}" on RightTouch! Check it out 🔧\nBooking Ref: #${bookingRef}`,
+        url: shareUrl
+      };
+
       if (navigator.share) {
-        navigator.share({
-          title: 'RightTouch Booking',
-          text: shareText,
-          url: shareUrl
-        }).catch(err => console.log('Error sharing:', err));
+        navigator.share(sharePayload).catch(err => {
+          if (err.name !== 'AbortError') {
+            // User cancelled or share failed – silent
+            console.log('Share dismissed:', err);
+          }
+        });
       } else {
-        navigator.clipboard.writeText(`${shareText} - ${shareUrl}`);
-        showToast('Booking link copied to clipboard');
+        // Fallback: copy to clipboard
+        const fullText = `${sharePayload.text}\n${shareUrl}`;
+        navigator.clipboard.writeText(fullText)
+          .then(() => showToast('Booking link copied to clipboard!'))
+          .catch(() => showToast('Could not copy link'));
       }
     } else if (type === 'Rebook') {
       setBookingToRebook(data);
@@ -197,8 +215,13 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
         currency = 'INR' 
       } = orderRes.result;
 
-      // ✅ Always use backend key first
-      const finalKey = (keyId || key || process.env.REACT_APP_RAZORPAY_KEY_ID || "").trim();
+      // ✅ .env key is the primary source (switch it to switch test/live).
+      // If it mismatches the key the order was created with, the server key
+      // wins with a loud console error (see utils/razorpay.js).
+      const finalKey = resolveRazorpayKey({
+        envKey: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        serverKey: keyId || key,
+      });
       const finalOrderId = (orderId || "").trim();
       const finalCurrency = String(currency).toUpperCase();
 
@@ -209,18 +232,10 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
       if (!finalOrderId) throw new Error('Razorpay Order ID is missing');
       if (!rawAmount) throw new Error('Payment amount is missing');
 
-      // 2. Amount unit handling (ensure it is in paise)
-      // Heuristic: If amount is > 1000 and total matches, it might already be in paise
-      // But the safest way is to trust the server and multiply if it looks like rupees (small value)
-      // However, to be robust, we check if the server amount matches the booking's total
-      let amountInPaise = Math.round(Number(rawAmount) * 100);
-      
-      // If the raw amount is already very large (e.g. > 10000 for a 100 rupee item), 
-      // it's likely already in paise.
-      if (Number(rawAmount) > (booking.totalPrice || 10000)) {
-        console.warn('[Razorpay] Amount from server seems to be already in paise:', rawAmount);
-        amountInPaise = Math.round(Number(rawAmount));
-      }
+      // 2. Server always returns the amount in PAISE (Razorpay Checkout SDK
+      // expects paise). Never multiply — a heuristic mismatch would send a
+      // 100x amount to checkout and Razorpay rejects the order (400).
+      const amountInPaise = Math.round(Number(rawAmount));
 
       if (amountInPaise < 100) {
         throw new Error('Minimum payment amount is ₹1.00 (100 paise)');
@@ -334,20 +349,35 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   }
 
   const renderBookingCard = (booking) => {
-    const serviceName = booking?.serviceId?.serviceName || booking?.cartId?.items?.[0]?.item?.name || 'Service Booking';
+    const serviceName =
+      booking?.serviceId?.serviceName ||
+      booking?.itemId?.serviceName ||
+      booking?.cartId?.items?.[0]?.item?.name ||
+      'Service Booking';
+
+    const serviceImage =
+      booking?.serviceId?.serviceImages?.[0] ||
+      booking?.itemId?.serviceImages?.[0] ||
+      booking?.cartId?.items?.[0]?.item?.serviceImages?.[0] ||
+      null;
+
+    const categoryName =
+      booking?.serviceId?.categoryId?.category ||
+      booking?.itemId?.categoryId?.category ||
+      null;
+
     const status = (booking.status || 'PENDING').toUpperCase();
     const paymentStatus = (booking?.paymentStatus || '').toUpperCase();
     const isPaymentPending = status !== 'CANCELLED' && status !== 'EXPIRED' && paymentStatus !== 'PAID';
     const paymentLabel = paymentStatus === 'PAID' ? 'PAID' : 'UNPAID';
-    const date = booking.scheduledAt ? safeParseDate(booking.scheduledAt).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    }) : (booking.createdAt ? safeParseDate(booking.createdAt).toLocaleDateString() : 'No date');
+    const isInstant = booking.bookingType === 'instant' || !booking.scheduledAt;
+    const dateLabel = booking.scheduledAt
+      ? safeParseDate(booking.scheduledAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : (booking.createdAt ? safeParseDate(booking.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No date');
 
-    const getStatusClass = (status) => {
-      if (['COMPLETED', 'ASSIGNED', 'ACCEPTED', 'IN PROGRESS'].includes(status)) return 'status-success';
-      if (['CANCELLED', 'EXPIRED'].includes(status)) return 'status-error';
+    const getStatusClass = (s) => {
+      if (['COMPLETED', 'ASSIGNED', 'ACCEPTED', 'IN PROGRESS', 'ACCEPTED_BY_TECH', 'ON_THE_WAY', 'REACHED', 'IN_PROGRESS'].includes(s)) return 'status-success';
+      if (['CANCELLED', 'EXPIRED'].includes(s)) return 'status-error';
       return 'status-warning';
     };
 
@@ -357,17 +387,27 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
         className="booking-card-premium"
         onClick={() => handleBookingClick(booking, false)}
       >
+        {/* Image + Title row */}
         <div className="booking-card-header">
-          <div className="booking-icon-wrapper">
-            <MdShoppingCart className="booking-card-icon" />
+          <div className="booking-icon-wrapper" style={{ padding: 0, overflow: 'hidden', borderRadius: '14px' }}>
+            {serviceImage ? (
+              <img
+                src={serviceImage}
+                alt={serviceName}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <MdShoppingCart className="booking-card-icon" />
+            )}
           </div>
           <div className="booking-title-group">
+            {categoryName && <p className="booking-category-tag">{categoryName}</p>}
             <h4 className="booking-service-name">{serviceName}</h4>
-            <p className="booking-id-text">ID: #{booking._id?.slice(-6).toUpperCase()}</p>
+            <p className="booking-id-text">#{booking._id?.slice(-6).toUpperCase()}</p>
           </div>
           <div className="booking-badges">
             <div className={`status-badge-vibrant ${getStatusClass(status)}`}>
-              {status}
+              {status.replace(/_/g, ' ')}
             </div>
             {status !== 'EXPIRED' && status !== 'CANCELLED' && (
               <div className={`payment-status-badge ${paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
@@ -380,20 +420,20 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
         {isPaymentPending && (
           <div className="payment-pending-banner">
             <MdPayment style={{ marginRight: '6px', flexShrink: 0 }} />
-            Payment Pending - Tap to pay
+            Payment Pending – Tap to pay
           </div>
         )}
 
         <div className="booking-card-body">
           <div className="booking-info-row">
-            <span className="info-label">Scheduled Date</span>
-            <span className="info-value">{date}</span>
+            <span className="info-label">{isInstant ? 'Booking Type' : 'Scheduled Date'}</span>
+            <span className="info-value">{isInstant ? '⚡ Instant' : dateLabel}</span>
           </div>
           <div className="booking-info-row">
             <span className="info-label">Total Amount</span>
-            <span className="info-value-price">₹{booking.totalPrice || booking.baseAmount || 0}</span>
+            <span className="info-value-price">₹{booking.totalPrice || booking.totalAmount || booking.baseAmount || 0}</span>
           </div>
-          
+
           {booking.technicianId && (
             <div className="booking-tech-preview">
               <div className="tech-avatar-mini">
@@ -424,15 +464,14 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                   background: 'var(--green)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '6px',
-                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  padding: '6px 14px',
                   fontSize: '12px',
                   fontWeight: '700',
                   cursor: 'pointer',
-                  zIndex: 10
                 }}
               >
-                Rate Service
+                ⭐ Rate Service
               </button>
             )}
           </div>
