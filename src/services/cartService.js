@@ -16,8 +16,22 @@ export const updateCartItem = (data) =>
     body: JSON.stringify(data)
   });
 
+export const setSchedule = (data) =>
+  apiClient(ENDPOINTS.CART.SET_SCHEDULE, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
 export const removeFromCart = (itemId) =>
   apiClient(ENDPOINTS.CART.REMOVE(itemId), {
+    method: "DELETE"
+  });
+
+export const getCartById = (id) =>
+  apiClient(ENDPOINTS.CART.GET_BY_ID(id));
+
+export const removeFromCartUnrestricted = (id) =>
+  apiClient(ENDPOINTS.CART.REMOVE_UNRESTRICTED(id), {
     method: "DELETE"
   });
 
@@ -28,10 +42,5 @@ export const checkout = (data) =>
   });
 
 export const getAvailableSlots = () =>
-  apiClient(ENDPOINTS.CART.GET_SLOTS);
-
-export const setSchedule = (data) =>
-  apiClient(ENDPOINTS.CART.SET_SCHEDULE, {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+  apiClient(ENDPOINTS.SERVICE_BOOKING.GET_SLOTS);
+

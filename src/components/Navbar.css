@@ -1,4 +1,12 @@
 @import '../styles/navbar.css';
+
+.nav-search-container {
+  flex: 1;
+  max-width: 380px;
+  min-width: 180px;
+  margin: 0 16px;
+}
+
 /* Add this new style for mobile search */
 .mobile-search {
   display: none;

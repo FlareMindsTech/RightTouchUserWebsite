@@ -156,6 +156,13 @@ const RegisterDialog = ({
       const resUser = response?.user || response?.result?.user || response?.result;
 
       if (response?.success || resToken) {
+        const role = (resUser?.role || '').toUpperCase();
+        if (['ADMIN', 'OWNER', 'TECHNICIAN', 'SUPERADMIN', 'EMPLOYEE'].includes(role)) {
+          setOtpError('This account is an Admin/Technician account. Please log in on the Admin or Technician portal.');
+          setIsLoading(false);
+          return;
+        }
+
         if (resToken) {
           localStorage.setItem('token', resToken);
         }

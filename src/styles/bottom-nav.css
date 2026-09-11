@@ -3,14 +3,18 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--bottom-nav-height);
-  background: var(--bg-card);
+  height: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  z-index: 100;
-  padding: 0 8px;
+  z-index: 1000;
+  padding-left: 8px;
+  padding-right: 8px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
 }
 

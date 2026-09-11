@@ -1,8 +1,8 @@
-// components/Navbar.jsx
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Wrench, User, ShoppingCart, Search, X, Menu } from 'lucide-react';
+import { Home, Wrench, Package, User, ShoppingCart, X, Menu } from 'lucide-react';
 import logo from '../assets/logo.png';
+import SearchDropdown from './SearchDropdown';
 import './Navbar.css';
 
 const Navbar = ({
@@ -13,7 +13,11 @@ const Navbar = ({
   onLoginClick,
   onLogout,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  allServices = [],
+  allProducts = [],
+  serviceCategories = [],
+  productCategories = []
 }) => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,6 +53,10 @@ const Navbar = ({
             <span className="nav-icon"><Home size={18} /></span>
             <span className="nav-label">Home</span>
           </Link>
+          <Link to="/products" className={`nav-link ${isActive('products') ? 'active' : ''}`}>
+            <span className="nav-icon"><Package size={18} /></span>
+            <span className="nav-label">Products</span>
+          </Link>
           <Link to="/services" className={`nav-link ${isActive('services') ? 'active' : ''}`}>
             <span className="nav-icon"><Wrench size={18} /></span>
             <span className="nav-label">Services</span>
@@ -61,28 +69,15 @@ const Navbar = ({
           </Link>
         </nav>
 
-        {/* Search Bar - Desktop */}
-        <div className="nav-search desktop-search">
-          <Search className="search-icon" size={18} />
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search services..."
-            value={searchQuery || ''}
-            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-          />
-          <kbd className="search-shortcut desktop-only">⌘K</kbd>
-        </div>
-
-        {/* Search Bar - Mobile (visible on mobile) */}
-        <div className="nav-search mobile-search">
-          <Search className="search-icon" size={18} />
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search..."
-            value={searchQuery || ''}
-            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+        {/* Search Bar - Desktop & Responsive Dropdown */}
+        <div className="nav-search-container">
+          <SearchDropdown
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            allServices={allServices}
+            allProducts={allProducts}
+            serviceCategories={serviceCategories}
+            productCategories={productCategories}
           />
         </div>
 
@@ -135,6 +130,10 @@ const Navbar = ({
               <Link to="/" className={`mobile-nav-link ${isActive('home') ? 'active' : ''}`} onClick={toggleMobileMenu}>
                 <Home size={20} />
                 <span>Home</span>
+              </Link>
+              <Link to="/products" className={`mobile-nav-link ${isActive('products') ? 'active' : ''}`} onClick={toggleMobileMenu}>
+                <Package size={20} />
+                <span>Products</span>
               </Link>
               <Link to="/services" className={`mobile-nav-link ${isActive('services') ? 'active' : ''}`} onClick={toggleMobileMenu}>
                 <Wrench size={20} />

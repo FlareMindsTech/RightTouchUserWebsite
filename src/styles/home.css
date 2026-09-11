@@ -195,8 +195,8 @@ body {
 .location-bar {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 12px 16px;
+    border-radius: var(--radius-lg);
+    padding: 12px 18px;
     margin-bottom: 20px;
     cursor: pointer;
     transition: var(--transition);
@@ -204,6 +204,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 .location-bar:hover {
     border-color: var(--green);
@@ -214,6 +217,9 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 .location-pin {
     color: var(--green);
@@ -223,7 +229,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1;
     min-width: 0;
+    overflow: hidden;
 }
 .location-text strong {
     font-size: 11px;
@@ -502,9 +510,10 @@ body {
 /* ---------- CATEGORY GRID ---------- */
 .category-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
     width: 100%;
+    align-items: stretch;
 }
 .category-card {
     background: var(--bg-card);
@@ -562,148 +571,459 @@ body {
     padding: 0 4px;
 }
 
-/* ---------- OFFERS CAROUSEL ---------- */
-.offers-carousel {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
-}
-.offer-card {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    padding: 24px 20px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-}
-.offer-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-}
-.offer-card-2 {
-    background: linear-gradient(135deg, #f0f9ff 0%, #EAFAF1 100%);
-}
-.offer-card-3 {
-    background: linear-gradient(135deg, #fefce8 0%, #f0f9ff 100%);
-}
-.offer-badge {
-    background: var(--green);
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 2px 12px;
-    border-radius: var(--radius-full);
-    margin-bottom: 4px;
-    display: inline-block;
-}
-.offer-icon {
-    color: var(--green);
-    opacity: 0.8;
-}
-.offer-text h3 {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-.offer-text p {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-bottom: 12px;
-}
-.btn-book-white {
-    background: var(--green);
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    transition: var(--transition);
-}
-.btn-book-white:hover {
-    background: var(--green-dark);
-    transform: scale(1.02);
+/* ---------- OFFERS SECTION (UNIQUE ANIMATED CARDS) ---------- */
+.offers-section {
+    background: linear-gradient(135deg, rgba(255, 247, 237, 0.6) 0%, rgba(240, 253, 244, 0.4) 100%);
+    border-radius: var(--radius-xl, 24px);
+    padding: 26px 22px 30px;
+    border: 1px solid rgba(249, 115, 22, 0.15);
+    box-shadow: 0 8px 30px rgba(249, 115, 22, 0.04);
 }
 
-/* ---------- APPLIANCE HORIZONTAL SCROLL (BIG CARDS) ---------- */
-.appliance-carousel {
-    display: flex;
-    gap: 20px;
-    overflow-x: auto;
-    padding: 16px 8px 24px;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
+.offers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 22px;
     width: 100%;
 }
 
-/* Custom scrollbar */
-.appliance-carousel::-webkit-scrollbar {
-    height: 8px;
-}
-.appliance-carousel::-webkit-scrollbar-track {
-    background: var(--bg-body);
-    border-radius: var(--radius-full);
-}
-.appliance-carousel::-webkit-scrollbar-thumb {
-    background: var(--green);
-    border-radius: var(--radius-full);
+.offer-card {
+    position: relative;
+    border-radius: 20px;
+    padding: 22px 20px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+    cursor: default;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
+.offer-card-glow {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    transform: skewX(-25deg);
+    pointer-events: none;
+}
+
+.offer-card:hover .offer-card-glow {
+    animation: offerShine 1.2s ease-in-out;
+}
+
+@keyframes offerShine {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+.offer-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+}
+
+.offer-theme-emerald {
+    background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+    border-color: rgba(16, 185, 129, 0.25);
+}
+.offer-theme-emerald:hover {
+    border-color: #10b981;
+    box-shadow: 0 16px 36px rgba(16, 185, 129, 0.2);
+}
+
+.offer-theme-blue {
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+    border-color: rgba(59, 130, 246, 0.25);
+}
+.offer-theme-blue:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 16px 36px rgba(59, 130, 246, 0.2);
+}
+
+.offer-theme-amber {
+    background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+    border-color: rgba(245, 158, 11, 0.25);
+}
+.offer-theme-amber:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 16px 36px rgba(245, 158, 11, 0.2);
+}
+
+.offer-theme-purple {
+    background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+    border-color: rgba(168, 85, 247, 0.25);
+}
+.offer-theme-purple:hover {
+    border-color: #a855f7;
+    box-shadow: 0 16px 36px rgba(168, 85, 247, 0.2);
+}
+
+.offer-card-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 30px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(4px);
+}
+
+.offer-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+}
+
+.offer-icon-wrapper {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.offer-card:hover .offer-icon-wrapper {
+    transform: scale(1.12) rotate(-5deg);
+}
+
+.offer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-grow: 1;
+}
+
+.offer-discount-tag {
+    font-size: 11px;
+    font-weight: 800;
+    color: #ea580c;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.offer-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.offer-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    margin-bottom: 10px;
+}
+
+.offer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.offer-code-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.04);
+    padding: 5px 9px;
+    border-radius: 8px;
+    font-family: monospace;
+}
+
+.offer-claim-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.offer-card:hover .offer-claim-btn {
+    color: #1b5e20;
+    transform: translateX(3px);
+}
+
+/* ---------- APPLIANCE HORIZONTAL SCROLL (UNIQUE HIGH-END STYLE) ---------- */
+.appliance-section-wrap {
+    background: linear-gradient(180deg, rgba(39, 174, 96, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: var(--radius-xl, 24px);
+    padding: 24px 20px 28px;
+    border: 1px solid rgba(39, 174, 96, 0.12);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+    position: relative;
+    overflow: hidden;
+}
+
+.appliance-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.section-header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.section-subtitle {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.section-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.scroll-controls-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.carousel-scroll-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.carousel-scroll-btn:hover {
+    background: var(--green);
+    color: #ffffff;
+    border-color: var(--green);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(39, 174, 96, 0.3);
+}
+
+.carousel-scroll-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
+.carousel-scroll-btn.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.appliance-carousel-container {
+    position: relative;
+    width: 100%;
+}
+
+.appliance-floating-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(39, 174, 96, 0.25);
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.appliance-floating-nav:hover {
+    background: var(--green);
+    color: #ffffff;
+    border-color: var(--green);
+    transform: translateY(-50%) scale(1.12);
+    box-shadow: 0 10px 28px rgba(39, 174, 96, 0.4);
+}
+
+.appliance-floating-nav:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.appliance-floating-nav.nav-left {
+    left: -14px;
+}
+
+.appliance-floating-nav.nav-right {
+    right: -14px;
+}
+
+/* Horizontal scroll container - ALWAYS Horizontal Scroll */
+.appliance-carousel {
+    display: flex;
+    gap: 22px;
+    overflow-x: auto;
+    padding: 12px 6px 20px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    width: 100%;
+    will-change: scroll-position;
+    transform: translateZ(0);
+}
+
+/* Custom modern glow scrollbar */
+.appliance-carousel::-webkit-scrollbar {
+    height: 6px;
+}
+.appliance-carousel::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 10px;
+    margin: 0 4px;
+}
+.appliance-carousel::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, var(--green) 0%, #10b981 100%);
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(39, 174, 96, 0.4);
+}
+
+/* Appliance Card Styling */
 .appliance-card {
-    flex: 0 0 260px;
+    flex: 0 0 270px;
+    width: 270px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border-radius: 18px;
     padding: 0;
-    text-align: center;
+    text-align: left;
     cursor: pointer;
-    transition: var(--transition);
-    box-shadow: var(--shadow-md);
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
     scroll-snap-align: start;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
+
 .appliance-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-xl);
-    border-color: var(--green);
+    transform: translateY(-8px) scale(1.015);
+    box-shadow: 0 16px 36px rgba(39, 174, 96, 0.16);
+    border-color: rgba(39, 174, 96, 0.4);
 }
 
 .appliance-img-wrap {
     position: relative;
     width: 100%;
-    height: 180px;
-    background: var(--green-bg);
+    height: 175px;
+    background: linear-gradient(135deg, #eefdf4 0%, #f7fee7 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    margin: 0;
 }
+
 .appliance-img-wrap img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .appliance-card:hover .appliance-img-wrap img {
-    transform: scale(1.08);
+    transform: scale(1.1);
 }
-.appliance-img-wrap svg {
+
+.appliance-placeholder-icon {
     color: var(--green);
-    opacity: 0.5;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.appliance-img-gradient-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 100%);
+    pointer-events: none;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.appliance-card:hover .appliance-img-gradient-overlay {
+    opacity: 0.8;
+}
+
+/* Badges */
+.appliance-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    z-index: 3;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    text-transform: uppercase;
+}
+
+.discount-badge {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+}
+
+.popular-badge {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
 }
 
 .share-btn-round {
@@ -733,101 +1053,253 @@ body {
 .appliance-info {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
-    padding: 16px 20px 20px;
+    padding: 14px 16px 16px;
+    flex: 1;
+    justify-content: space-between;
 }
 
-/* Address Modal Button Custom Size */
-.address-popup-footer .checkout-btn-premium,
-.address-use-btn {
-    padding: 10px 20px !important;
-    font-size: 14px !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.5px !important;
-    width: auto !important;
-    min-width: 160px !important;
-    margin: 0 auto !important;
+.appliance-meta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--text-secondary);
 }
+
+.appliance-warranty {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #059669;
+    font-weight: 600;
+    background: #ecfdf5;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.appliance-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 700;
+    color: #d97706;
+}
+
+.appliance-rating .star-icon {
+    color: #f59e0b;
+}
+
 .appliance-name {
     font-weight: 700;
-    font-size: 16px;
+    font-size: 15px;
     color: var(--text-primary);
-    white-space: nowrap;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    min-height: 40px;
 }
+
 .appliance-price-wrap {
     display: flex;
     align-items: center;
     gap: 8px;
-    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 2px;
 }
+
 .appliance-price {
     font-weight: 800;
     color: var(--green);
-    font-size: 18px;
+    font-size: 17px;
 }
+
 .appliance-old-price {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-muted);
     text-decoration: line-through;
 }
-.appliance-book-btn {
-    margin-top: 8px;
-    background: var(--green-bg);
-    color: var(--green);
-    border: none;
-    padding: 10px 24px;
-    border-radius: var(--radius-full);
+
+.appliance-save-tag {
+    font-size: 10.5px;
     font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: var(--transition);
-    width: 100%;
-    max-width: 140px;
-}
-.appliance-book-btn:hover {
-    background: var(--green);
-    color: white;
-    transform: translateY(-2px);
+    color: #ef4444;
+    background: #fef2f2;
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
-/* ---------- WHY CHOOSE US ---------- */
+.appliance-card-footer {
+    margin-top: 6px;
+    width: 100%;
+}
+
+.appliance-book-btn {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid rgba(39, 174, 96, 0.2);
+    padding: 9px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.appliance-card:hover .appliance-book-btn {
+    background: var(--green-gradient);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(39, 174, 96, 0.35);
+}
+
+.appliance-book-btn svg {
+    transition: transform 0.25s ease;
+}
+
+.appliance-card:hover .appliance-book-btn svg {
+    transform: translateX(4px);
+}
+
+/* ---------- WHY CHOOSE US (UNIQUE ANIMATED MOTION CARDS) ---------- */
+.why-choose-section {
+    background: linear-gradient(180deg, #ffffff 0%, rgba(241, 245, 249, 0.6) 100%);
+    border-radius: var(--radius-xl, 24px);
+    padding: 28px 24px 34px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+}
+
+.why-header {
+    margin-bottom: 24px;
+}
+
 .why-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 20px;
+    width: 100%;
 }
+
 .why-card {
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    padding: 24px 20px;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 22px 18px 24px;
     border: 1px solid var(--border);
-    text-align: center;
-    transition: var(--transition);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
+
 .why-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-8px);
+    border-color: var(--green);
+    box-shadow: 0 16px 36px rgba(39, 174, 96, 0.14);
 }
-.why-icon {
-    font-size: 2.2rem;
-    margin-bottom: 12px;
+
+.why-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
 }
-.why-card h4 {
+
+.why-icon-box {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(39, 174, 96, 0.04) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.4s ease;
+}
+
+.why-icon-pulse {
+    position: absolute;
+    inset: -3px;
+    border-radius: 17px;
+    border: 1.5px dashed rgba(39, 174, 96, 0.3);
+    animation: iconRotate 12s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes iconRotate {
+    100% { transform: rotate(360deg); }
+}
+
+.why-card:hover .why-icon-box {
+    transform: scale(1.15) rotate(6deg);
+    background: var(--green-bg);
+}
+
+.why-badge-pill {
+    font-size: 9.5px;
+    font-weight: 800;
+    color: var(--green);
+    background: rgba(39, 174, 96, 0.1);
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.why-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.why-card-title {
     font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 6px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.3;
 }
-.why-card p {
-    font-size: 14px;
+
+.why-card-desc {
+    font-size: 13px;
     color: var(--text-secondary);
+    line-height: 1.5;
 }
+
+.why-card-accent-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3.5px;
+    width: 0%;
+    background: var(--green-gradient);
+    transition: width 0.35s ease;
+    border-radius: 0 0 20px 20px;
+}
+
+.why-card:hover .why-card-accent-bar {
+    width: 100%;
+}
+
+.text-emerald { color: #10b981; }
+.text-amber { color: #f59e0b; }
+.text-blue { color: #3b82f6; }
+.text-rose { color: #f43f5e; }
+.text-indigo { color: #6366f1; }
+.text-teal { color: #14b8a6; }
 
 /* ---------- TRUST / CONTACT BAR ---------- */
 .trust-contact-bar {
@@ -1214,19 +1686,19 @@ body {
         padding: 0 16px 32px;
     }
     .section-title {
-        font-size: 20px;
+        font-size: 19px;
     }
     .category-grid {
-        grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
     .category-card {
         padding: 10px 8px 12px;
-        min-height: 165px;
+        min-height: 155px;
     }
     .cat-icon-wrap {
         width: 100%;
-        height: 110px;
+        height: 105px;
         font-size: 26px;
         border-radius: 12px;
     }
@@ -1240,34 +1712,57 @@ body {
     .offers-carousel {
         grid-template-columns: 1fr;
         gap: 16px;
+        width: 100%;
+    }
+    .offer-card {
+        width: 100%;
+        padding: 20px 18px;
+        box-sizing: border-box;
     }
 
-    /* Horizontal scroll cards shrink on tablet */
+    .appliance-section-wrap {
+        padding: 18px 14px 22px;
+    }
     .appliance-card {
-        flex: 0 0 150px;
-        padding: 12px 8px;
+        flex: 0 0 220px;
+        width: 220px;
+        border-radius: 16px;
     }
     .appliance-img-wrap {
-        width: 64px;
-        height: 64px;
+        width: 100%;
+        height: 140px;
+    }
+    .appliance-info {
+        padding: 12px 12px 14px;
     }
     .appliance-name {
-        font-size: 13px;
+        font-size: 14px;
+        min-height: 38px;
     }
     .appliance-price {
-        font-size: 14px;
+        font-size: 16px;
+    }
+    .appliance-floating-nav {
+        width: 36px;
+        height: 36px;
+    }
+    .appliance-floating-nav.nav-left {
+        left: -4px;
+    }
+    .appliance-floating-nav.nav-right {
+        right: -4px;
     }
     .appliance-book-btn {
         font-size: 12px;
-        padding: 4px 12px;
+        padding: 8px 12px;
     }
 
     .why-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
     .why-card {
-        padding: 16px;
+        padding: 16px 12px;
     }
 
     .footer-grid {
@@ -1306,22 +1801,23 @@ body {
         gap: 8px;
     }
     .services-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
     }
 }
 
 @media (max-width: 480px) {
     .category-grid {
-        grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
     .category-card {
-        min-height: 145px;
+        min-height: 140px;
         padding: 8px 6px 10px;
     }
     .cat-icon-wrap {
         width: 100%;
-        height: 92px;
+        height: 90px;
         font-size: 22px;
         border-radius: 10px;
     }
@@ -1332,7 +1828,17 @@ body {
         font-size: 12px;
     }
     .why-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .why-card {
+        padding: 12px 8px;
+    }
+    .why-card h4 {
+        font-size: 13.5px;
+    }
+    .why-card p {
+        font-size: 11.5px;
     }
     .services-grid {
         grid-template-columns: 1fr;
@@ -1341,11 +1847,14 @@ body {
         font-size: 22px;
     }
     .hero-stats {
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-around;
         gap: 8px;
+        width: 100%;
     }
     .stat-divider {
-        display: none;
+        display: block;
+        height: 24px;
     }
     .footer-cta {
         padding: 24px 16px;
@@ -1357,17 +1866,21 @@ body {
         padding: 16px;
     }
 
-    /* Even smaller on mobile */
+    .appliance-section-header {
+        margin-bottom: 14px;
+    }
     .appliance-card {
-        flex: 0 0 130px;
-        padding: 10px 6px;
+        flex: 0 0 190px;
+        width: 190px;
+        border-radius: 14px;
     }
     .appliance-img-wrap {
-        width: 56px;
-        height: 56px;
+        width: 100%;
+        height: 125px;
     }
     .appliance-name {
-        font-size: 12px;
+        font-size: 13px;
+        min-height: 34px;
     }
 
     .trust-items {
@@ -1377,5 +1890,43 @@ body {
     .contact-info {
         flex-direction: column;
         gap: 8px;
+    }
+}
+
+/* Extra Fine-Tuned Screen Responsiveness (<360px and Large Desktop 1400px+) */
+@media (max-width: 360px) {
+    .home-page {
+        padding: 0 10px 24px;
+    }
+    .category-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    .category-card {
+        min-height: 130px;
+        padding: 6px 4px 8px;
+    }
+    .cat-icon-wrap {
+        height: 80px;
+    }
+    .category-card span {
+        font-size: 11px;
+    }
+    .appliance-card {
+        flex: 0 0 175px;
+        width: 175px;
+    }
+    .why-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 1400px) {
+    .home-page {
+        max-width: 1360px;
+        margin: 0 auto;
+    }
+    .offers-grid {
+        grid-template-columns: repeat(4, 1fr);
     }
 }

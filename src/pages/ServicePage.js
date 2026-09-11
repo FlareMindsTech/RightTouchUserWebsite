@@ -78,8 +78,6 @@ const ServicePage = ({
     }
   }, [initialCategories, initialAllServices, isGlobalLoading]);
 
-  const effectiveSearchQuery = (searchQuery || '').trim().toLowerCase();
-
   useEffect(() => {
     let result = allServices;
 
@@ -104,20 +102,9 @@ const ServicePage = ({
       result = result.filter(s => (s.ratingSummary?.averageRating || 0) >= filters.rating);
     }
 
-    if (effectiveSearchQuery) {
-      result = result.filter(item => {
-        const name = (item.serviceName || '').toLowerCase();
-        const description = (item.description || '').toLowerCase();
-        const category = (item.categoryId?.category || '').toLowerCase();
-        return name.includes(effectiveSearchQuery) ||
-          description.includes(effectiveSearchQuery) ||
-          category.includes(effectiveSearchQuery);
-      });
-    }
-
     setFilteredServices(result);
     setVisibleCount(9);
-  }, [selectedCategory, allServices, effectiveSearchQuery, filters]);
+  }, [selectedCategory, allServices, filters]);
 
   useEffect(() => {
     if (categories.length > 0) {
@@ -237,37 +224,7 @@ const ServicePage = ({
     return '#22ba73';
   };
 
-  const CategoryNav = () => (
-    <div className="category-nav">
-      <div className="category-nav-scroll">
-        <button
-          className={`category-nav-item ${!selectedCategory ? 'active' : ''}`}
-          onClick={() => handleCategoryClick(null)}
-        >
-          <div className="category-nav-icon">
-            <LayoutGrid size={16} />
-          </div>
-          <span>All Services</span>
-        </button>
-        {shuffledCategories.map(cat => (
-          <button
-            key={cat._id}
-            className={`category-nav-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
-            onClick={() => handleCategoryClick(cat)}
-          >
-            <div className="category-nav-icon" style={{ background: selectedCategory?._id === cat._id ? 'rgba(255,255,255,0.2)' : getCategoryColor(cat.category) + '20' }}>
-              {cat.image ? (
-                <img src={cat.image} alt={cat.category} />
-              ) : (
-                getCategoryIcon(cat.category)
-              )}
-            </div>
-            <span>{cat.category}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+
 
   const FilterPanel = () => (
     <div className="filter-panel-modern">
@@ -326,7 +283,7 @@ const ServicePage = ({
 
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-services">
-      {/* Mobile Filter */}
+      {/* Mobile Filter Toolbar */}
       <div className="mobile-toolbar mobile-only">
         <button className="toolbar-filter" onClick={() => setShowMobileFilters(true)}>
           <Filter size={16} />
@@ -338,8 +295,28 @@ const ServicePage = ({
         <span className="toolbar-count">{filteredServices.length} services</span>
       </div>
 
-      {/* Category Navigation */}
-      <CategoryNav />
+      {/* Top Category Filter Bar */}
+      <nav className="category-nav desktop-only">
+        <div className="category-nav-scroll">
+          <button
+            className={`category-nav-item ${!selectedCategory ? 'active' : ''}`}
+            onClick={() => handleCategoryClick(null)}
+          >
+            <span className="category-nav-icon"><LayoutGrid size={16} /></span>
+            <span>All Services</span>
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat._id}
+              className={`category-nav-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+              onClick={() => handleCategoryClick(cat)}
+            >
+              <span className="category-nav-icon">{getCategoryIcon(cat.category)}</span>
+              <span>{cat.category}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
 
       <div className="content-area">
         <main className="main-content-area">
@@ -468,7 +445,8 @@ const ServicePage = ({
                       )}
                     </div>
                   </div>
-                )})}
+                );
+              })}
               </div>
 
               {/* Mobile Compact Cards */}
@@ -485,9 +463,11 @@ const ServicePage = ({
                   >
                     <div className="compact-card-image">
                       {service.serviceImages?.[0] ? (
-                        <img src={service.serviceImages[0]} alt={service.serviceName} />
+                        <img src={service.serviceImages[0]} alt={service.serviceName} loading="lazy" />
                       ) : (
-                        <Wrench size={18} />
+                        <div className="compact-placeholder">
+                          <Hammer size={26} />
+                        </div>
                       )}
                       {discount > 0 && (
                         <div className="compact-discount">-{discount}%</div>
@@ -497,16 +477,31 @@ const ServicePage = ({
                       </div>
                     </div>
                     <div className="compact-card-info">
-                      <h4 className="compact-card-title">{service.serviceName}</h4>
-<div className="compact-card-price">
-                        ₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}
-                        {service.serviceCost > (service.discountedPrice || 0) && (
-                          <span className="compact-original">��{formatPriceSmart(service.serviceCost)}</span>
-                        )}
+                      <div className="compact-card-category-row">
+                        <span 
+                          className="compact-category-badge"
+                          style={{ 
+                            background: getCategoryColor(service.categoryId?.category) + '18', 
+                            color: getCategoryColor(service.categoryId?.category) 
+                          }}
+                        >
+                          {service.categoryId?.category || 'Service'}
+                        </span>
+                        <div className="compact-card-rating">
+                          <Star size={11} className="star-gold" fill="#F1C40F" color="#F1C40F" />
+                          <span>{service.ratingSummary?.averageRating || 0}</span>
+                        </div>
                       </div>
-                      <div className="compact-card-rating">
-                        <Star size={10} className="star-gold" fill="#F1C40F" />
-                        <span>{service.ratingSummary?.averageRating || 0}</span>
+
+                      <h4 className="compact-card-title">{service.serviceName}</h4>
+
+                      <div className="compact-card-price-row">
+                        <span className="compact-price-current">
+                          ₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}
+                        </span>
+                        {service.serviceCost > (service.discountedPrice || 0) && (
+                          <span className="compact-original">₹{formatPriceSmart(service.serviceCost)}</span>
+                        )}
                       </div>
                     </div>
                     <div className="compact-card-action" onClick={(e) => e.stopPropagation()}>
@@ -515,6 +510,7 @@ const ServicePage = ({
                           <button
                             className="compact-qty-btn"
                             onClick={() => handleDecrementService(service)}
+                            aria-label="Decrease quantity"
                           >
                             −
                           </button>
@@ -524,6 +520,7 @@ const ServicePage = ({
                           <button
                             className="compact-qty-btn"
                             onClick={() => handleIncrementService(service)}
+                            aria-label="Increase quantity"
                           >
                             +
                           </button>
@@ -533,12 +530,13 @@ const ServicePage = ({
                           className="compact-add-btn"
                           onClick={() => handleIncrementService(service)}
                         >
-                          Add to Cart
+                          <ShoppingBag size={14} /> Add to Cart
                         </button>
                       )}
                     </div>
                   </div>
-                )})}
+                );
+              })}
               </div>
 
               {/* Load More */}

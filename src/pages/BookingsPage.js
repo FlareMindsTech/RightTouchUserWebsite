@@ -1,24 +1,35 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
+  MdArrowBack,
   MdOutlineChevronRight,
   MdSearch,
   MdShoppingCart,
   MdPayment,
   MdCalendarToday,
-  MdHistory
+  MdHistory,
+  MdAssignment,
+  MdApps,
+  MdCheckCircle,
+  MdCancel,
+  MdAccessTime,
+  MdArchive,
+  MdFlashOn,
+  MdStar,
+  MdRefresh,
+  MdHandyman
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import BookingDetailPage from './BookingDetailPage';
 import { getCustomerBookings, getBookings, bookAgain } from '../services/bookingService';
-import { createPaymentOrder, verifyPayment, loadRazorpayScript } from '../services/paymentService';
+import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import { safeParseDate } from '../utils/browserUtils';
 import { goBackSmart } from '../utils/browserUtils';
-import { resolveRazorpayKey } from '../utils/razorpay';
 import ConfirmModal from '../components/ConfirmModal';
 import './BookingsPage.css';
 
 const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentUser }) => {
   const navigate = useNavigate();
+  const { initiatePayment, loading: paymentLoading } = useRazorpayPayment();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +39,6 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
   const [activeHistoryFilter, setActiveHistoryFilter] = useState('ALL'); // 'ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'HISTORY'
   const [autoOpenRate, setAutoOpenRate] = useState(false);
   const [visibleHistoryCount, setVisibleHistoryCount] = useState(5);
-  const [paymentLoading, setPaymentLoading] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showRebookConfirm, setShowRebookConfirm] = useState(false);
   const [rebookLoading, setRebookLoading] = useState(false);
@@ -186,134 +196,25 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
     }
   }, [showToast]);
   
-  const handlePayNow = async (booking) => {
-    if (paymentLoading) return;
-    setPaymentLoading(true);
-    try {
-      if (!window.Razorpay) {
-        const loaded = await loadRazorpayScript();
-        if (!loaded) {
-          throw new Error('Failed to load Razorpay SDK');
-        }
-      }
-      const bookingId = booking._id;
-      
-      // 1. Create Razorpay Order
-      const orderRes = await createPaymentOrder({ bookingId });
-      console.log('[Razorpay] Order Creation Response:', orderRes);
-
-      if (!orderRes?.success || !orderRes.result) {
-        throw new Error(orderRes?.message || 'Failed to create payment order from server');
-      }
-
-      // Destructure with fallbacks
-      const { 
-        amount: rawAmount, 
-        orderId, 
-        keyId, 
-        key, 
-        currency = 'INR' 
-      } = orderRes.result;
-
-      // ✅ .env key is the primary source (switch it to switch test/live).
-      // If it mismatches the key the order was created with, the server key
-      // wins with a loud console error (see utils/razorpay.js).
-      const finalKey = resolveRazorpayKey({
-        envKey: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        serverKey: keyId || key,
-      });
-      const finalOrderId = (orderId || "").trim();
-      const finalCurrency = String(currency).toUpperCase();
-
-      console.log("Frontend Key (Bookings):", finalKey);
-      console.log("Order ID (Bookings):", finalOrderId);
-
-      if (!finalKey) throw new Error('Razorpay Key ID is missing');
-      if (!finalOrderId) throw new Error('Razorpay Order ID is missing');
-      if (!rawAmount) throw new Error('Payment amount is missing');
-
-      // 2. Server always returns the amount in PAISE (Razorpay Checkout SDK
-      // expects paise). Never multiply — a heuristic mismatch would send a
-      // 100x amount to checkout and Razorpay rejects the order (400).
-      const amountInPaise = Math.round(Number(rawAmount));
-
-      if (amountInPaise < 100) {
-        throw new Error('Minimum payment amount is ₹1.00 (100 paise)');
-      }
-
-      // Clean phone number
-      const cleanPhone = (currentUser?.phone || currentUser?.mobile || "").replace(/\D/g, "");
-
-      // 3. Open Razorpay Checkout
-      const options = {
-        key: finalKey,
-        amount: amountInPaise,
-        currency: finalCurrency,
-        name: "RightTouch",
-        description: `Payment for Booking #${bookingId?.slice(-6).toUpperCase()}`,
-        order_id: finalOrderId,
-        prefill: {
-          name: (currentUser?.name || currentUser?.fname || "Customer").trim(),
-          email: (currentUser?.email || "").trim(),
-          contact: cleanPhone.length >= 10 ? cleanPhone : ""
-        },
-        theme: {
-          color: "#22c55e"
-        },
-        handler: async function (response) {
-          try {
-            console.log('[Razorpay Success] Response:', response);
-            // 4. Verify Payment
-            const verifyRes = await verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              bookingId: bookingId
-            });
-
-            if (verifyRes?.success) {
-              showToast('Payment Successful!', 'success');
-              await fetchMyBookings();
-              setSelectedBooking(null);
-            } else {
-              showToast(verifyRes?.message || 'Payment verification failed', 'error');
-            }
-          } catch (error) {
-            console.error('[Razorpay Verify Error]:', error);
-            showToast('Error verifying payment', 'error');
-          } finally {
-            setPaymentLoading(false);
-          }
-        },
-        modal: {
-          ondismiss: function() {
-            console.log('[Razorpay] Checkout dismissed by user');
-            setPaymentLoading(false);
-          }
-        }
-      };
-
-      console.log('[Razorpay Options] Final Payload:', { ...options, key: finalKey.substring(0, 8) + '***' });
-      
-      try {
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response){
-                console.error('[Razorpay Payment Failed]:', response.error);
-                showToast(response.error.description || 'Payment failed', 'error');
-        });
-        rzp.open();
-      } catch (e) {
-        console.error('[Razorpay Init Error]:', e);
-        showToast('Failed to open payment gateway. Check console.', 'error');
-        setPaymentLoading(false);
-      }
-
-    } catch (error) {
-      console.error('[Payment Flow Error]:', error);
-      showToast(error.message || 'Payment initialization failed', 'error');
-      setPaymentLoading(false);
+  const handlePayNow = (booking) => {
+    const bookingId = booking?._id || booking?.id || booking?.bookingId;
+    if (!bookingId) {
+      showToast('Booking ID is missing', 'error');
+      return;
     }
 
+    initiatePayment({
+      bookingId,
+      customerUser: currentUser,
+      onSuccess: async () => {
+        showToast('Payment completed successfully!', 'success');
+        await fetchMyBookings();
+        setSelectedBooking(null);
+      },
+      onFailure: (err) => {
+        showToast(err.message || 'Payment failed', 'error');
+      }
+    });
   };
 
   // If a booking is selected, show the detail page
@@ -350,21 +251,29 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
 
   const renderBookingCard = (booking) => {
     const serviceName =
+      booking?.productSnapshot?.productName ||
+      booking?.productId?.productName ||
+      booking?.productId?.name ||
       booking?.serviceId?.serviceName ||
       booking?.itemId?.serviceName ||
       booking?.cartId?.items?.[0]?.item?.name ||
-      'Service Booking';
+      booking?.productName ||
+      'Product / Service Order';
 
     const serviceImage =
+      booking?.productSnapshot?.imageUrl ||
+      booking?.productId?.productImages?.[0] ||
       booking?.serviceId?.serviceImages?.[0] ||
       booking?.itemId?.serviceImages?.[0] ||
       booking?.cartId?.items?.[0]?.item?.serviceImages?.[0] ||
       null;
 
     const categoryName =
+      booking?.productSnapshot?.productType ||
+      booking?.productId?.productType ||
       booking?.serviceId?.categoryId?.category ||
       booking?.itemId?.categoryId?.category ||
-      null;
+      (booking?.productId ? 'Product Purchase' : null);
 
     const status = (booking.status || 'PENDING').toUpperCase();
     const paymentStatus = (booking?.paymentStatus || '').toUpperCase();
@@ -427,7 +336,13 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
         <div className="booking-card-body">
           <div className="booking-info-row">
             <span className="info-label">{isInstant ? 'Booking Type' : 'Scheduled Date'}</span>
-            <span className="info-value">{isInstant ? '⚡ Instant' : dateLabel}</span>
+            <span className="info-value">
+              {isInstant ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                  <MdFlashOn style={{ color: '#eab308', fontSize: '15px' }} /> Instant
+                </span>
+              ) : dateLabel}
+            </span>
           </div>
           <div className="booking-info-row">
             <span className="info-label">Total Amount</span>
@@ -469,9 +384,12 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                   fontSize: '12px',
                   fontWeight: '700',
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
                 }}
               >
-                ⭐ Rate Service
+                <MdStar style={{ fontSize: '15px' }} /> Rate Service
               </button>
             )}
           </div>
@@ -486,32 +404,48 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
 
   return (
     <section className={`bookings-page-premium ${isActive ? '' : 'hidden'}`}>
-      {/* Header Section - Desktop Only */}
-      <div className="bookings-premium-header desktop-only">
+      {/* Header Section */}
+      <div className="bookings-premium-header">
         <div className="header-top">
-          <button className="back-btn-premium" onClick={handleBack}>
-            <MdOutlineChevronRight className="back-icon-premium" />
+          <button className="back-btn-premium" onClick={handleBack} aria-label="Go Back">
+            <MdArrowBack className="back-icon-premium" />
           </button>
-          <h2 className="page-title-premium">My Bookings</h2>
+          <div className="header-title-wrapper">
+            <h2 className="page-title-premium">My Bookings</h2>
+            <p className="page-subtitle-premium">Track your active services, schedules, and past orders</p>
+          </div>
         </div>
       </div>
 
-      {/* Tab Navigation - Visible on all screens */}
+      {/* Tab Navigation - Fixed Segmented Tabs */}
       <div className="bookings-tabs-premium-fixed">
-        <div className="bookings-tabs-premium">
+        <div className="bookings-segmented-tabs">
           <button
             className={`tab-btn-premium ${activeTab === 'active' ? 'active' : ''}`}
             onClick={() => setActiveTab('active')}
           >
-            <MdCalendarToday style={{ marginBottom: '-2px', marginRight: '6px' }} />
-            Active & Upcoming
+            <MdCalendarToday className="tab-icon" />
+            <span>Active & Upcoming</span>
+            {activeBookingsList.length > 0 && (
+              <span className="tab-count-badge active">{activeBookingsList.length}</span>
+            )}
           </button>
           <button
             className={`tab-btn-premium ${activeTab === 'history' ? 'active' : ''}`}
             onClick={() => { setActiveTab('history'); setVisibleHistoryCount(5); }}
           >
-            <MdHistory style={{ marginBottom: '-2px', marginRight: '6px' }} />
-            Past Bookings
+            <MdHistory className="tab-icon" />
+            <span>Past Bookings</span>
+            {bookingsHistory.length > 0 && (
+              <span className="tab-count-badge">{bookingsHistory.length}</span>
+            )}
+          </button>
+          <button
+            className="tab-btn-premium"
+            onClick={() => navigate('/quotations')}
+          >
+            <MdAssignment className="tab-icon" />
+            <span>Product Quotations</span>
           </button>
         </div>
       </div>
@@ -530,10 +464,16 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                 activeBookingsList.map(booking => renderBookingCard(booking))
               ) : (
                 <div className="empty-state-premium">
-                  <div className="empty-icon-wrapper">📅</div>
-                  <h3>No active bookings</h3>
-                  <p>You haven't booked any services yet.</p>
-                  <button className="book-now-btn" onClick={() => navigate('/')}>Book Now</button>
+                  <div className="empty-icon-wrapper">
+                    <div className="empty-badge-circle">
+                      <MdCalendarToday />
+                    </div>
+                  </div>
+                  <h3>No Active Bookings</h3>
+                  <p>You don't have any in-progress or scheduled service bookings right now. Explore our home services and book in seconds.</p>
+                  <button className="book-now-btn" onClick={() => navigate('/#services')}>
+                    <MdHandyman style={{ fontSize: '18px' }} /> Explore Services
+                  </button>
                 </div>
               )
             ) : (
@@ -548,18 +488,45 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                       onChange={(e) => { setHistorySearchQuery(e.target.value); setVisibleHistoryCount(5); }}
                       className="history-search-input"
                     />
+                    {historySearchQuery && (
+                      <button 
+                        className="search-clear-btn"
+                        onClick={() => { setHistorySearchQuery(''); setVisibleHistoryCount(5); }}
+                        aria-label="Clear search"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                   <div className="status-filter-pills-container">
                     <div className="status-filter-pills">
-                      {['ALL', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'HISTORY'].map(filter => (
-                        <button
-                          key={filter}
-                          className={`filter-pill ${activeHistoryFilter === filter ? 'active' : ''}`}
-                          onClick={() => { setActiveHistoryFilter(filter); setVisibleHistoryCount(5); }}
-                        >
-                          {filter}
-                        </button>
-                      ))}
+                      {[
+                        { id: 'ALL', label: 'All Bookings', icon: MdApps, iconColor: '#0284c7' },
+                        { id: 'COMPLETED', label: 'Completed', icon: MdCheckCircle, iconColor: '#16a34a' },
+                        { id: 'CANCELLED', label: 'Cancelled', icon: MdCancel, iconColor: '#dc2626' },
+                        { id: 'EXPIRED', label: 'Expired', icon: MdAccessTime, iconColor: '#d97706' },
+                        { id: 'HISTORY', label: 'History Archive', icon: MdArchive, iconColor: '#7c3aed' }
+                      ].map(item => {
+                        const IconComp = item.icon;
+                        const isPillActive = activeHistoryFilter === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            className={`filter-pill ${isPillActive ? 'active' : ''}`}
+                            onClick={() => { setActiveHistoryFilter(item.id); setVisibleHistoryCount(5); }}
+                          >
+                            <IconComp
+                              className="pill-icon"
+                              style={{
+                                fontSize: '16px',
+                                flexShrink: 0,
+                                color: isPillActive ? '#ffffff' : item.iconColor
+                              }}
+                            />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -580,7 +547,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
                   </>
                 ) : (
                   <div className="empty-state-premium">
-                    <div className="empty-icon-wrapper">⌛</div>
+                    <div className="empty-icon-wrapper"><MdSearch style={{ fontSize: '28px', color: '#64748b' }} /></div>
                     <h3>No bookings found</h3>
                     <p>Try adjusting your search or filters.</p>
                     {(historySearchQuery || activeHistoryFilter !== 'ALL') && (
@@ -602,7 +569,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
 
       <ConfirmModal
         isOpen={showRebookConfirm}
-        icon="🔄"
+        icon={<MdRefresh style={{ fontSize: '24px' }} />}
         iconBg="#e0f2fe"
         iconColor="#0284c7"
         title="Book Service Again?"

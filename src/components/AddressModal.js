@@ -14,7 +14,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import { getMyAddresses, updateAddress, createAddress, searchAddress, reverseAddress, getCurrentUserLocation } from '../services/addressService';
 import './AddressModal.css';
 
-const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast }) => {
+const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast, onLoginClick }) => {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
@@ -53,9 +53,10 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
       const addrArr = Array.isArray(list) ? list : [];
       setAddresses(addrArr);
 
+      const getAddrId = (a) => a?._id || a?.id || a?.addressId;
       const defaultAddr = addrArr.find((a) => a.isDefault) || addrArr[0];
       if (defaultAddr) {
-        setSelectedId(defaultAddr._id);
+        setSelectedId(getAddrId(defaultAddr));
       }
     } catch (err) {
       console.warn('Failed to load addresses:', err);
@@ -207,13 +208,16 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
   };
 
   const handleSelectAddress = async (addr) => {
-    setSelectedId(addr._id);
+    const targetId = addr._id || addr.id || addr.addressId;
+    setSelectedId(targetId);
     const line = (addr.addressLine && !addr.addressLine.toLowerCase().includes('pinned location'))
       ? addr.addressLine
       : [addr.addressLine || addr.address, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || 'Saved Address';
 
     try {
-      await updateAddress({ id: addr._id, isDefault: true });
+      if (targetId) {
+        await updateAddress({ id: targetId, addressId: targetId, isDefault: true });
+      }
       if (showToast) showToast('Delivery address updated');
     } catch (err) {
       console.warn('Could not set address as default:', err);
@@ -239,6 +243,9 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
     <div className="address-popup-overlay location-overlay-premium" onClick={resetAddressPopupState}>
       <div className="address-popup location-popup-premium" onClick={(e) => e.stopPropagation()}>
         
+        {/* Mobile drag handle indicator */}
+        <div className="address-sheet-handle mobile-only"></div>
+
         {/* Header Title */}
         <div className="modal-title-header">
           <div className="title-with-icon">
@@ -261,7 +268,7 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
             <MdSearch className="search-leading-icon" />
             <input
               type="text"
-              placeholder="Search for area, street name..."
+              placeholder="Search for area, street name, apartment..."
               value={locationSearch}
               onChange={(e) => setLocationSearch(e.target.value)}
             />
@@ -299,12 +306,12 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
         {!showAddAddressForm && locationSuggestions.length === 0 && (
           <div className="location-actions-container">
             <button className="use-current-loc-card" onClick={handleUseCurrentLocation} disabled={isLocating}>
-              <div className="gps-icon-badge">
+              <div className={`gps-icon-badge ${isLocating ? 'pulsing' : ''}`}>
                 <MdMyLocation className="loc-icon-gps" />
               </div>
               <div className="gps-text-content">
-                <span className="gps-main-title">{isLocating ? 'Detecting location...' : 'Use current location'}</span>
-                <span className="gps-sub-title">Using GPS for precise location</span>
+                <span className="gps-main-title">{isLocating ? 'Detecting your GPS location...' : 'Use current location'}</span>
+                <span className="gps-sub-title">Auto-detect area via GPS for precise delivery</span>
               </div>
               <MdChevronRight className="gps-chevron" />
             </button>
@@ -326,17 +333,31 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
             </div>
 
             <div className="new-address-grid">
-              <div className="input-field-group">
-                <label className="input-label">Address Tag</label>
-                <select
-                  className="address-form-input"
-                  value={newAddressForm.label}
-                  onChange={(e) => setNewAddressForm((prev) => ({ ...prev, label: e.target.value }))}
-                >
-                  <option value="home">Home</option>
-                  <option value="office">Office / Work</option>
-                  <option value="other">Other</option>
-                </select>
+              <div className="input-field-group full-width">
+                <label className="input-label">Address Tag / Type</label>
+                <div className="address-tag-pill-group">
+                  <button
+                    type="button"
+                    className={`tag-pill-btn ${(newAddressForm.label || 'home').toLowerCase() === 'home' ? 'active tag-home' : ''}`}
+                    onClick={() => setNewAddressForm((prev) => ({ ...prev, label: 'home' }))}
+                  >
+                    <MdHome size={18} /> Home
+                  </button>
+                  <button
+                    type="button"
+                    className={`tag-pill-btn ${(newAddressForm.label || '').toLowerCase().includes('office') || (newAddressForm.label || '').toLowerCase().includes('work') ? 'active tag-office' : ''}`}
+                    onClick={() => setNewAddressForm((prev) => ({ ...prev, label: 'office' }))}
+                  >
+                    <MdWork size={18} /> Work / Office
+                  </button>
+                  <button
+                    type="button"
+                    className={`tag-pill-btn ${(newAddressForm.label || '').toLowerCase() === 'other' ? 'active tag-other' : ''}`}
+                    onClick={() => setNewAddressForm((prev) => ({ ...prev, label: 'other' }))}
+                  >
+                    <MdLocationOn size={18} /> Other
+                  </button>
+                </div>
               </div>
 
               <div className="input-field-group">
@@ -347,6 +368,17 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
                   placeholder="e.g. 625001"
                   value={newAddressForm.pincode}
                   onChange={(e) => setNewAddressForm((prev) => ({ ...prev, pincode: e.target.value }))}
+                />
+              </div>
+
+              <div className="input-field-group">
+                <label className="input-label">City</label>
+                <input
+                  type="text"
+                  className="address-form-input"
+                  placeholder="City"
+                  value={newAddressForm.city}
+                  onChange={(e) => setNewAddressForm((prev) => ({ ...prev, city: e.target.value }))}
                 />
               </div>
 
@@ -365,24 +397,13 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
                 <label className="input-label">Complete Address *</label>
                 <textarea
                   className="address-form-input textarea-input"
-                  placeholder="Flat No / House No, Street Name, Area..."
+                  placeholder="Flat No / House No, Building Name, Street, Area..."
                   value={newAddressForm.addressLine}
                   onChange={(e) => setNewAddressForm((prev) => ({ ...prev, addressLine: e.target.value }))}
                 />
               </div>
 
-              <div className="input-field-group">
-                <label className="input-label">City</label>
-                <input
-                  type="text"
-                  className="address-form-input"
-                  placeholder="City"
-                  value={newAddressForm.city}
-                  onChange={(e) => setNewAddressForm((prev) => ({ ...prev, city: e.target.value }))}
-                />
-              </div>
-
-              <div className="input-field-group">
+              <div className="input-field-group full-width">
                 <label className="input-label">State</label>
                 <input
                   type="text"
@@ -409,12 +430,14 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
             <div className="form-action-buttons">
               <div className="btn-row">
                 <button
+                  type="button"
                   className="address-cancel-btn"
                   onClick={() => setShowAddAddressForm(false)}
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   className="address-save-btn"
                   onClick={handleSaveNewAddress}
                   disabled={isSavingAddress}
@@ -425,103 +448,148 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
             </div>
           </div>
         ) : (
-          /* Saved Addresses List */
-          <div className="location-list-premium">
-            {!currentUser?._id ? (
-              <div className="empty-addresses-box">
-                <p className="empty-msg-text">Please sign in to view and select your saved delivery addresses.</p>
-              </div>
-            ) : loading ? (
-              <div className="loading-state-container">
-                <Loader2 className="spinner" size={28} />
-                <span>Loading saved addresses...</span>
-              </div>
-            ) : addresses.length === 0 ? (
-              <div className="empty-addresses-box">
-                <p className="empty-msg-text">No saved addresses found.</p>
+          /* Saved Addresses List View */
+          <>
+            <div className="location-list-premium">
+              {!currentUser?._id ? (
+                <div className="empty-addresses-box">
+                  <div className="empty-address-icon-wrap">
+                    <MdLocationOn size={36} />
+                  </div>
+                  <p className="empty-msg-title">Sign in to view addresses</p>
+                  <p className="empty-msg-text">Please sign in to access your saved delivery locations.</p>
+                  {onLoginClick && (
+                    <button
+                      className="add-address-trigger-btn"
+                      onClick={() => {
+                        resetAddressPopupState();
+                        onLoginClick();
+                      }}
+                      style={{ marginTop: '16px' }}
+                    >
+                      Sign In / Register
+                    </button>
+                  )}
+                </div>
+              ) : loading ? (
+                <div className="loading-state-container">
+                  <Loader2 className="spinner" size={28} />
+                  <span>Loading your addresses...</span>
+                </div>
+              ) : addresses.length === 0 ? (
+                <div className="empty-addresses-box">
+                  <div className="empty-address-icon-wrap">
+                    <MdPlace size={36} />
+                  </div>
+                  <p className="empty-msg-title">No addresses saved yet</p>
+                  <p className="empty-msg-text">Add your home or office address for faster checkout.</p>
+                  <button
+                    className="add-address-trigger-btn"
+                    onClick={() => setShowAddAddressForm(true)}
+                  >
+                    <Plus size={18} /> Add New Address
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {defaultAddresses.length > 0 && (
+                    <p className="address-section-divider">Default Address</p>
+                  )}
+                  {defaultAddresses.map((addr) => {
+                    const itemKey = addr._id || addr.id || addr.addressId;
+                    const isSelected = selectedId === itemKey;
+                    const labelTag = (addr.label || 'home').toLowerCase();
+                    return (
+                      <div
+                        key={itemKey}
+                        className={`location-item-premium tag-type-${labelTag} ${isSelected ? 'active' : ''}`}
+                        onClick={() => handleSelectAddress(addr)}
+                      >
+                        <div className={`loc-item-icon tag-type-${labelTag}`}>
+                          {getLabelIcon(addr.label)}
+                        </div>
+                        <div className="loc-item-content">
+                          <div className="loc-title-row">
+                            <h4 className="loc-item-title">{addr.label || 'Home'}</h4>
+                            <span className="default-pill">DEFAULT</span>
+                          </div>
+                          <p className="loc-item-subtitle">
+                            {(addr.addressLine && !addr.addressLine.toLowerCase().includes('pinned location'))
+                              ? addr.addressLine
+                              : [addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || 'Pinned Location'}
+                          </p>
+                          {(addr.city || addr.pincode) && (
+                            <div className="loc-item-meta-row">
+                              <span className="loc-city-pill">{[addr.city, addr.state].filter(Boolean).join(', ')}</span>
+                              {addr.pincode && <span className="loc-pin-pill">PIN: {addr.pincode}</span>}
+                            </div>
+                          )}
+                        </div>
+                        <div className="loc-selection-indicator">
+                          <div className={`radio-outer ${isSelected ? 'selected' : ''}`}>
+                            {isSelected && <div className="radio-inner" />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {otherAddresses.length > 0 && (
+                    <p className="address-section-divider">Other Saved Addresses</p>
+                  )}
+                  {otherAddresses.map((addr) => {
+                    const itemKey = addr._id || addr.id || addr.addressId;
+                    const isSelected = selectedId === itemKey;
+                    const labelTag = (addr.label || 'home').toLowerCase();
+                    return (
+                      <div
+                        key={itemKey}
+                        className={`location-item-premium tag-type-${labelTag} ${isSelected ? 'active' : ''}`}
+                        onClick={() => handleSelectAddress(addr)}
+                      >
+                        <div className={`loc-item-icon tag-type-${labelTag}`}>
+                          {getLabelIcon(addr.label)}
+                        </div>
+                        <div className="loc-item-content">
+                          <div className="loc-title-row">
+                            <h4 className="loc-item-title">{addr.label || 'Address'}</h4>
+                          </div>
+                          <p className="loc-item-subtitle">
+                            {(addr.addressLine && !addr.addressLine.toLowerCase().includes('pinned location'))
+                              ? addr.addressLine
+                              : [addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || 'Pinned Location'}
+                          </p>
+                          {(addr.city || addr.pincode) && (
+                            <div className="loc-item-meta-row">
+                              <span className="loc-city-pill">{[addr.city, addr.state].filter(Boolean).join(', ')}</span>
+                              {addr.pincode && <span className="loc-pin-pill">PIN: {addr.pincode}</span>}
+                            </div>
+                          )}
+                        </div>
+                        <div className="loc-selection-indicator">
+                          <div className={`radio-outer ${isSelected ? 'selected' : ''}`}>
+                            {isSelected && <div className="radio-inner" />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+
+            {currentUser?._id && addresses.length > 0 && !loading && (
+              <div className="modal-sticky-footer">
                 <button
+                  type="button"
                   className="add-address-trigger-btn"
                   onClick={() => setShowAddAddressForm(true)}
                 >
                   <Plus size={18} /> Add New Address
                 </button>
               </div>
-            ) : (
-              <>
-                {defaultAddresses.length > 0 && (
-                  <p className="address-section-divider">Default Address</p>
-                )}
-                {defaultAddresses.map((addr) => {
-                  const isSelected = selectedId === addr._id;
-                  return (
-                    <div
-                      key={addr._id}
-                      className={`location-item-premium ${isSelected ? 'active' : ''}`}
-                      onClick={() => handleSelectAddress(addr)}
-                    >
-                      <div className="loc-item-icon">
-                        {getLabelIcon(addr.label)}
-                      </div>
-                      <div className="loc-item-content">
-                        <div className="loc-title-row">
-                          <h4 className="loc-item-title">{addr.label || 'Home'}</h4>
-                          <span className="default-pill">DEFAULT</span>
-                        </div>
-                        <p className="loc-item-subtitle">
-                          {(addr.addressLine && !addr.addressLine.toLowerCase().includes('pinned location'))
-                            ? addr.addressLine
-                            : [addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || 'Pinned Location'}
-                        </p>
-                      </div>
-                      <div className="loc-selection-indicator">
-                        <div className={`radio-outer ${isSelected ? 'selected' : ''}`}>
-                          {isSelected && <div className="radio-inner" />}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {otherAddresses.length > 0 && (
-                  <p className="address-section-divider">Other Saved Addresses</p>
-                )}
-                {otherAddresses.map((addr) => {
-                  const isSelected = selectedId === addr._id;
-                  return (
-                    <div
-                      key={addr._id}
-                      className={`location-item-premium ${isSelected ? 'active' : ''}`}
-                      onClick={() => handleSelectAddress(addr)}
-                    >
-                      <div className="loc-item-icon">
-                        {getLabelIcon(addr.label)}
-                      </div>
-                      <div className="loc-item-content">
-                        <h4 className="loc-item-title">{addr.label || 'Address'}</h4>
-                        <p className="loc-item-subtitle">
-                          {(addr.addressLine && !addr.addressLine.toLowerCase().includes('pinned location'))
-                            ? addr.addressLine
-                            : [addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || 'Pinned Location'}
-                        </p>
-                      </div>
-                      <div className="loc-selection-indicator">
-                        <div className={`radio-outer ${isSelected ? 'selected' : ''}`}>
-                          {isSelected && <div className="radio-inner" />}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                <button
-                  className="add-address-trigger-btn"
-                  onClick={() => setShowAddAddressForm(true)}
-                >
-                  <Plus size={18} /> Add New Address
-                </button>
-              </>
             )}
-          </div>
+          </>
         )}
 
       </div>

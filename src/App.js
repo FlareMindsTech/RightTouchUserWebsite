@@ -19,14 +19,17 @@ import RegisterDialog from './components/RegisterDialog';
 import Footer from './components/Footer';
 import ProductPage from './pages/ProductPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import QuotationsPage from './pages/QuotationsPage';
 import PaymentMethodsPage from './pages/PaymentMethodsPage';
+import PaymentsPage from './pages/PaymentsPage';
 import SettingsPage from './pages/SettingsPage';
 import RatingsPage from './pages/RatingsPage';
 import ReportPage from './pages/ReportPage';
 import HelpSupportPage from './pages/HelpSupportPage';
 import AboutPage from './pages/AboutPage';
 import LegalPage from './pages/LegalPage';
-import { MdSearch, MdShoppingCart } from 'react-icons/md';
+import SearchDropdown from './components/SearchDropdown';
+import { MdShoppingCart } from 'react-icons/md';
 import logo from './assets/logo.png';
 import { getAllCategories } from './services/categoryService';
 import { getAllServices } from './services/serviceService';
@@ -153,19 +156,31 @@ function App() {
 
   // Check for user login on mount
   useEffect(() => {
-    const savedUser = safeStorage.getItem('currentUser');
-    const savedToken = safeStorage.getItem('token');
-
+    // 🧹 Clean up leftover adminToken or non-customer storage from localhost domain sharing
+    const savedUserStr = safeStorage.getItem('currentUser') || safeStorage.getItem('user');
+    let parsed = null;
     try {
-      const parsed = JSON.parse(savedUser);
-      if (parsed && (parsed._id || parsed.userId)) {
-        // Ensure _id is present for consistency
-        if (!parsed._id && parsed.userId) parsed._id = parsed.userId;
-        setCurrentUser(parsed);
-      }
+      if (savedUserStr) parsed = JSON.parse(savedUserStr);
     } catch (e) {
       console.error('Failed to parse saved user:', e);
       safeStorage.removeItem('currentUser');
+      safeStorage.removeItem('user');
+    }
+
+    const userRole = (parsed?.role || '').toUpperCase();
+    const isNonCustomerRole = ['ADMIN', 'OWNER', 'TECHNICIAN', 'SUPERADMIN', 'EMPLOYEE'].includes(userRole);
+
+    if (isNonCustomerRole) {
+      console.warn('[Auth Guard] Non-customer role session (Admin/Technician) detected in localStorage. Clearing non-customer storage.');
+      safeStorage.removeItem('adminToken');
+      safeStorage.removeItem('user');
+      safeStorage.removeItem('currentUser');
+      safeStorage.removeItem('token');
+      setCurrentUser(null);
+    } else if (parsed && (parsed._id || parsed.userId)) {
+      // Ensure _id is present for consistency
+      if (!parsed._id && parsed.userId) parsed._id = parsed.userId;
+      setCurrentUser(parsed);
     }
 
     // Check for dark mode preference
@@ -191,7 +206,7 @@ function App() {
     window.addEventListener('userLoggedOut', handleLogoutEvent);
     window.addEventListener('userProfileUpdated', handleProfileUpdateEvent);
 
-    if (savedUser && savedToken) {
+    if (parsed && (safeStorage.getItem('token') || parsed.token)) {
       fetchCart();
     }
 
@@ -316,9 +331,8 @@ const removeFromCart = useCallback(async (itemId) => {
     const originalItems = [...cartItems];
     const itemToRemove = cartItems.find(item => item.id === itemId || item._id === itemId);
     
-    // ��� OPTIMISTIC UPDATE: Remove locally immediately
+    // 🚀 OPTIMISTIC UPDATE: Remove locally immediately
     setCartItems(prev => prev.filter(item => item.id !== itemId && item._id !== itemId));
-    showToast('Item removed from cart');
 
     // If item is optimistic (not yet synced to server), skip API call
     if (itemToRemove?.isOptimistic) {
@@ -411,6 +425,8 @@ const removeFromCart = useCallback(async (itemId) => {
 
   // Auth handlers
   const handleLoginSuccess = (user) => {
+    safeStorage.removeItem('adminToken');
+    safeStorage.removeItem('user');
     if (user?.token) {
       safeStorage.setItem('token', user.token);
     }
@@ -422,6 +438,8 @@ const removeFromCart = useCallback(async (itemId) => {
   };
 
   const handleRegisterSuccess = (user) => {
+    safeStorage.removeItem('adminToken');
+    safeStorage.removeItem('user');
     if (user?.token) {
       safeStorage.setItem('token', user.token);
     }
@@ -438,6 +456,9 @@ const removeFromCart = useCallback(async (itemId) => {
 
   const confirmLogout = () => {
     safeStorage.removeItem('currentUser');
+    safeStorage.removeItem('user');
+    safeStorage.removeItem('token');
+    safeStorage.removeItem('adminToken');
     setCurrentUser(null);
     setShowLogoutConfirm(false);
     showToast('Logged out successfully');
@@ -460,43 +481,39 @@ const removeFromCart = useCallback(async (itemId) => {
       <Navbar
         currentPage={currentPage}
         onNavigate={handleNavigate}
-          cartItemCount={cartTotalQuantity}
+        cartItemCount={cartTotalQuantity}
         currentUser={currentUser}
         onLoginClick={() => setShowLoginDialog(true)}
         onLogout={handleLogout}
         searchQuery={globalSearchQuery}
         onSearchChange={setGlobalSearchQuery}
+        allServices={allServices}
+        allProducts={allProducts}
+        serviceCategories={serviceCategories}
+        productCategories={productCategories}
       />
 
-      {/* Global Mobile Header - shows on all pages */}
+      {/* Global Mobile Header - consistent structure across all pages */}
       <div className="global-mobile-header mobile-only">
-        <div className="gmh-left">
-          {currentPage === 'home' ? (
-            <img src={logo} alt="RightTouch" className="gmh-logo" />
-          ) : (
-            <>
-              <img src={logo} alt="RightTouch" className="gmh-logo gmh-logo-mini" />
-              {/* Only show title for non-redundant pages on mobile */}
-              {!['account', 'services'].includes(currentPage) && (
-                <h1 className="gmh-title">{currentPage.charAt(0).toUpperCase() + currentPage.slice(1).replace('-', ' ')}</h1>
-              )}
-            </>
-          )}
+        <div className="gmh-left" onClick={() => handleNavigate('home')} style={{ cursor: 'pointer' }}>
+          <img src={logo} alt="RightTouch" className="gmh-logo" />
         </div>
-        <div className="gmh-right">
 
-          {!['bookings', 'cart', 'checkout', 'account', 'settings', 'payment-methods', 'services'].includes(currentPage) && (
-            <div className="gmh-search">
-              <MdSearch className="gmh-search-icon" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={globalSearchQuery}
-                onChange={(e) => setGlobalSearchQuery(e.target.value)}
-              />
-            </div>
-          )}
-          <button className="gmh-cart-btn" onClick={handleCartClick}>
+        <div className="gmh-center">
+          <SearchDropdown
+            searchQuery={globalSearchQuery}
+            onSearchChange={setGlobalSearchQuery}
+            allServices={allServices}
+            allProducts={allProducts}
+            serviceCategories={serviceCategories}
+            productCategories={productCategories}
+            placeholder="Search services..."
+            className="gmh-search-dropdown-box"
+          />
+        </div>
+
+        <div className="gmh-right">
+          <button className="gmh-cart-btn" onClick={handleCartClick} aria-label="Shopping Cart">
             <MdShoppingCart className="gmh-cart-icon" />
             {cartTotalQuantity > 0 && <span className="gmh-cart-badge">{cartTotalQuantity}</span>}
           </button>
@@ -512,6 +529,7 @@ const removeFromCart = useCallback(async (itemId) => {
               onOpenService={openServiceSheet}
               showToast={showToast}
               currentUser={currentUser}
+              onLoginClick={() => setShowLoginDialog(true)}
               searchQuery={globalSearchQuery}
               serviceCategories={serviceCategories}
               productCategories={productCategories}
@@ -526,6 +544,7 @@ const removeFromCart = useCallback(async (itemId) => {
               onOpenService={openServiceSheet}
               showToast={showToast}
               currentUser={currentUser}
+              onLoginClick={() => setShowLoginDialog(true)}
               searchQuery={globalSearchQuery}
               serviceCategories={serviceCategories}
               productCategories={productCategories}
@@ -582,6 +601,7 @@ const removeFromCart = useCallback(async (itemId) => {
               showToast={showToast}
             />
           } />
+          <Route path="/payments" element={<PaymentsPage showToast={showToast} />} />
           <Route path="/bookings" element={
             <BookingsPage
               isActive={currentPage === 'bookings'}
@@ -622,6 +642,8 @@ const removeFromCart = useCallback(async (itemId) => {
               isInCart={isInCart}
               removeFromCart={removeFromCart}
               cartItems={cartItems}
+              currentUser={currentUser}
+              onNavigate={handleNavigate}
             />
           } />
           <Route path="/products" element={
@@ -635,6 +657,17 @@ const removeFromCart = useCallback(async (itemId) => {
               productCategories={productCategories}
               allProducts={allProducts}
               dataLoading={!isDataLoaded}
+              currentUser={currentUser}
+              showToast={showToast}
+              searchQuery={globalSearchQuery}
+            />
+          } />
+          <Route path="/quotations" element={
+            <QuotationsPage
+              isActive={currentPage === 'quotations'}
+              showToast={showToast}
+              currentUser={currentUser}
+              onNavigate={handleNavigate}
             />
           } />
           <Route path="/settings" element={

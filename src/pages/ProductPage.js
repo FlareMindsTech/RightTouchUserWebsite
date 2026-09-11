@@ -1,217 +1,301 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    ChevronLeft,
-    Search,
-    Package,
-    Sun,
-    Star,
-    ShieldCheck,
-    Zap,
-    Building2
+  Package,
+  Sun,
+  Star,
+  ShieldCheck,
+  Zap,
+  Building2,
+  LayoutGrid,
+  ShoppingBag,
+  Share2,
+  FileText,
+  RotateCcw
 } from 'lucide-react';
-import { getAllCategories } from '../services/categoryService';
-import { getAllProducts } from '../services/productService';
+import { shareItem } from '../utils/share';
+import { formatPriceSmart } from '../utils/format';
+import QuoteRequestModal from '../components/QuoteRequestModal';
 import '../styles/services.css';
+import './ServicePage.css';
 
 const ProductPage = ({
-    isActive,
-    addToCart,
-    isInCart,
-    cartItems,
-    removeFromCart,
-    productCategories: initialCategories = [],
-    allProducts: initialAllProducts = [],
-    dataLoading: isGlobalLoading
+  isActive,
+  addToCart,
+  isInCart,
+  cartItems,
+  removeFromCart,
+  productCategories: initialCategories = [],
+  allProducts: initialAllProducts = [],
+  dataLoading: isGlobalLoading,
+  currentUser,
+  showToast,
+  onNavigate,
+  searchQuery: globalSearchQuery = ''
 }) => {
-    const navigate = useNavigate();
-    const [categories, setCategories] = useState(initialCategories);
-    const [products, setProducts] = useState(initialAllProducts);
-    const [view, setView] = useState('categories'); // 'categories' or 'products'
-    const [selectedCategory, setSelectedCategory] = useState(null);
-    const [loading, setLoading] = useState(isGlobalLoading);
-    const [error, setError] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const categoryIdFromUrl = searchParams.get('category');
 
-    // Sync with global props
-    useEffect(() => {
-        setCategories(initialCategories);
-        setProducts(initialAllProducts);
-        setLoading(isGlobalLoading);
-    }, [initialCategories, initialAllProducts, isGlobalLoading]);
+  const [categories, setCategories] = useState(initialCategories);
+  const [products, setProducts] = useState(initialAllProducts);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [loading, setLoading] = useState(isGlobalLoading);
+  const [error] = useState(null);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [selectedProductForQuote, setSelectedProductForQuote] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState(null);
 
-    // Icon Map for Product Categories
-    const iconMap = {
-        'Solar': <Sun size={32} />,
-        'Inverter': <Zap size={32} />,
-        'Battery': <Zap size={32} />,
-        'Commercial': <Building2 size={32} />,
-        'Security': <ShieldCheck size={32} />,
-        'default': <Package size={32} />
-    };
+  // Sync with global props
+  useEffect(() => {
+    setCategories(initialCategories);
+    setProducts(initialAllProducts);
+    setLoading(isGlobalLoading);
+  }, [initialCategories, initialAllProducts, isGlobalLoading]);
 
+  // Sync URL category param
+  useEffect(() => {
+    if (categories.length > 0) {
+      if (categoryIdFromUrl) {
+        const cat = categories.find(c => c._id === categoryIdFromUrl);
+        if (cat) setSelectedCategory(cat);
+      } else {
+        setSelectedCategory(null);
+      }
+    }
+  }, [categoryIdFromUrl, categories]);
 
-    const handleCategoryClick = (category) => {
-        setSelectedCategory(category);
-        setView('products');
-        window.scrollTo(0, 0);
-    };
+  const getCategoryIcon = (categoryName) => {
+    const name = (categoryName || '').toLowerCase();
+    if (name.includes('solar')) return <Sun size={16} />;
+    if (name.includes('inverter') || name.includes('battery')) return <Zap size={16} />;
+    if (name.includes('commercial')) return <Building2 size={16} />;
+    if (name.includes('security') || name.includes('cctv')) return <ShieldCheck size={16} />;
+    return <Package size={16} />;
+  };
 
-    const handleProductClick = (product) => {
-        navigate(`/product-detail?productId=${product._id}`);
-    };
+  const getCategoryColor = (categoryName) => {
+    const name = (categoryName || '').toLowerCase();
+    if (name.includes('solar')) return '#F39C12';
+    if (name.includes('inverter') || name.includes('battery')) return '#3498DB';
+    if (name.includes('commercial')) return '#8E44AD';
+    if (name.includes('security') || name.includes('cctv')) return '#E74C3C';
+    return '#22ba73';
+  };
 
-    const filteredProducts = products.filter(prod => {
-        const matchesCategory = selectedCategory ? (prod.categoryId === selectedCategory._id || prod.categoryId?._id === selectedCategory._id) : true;
-        const matchesSearch = prod.productName.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
+  const handleCategoryClick = (category) => {
+    if (!category) {
+      setSelectedCategory(null);
+      navigate('/products');
+    } else {
+      setSelectedCategory(category);
+      navigate(`/products?category=${category._id}`);
+    }
+  };
 
-    if (!isActive) return null;
+  const handleProductClick = (product) => {
+    navigate(`/product-detail?productId=${product._id}`);
+  };
 
-    return (
-        <div className="page-wrapper" style={{ padding: '20px' }}>
-            {/* Header Section */}
-            <div className="section-header" style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-                <div>
-                    {view === 'products' ? (
-                        <button className="back-btn-simple" onClick={() => setView('categories')} style={{ marginBottom: '10px' }}>
-                            <ChevronLeft size={20} /> Back to Categories
-                        </button>
-                    ) : null}
-                    <h1 style={{ margin: 0 }}>
-                        Our <span className="accent">{view === 'categories' ? 'Product Categories' : selectedCategory?.category}</span>
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: '5px' }}>
-                        {view === 'categories' ? 'Select a category to explore professional products' : `Showing professional products for ${selectedCategory?.category}`}
-                    </p>
-                </div>
+  const filteredProducts = products.filter(prod => {
+    return selectedCategory
+      ? (prod.categoryId === selectedCategory._id ||
+         prod.categoryId?._id === selectedCategory._id ||
+         (prod.category || '').toLowerCase() === (selectedCategory.category || '').toLowerCase())
+      : true;
+  });
 
-                <div className="search-box" style={{ maxWidth: '400px', width: '100%', position: 'relative' }}>
-                    <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                            width: '100%',
-                            padding: '12px 12px 12px 40px',
-                            borderRadius: '12px',
-                            border: '1px solid var(--border)',
-                            background: 'var(--bg-input)'
-                        }}
-                    />
-                </div>
-            </div>
+  if (!isActive) return null;
 
-            {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
-                    <div className="spinner"></div>
-                </div>
-            ) : error ? (
-                <div style={{ textAlign: 'center', padding: '50px', color: '#ef4444' }}>{error}</div>
-            ) : (
-                <>
-                    {view === 'categories' ? (
-                        <div className="category-grid">
-                            {categories.map(cat => (
-                                <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat)}>
-                                    <div className="cat-icon-wrap" style={{ display: 'grid', placeItems: 'center', color: 'var(--green)' }}>
-                                        {cat.image ? (
-                                            <img src={cat.image} alt={cat.category} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                        ) : (
-                                            iconMap[cat.category] || iconMap['default']
-                                        )}
-                                    </div>
-                                    <span>{cat.category}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-                            {filteredProducts.length > 0 ? (
-                                <div className="massive-list">
-                                    {filteredProducts.map(product => (
-                                        <div key={product._id} className="massive-section-wrap">
-                                            <div className="massive-card" onClick={() => handleProductClick(product)} style={{ cursor: 'pointer' }}>
-                                                <div className="massive-card-content">
-                                                    <h3 className="massive-card-title">{product.productName}</h3>
-
-                                                    <div className="massive-card-rating">
-                                                        <Star size={16} className="star-icon" />
-                                                        <span>
-                                                            {product.ratingSummary?.averageRating || 0.0} ({product.ratingSummary?.totalRatings || 0} reviews)
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="massive-card-price">
-                                                        ₹{product.estimatedPriceFrom?.toLocaleString()} •
-                                                    </div>
-
-                                                    <ul className="massive-card-description">
-                                                        <li style={{ color: 'var(--green)', fontWeight: '700', textTransform: 'uppercase', fontSize: '11px' }}>
-                                                            {product.productType}
-                                                        </li>
-                                                        <li>Usage: {product.usageType}</li>
-                                                        <li>{product.siteInspectionRequired ? 'Site Inspection Required' : 'Instant Setup'}</li>
-                                                    </ul>
-
-                                                    <div className="massive-card-link">
-                                                        View details
-                                                    </div>
-                                                </div>
-
-                                                <div className="massive-card-right">
-                                                    <div className="massive-card-image" style={{ background: '#f8fafc' }}>
-                                                        {product.productImages?.[0] ? (
-                                                            <img src={product.productImages[0]} alt={product.productName} />
-                                                        ) : (
-                                                            <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: 'var(--green)' }}>
-                                                                <Package size={40} />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    {isInCart && isInCart(product._id) ? (
-                                                        <button
-                                                            className="massive-add-btn"
-                                                            style={{ background: '#ef4444', color: 'white', borderColor: '#ef4444' }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const cartItem = cartItems?.find(item => (item.itemId?._id || item.originalId) === product._id);
-                                                                if (cartItem && removeFromCart) removeFromCart(cartItem.id);
-                                                            }}
-                                                        >
-                                                            Remove
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            className="massive-add-btn"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                addToCart({ ...product, itemType: 'product' });
-                                                            }}
-                                                        >
-                                                            Add
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    ))}
-                                </div>
-                            ) : (
-                                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '50px', background: '#f8fafc', borderRadius: '12px' }}>
-                                    No products found in this category.
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </>
-            )}
+  return (
+    <section className={`page ${isActive ? '' : 'hidden'}`} id="page-products">
+      {/* Top Category Filter Ribbon */}
+      <nav className="category-nav">
+        <div className="category-nav-scroll">
+          <button
+            className={`category-nav-item ${!selectedCategory ? 'active' : ''}`}
+            onClick={() => handleCategoryClick(null)}
+          >
+            <span className="category-nav-icon"><LayoutGrid size={16} /></span>
+            <span>All Products</span>
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat._id}
+              className={`category-nav-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+              onClick={() => handleCategoryClick(cat)}
+            >
+              <span className="category-nav-icon">
+                {cat.image ? (
+                  <img src={cat.image} alt={cat.category} />
+                ) : (
+                  getCategoryIcon(cat.category)
+                )}
+              </span>
+              <span>{cat.category}</span>
+            </button>
+          ))}
         </div>
-    );
+      </nav>
+
+      {/* Main Full-Width Content Container */}
+      <div className="content-area" style={{ display: 'block', width: '100%' }}>
+        <main className="main-content-area" style={{ width: '100%' }}>
+          {loading ? (
+            <div className="loader-wrapper">
+              <div className="loader-spinner"></div>
+              <p className="loader-text">Loading products...</p>
+            </div>
+          ) : error ? (
+            <div className="error-wrapper">
+              <div className="error-emoji">😕</div>
+              <h2 className="error-heading">Something went wrong</h2>
+              <p className="error-desc">{error}</p>
+              <button className="error-btn" onClick={() => window.location.reload()}>
+                Try Again
+              </button>
+            </div>
+          ) : filteredProducts.length > 0 ? (
+            <div className="product-grid-full">
+              {filteredProducts.map((product, index) => {
+                const isHovered = hoveredCard === product._id;
+                const discount = product.originalPrice && product.discountedPrice
+                  ? Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)
+                  : 0;
+
+                const priceDisplay = product.discountedPrice || product.productPrice || product.estimatedPriceFrom || 0;
+                const inCart = isInCart && isInCart(product._id);
+                const categoryName = product.category || product.productType || 'Product';
+                const categoryColor = getCategoryColor(categoryName);
+
+                return (
+                  <div
+                    key={product._id}
+                    className={`service-card-modern ${isHovered ? 'hovered' : ''}`}
+                    onMouseEnter={() => setHoveredCard(product._id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="card-image" onClick={() => handleProductClick(product)}>
+                      {product.productImages?.[0] ? (
+                        <img src={product.productImages[0]} alt={product.productName} loading="lazy" />
+                      ) : (
+                        <div className="card-image-placeholder">
+                          <Package size={32} />
+                        </div>
+                      )}
+                      {discount > 0 && (
+                        <div className="discount-badge">-{discount}%</div>
+                      )}
+                      <div className="card-image-overlay">
+                        <button className="card-view-link">View Product</button>
+                      </div>
+                      <button
+                        className="share-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          shareItem({
+                            title: product.productName,
+                            text: product.description || product.productName,
+                            url: `${window.location.origin}/product-detail?productId=${product._id}`
+                          }, showToast);
+                        }}
+                      >
+                        <Share2 size={16} />
+                      </button>
+                    </div>
+
+                    <div className="card-body" onClick={() => handleProductClick(product)}>
+                      <div className="card-header">
+                        <h3 className="card-title">{product.productName}</h3>
+                        <span
+                          className="card-category"
+                          style={{
+                            background: `${categoryColor}18`,
+                            color: categoryColor
+                          }}
+                        >
+                          {categoryName}
+                        </span>
+                      </div>
+
+                      <div className="card-meta">
+                        <div className="card-rating">
+                          <Star size={14} className="star-gold" fill="#F1C40F" color="#F1C40F" />
+                          <span className="rating-value">{product.ratingSummary?.averageRating || 0}</span>
+                          <span className="card-review-count">
+                            ({product.ratingSummary?.totalRatings || 0} reviews)
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="card-price">
+                        <span className="price-current">₹{formatPriceSmart(priceDisplay)}</span>
+                        {product.originalPrice > priceDisplay && (
+                          <span className="price-original">₹{formatPriceSmart(product.originalPrice)}</span>
+                        )}
+                        {product.originalPrice > priceDisplay && (
+                          <span className="price-save">
+                            Save ₹{formatPriceSmart(product.originalPrice - priceDisplay)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="card-actions product-card-actions" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="action-btn action-quote"
+                        style={{ width: '100%', justifyContent: 'center' }}
+                        onClick={() => {
+                          if (!currentUser) {
+                            if (showToast) showToast('Please sign in to request a quote');
+                            return;
+                          }
+                          setSelectedProductForQuote(product);
+                          setShowQuoteModal(true);
+                        }}
+                      >
+                        <FileText size={16} /> Get Quote
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-state-modern">
+              <div className="empty-icon-wrapper">
+                <Package size={48} />
+              </div>
+              <h3 className="empty-heading">No products found</h3>
+              <p className="empty-desc">
+                We couldn't find any products matching your selected category or search.
+              </p>
+              <button className="empty-action" onClick={() => handleCategoryClick(null)}>
+                <RotateCcw size={14} /> Reset Category
+              </button>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Quotation Modal */}
+      <QuoteRequestModal
+        isOpen={showQuoteModal}
+        onClose={() => {
+          setShowQuoteModal(false);
+          setSelectedProductForQuote(null);
+        }}
+        product={selectedProductForQuote}
+        currentUser={currentUser}
+        showToast={showToast}
+        onNavigateToQuotations={() => {
+          if (onNavigate) onNavigate('quotations');
+          else navigate('/quotations');
+        }}
+      />
+    </section>
+  );
 };
 
 export default ProductPage;

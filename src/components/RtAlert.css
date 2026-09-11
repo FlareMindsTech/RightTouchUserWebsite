@@ -2,7 +2,7 @@
 /* ── Container ─────────────────────────────────────────────── */
 .rt-alert-container {
   position: fixed;
-  top: 20px;
+  top: 90px;
   right: 20px;
   z-index: 99999;
   display: flex;
@@ -241,7 +241,7 @@
 /* ── Mobile – float above bottom nav ───────────────────────── */
 @media (max-width: 768px) {
   .rt-alert-container {
-    top: 12px;
+    top: 85px;
     bottom: auto;
     left: 50%;
     right: auto;

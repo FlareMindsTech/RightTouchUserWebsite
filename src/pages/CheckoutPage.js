@@ -11,8 +11,7 @@ import {
 } from 'react-icons/md';
 import { getMyAddresses, createAddress, updateAddress } from '../services/addressService';
 import { checkout } from '../services/cartService';
-import { createPaymentOrder, verifyPayment } from '../services/paymentService';
-import { resolveRazorpayKey } from '../utils/razorpay';
+import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import { goBackSmart } from '../utils/browserUtils';
 import './CheckoutPage.css';
 
@@ -67,6 +66,7 @@ const CheckoutPage = ({
   });
   const [loading, setLoading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const { initiatePayment, loading: isRazorpayLoading } = useRazorpayPayment();
 
   const fetchAddresses = useCallback(async () => {
     if (!currentUser) return;
@@ -335,140 +335,57 @@ const CheckoutPage = ({
                     <span>₹{total.toFixed(2)}</span>
                   </div>
                   <button 
-                    className={`final-pay-btn ${paymentLoading ? 'loading' : ''}`} 
+                    className={`final-pay-btn ${paymentLoading || isRazorpayLoading ? 'loading' : ''}`} 
                     onClick={async () => {
-                      if (paymentLoading) return;
+                      if (paymentLoading || isRazorpayLoading) return;
                       setPaymentLoading(true);
                       try {
                         // 1. Create Booking from Cart
-                      const checkoutRes = await checkout({ addressId: selectedAddressId });
-                      if (!checkoutRes?.success) {
-                        throw new Error(checkoutRes?.message || 'Failed to create booking');
-                      }
+                        const checkoutRes = await checkout({ addressId: selectedAddressId });
+                        if (!checkoutRes?.success) {
+                          throw new Error(checkoutRes?.message || 'Failed to create booking');
+                        }
 
-                      const bookingId = checkoutRes.result?._id || checkoutRes.result?.bookingId;
-                      if (!bookingId) {
-                        throw new Error('Booking ID not received from server');
-                      }
+                        const bookingId = checkoutRes.result?._id || checkoutRes.result?.bookingId;
+                        if (!bookingId) {
+                          throw new Error('Booking ID not received from server');
+                        }
 
-                      // 2. Create Razorpay Order
-                      const orderRes = await createPaymentOrder({ bookingId });
-                      console.log('[Razorpay] Order Creation Response:', orderRes);
-                      
-                      if (!orderRes?.success || !orderRes.result) {
-                        throw new Error(orderRes?.message || 'Failed to create payment order');
-                      }
-
-                      const { 
-                        amount: rawAmount, 
-                        orderId, 
-                        keyId, 
-                        key, // Fallback
-                        currency = "INR" 
-                      } = orderRes.result;
-                      
-                      // ✅ .env key is the primary source (switch it to switch test/live).
-                      // If it mismatches the key the order was created with, the
-                      // server key wins with a loud console error (utils/razorpay.js).
-                      const finalKey = resolveRazorpayKey({
-                        envKey: process.env.REACT_APP_RAZORPAY_KEY_ID,
-                        serverKey: keyId || key,
-                      });
-                      const finalOrderId = (orderId || "").trim();
-                      const finalCurrency = String(currency).toUpperCase();
-
-                      console.log("Frontend Key:", finalKey);
-                      console.log("Order ID:", finalOrderId);
-
-                      if (!finalKey) throw new Error('Razorpay Key ID is missing');
-                      if (!finalOrderId) throw new Error('Razorpay Order ID is missing');
-                      if (!rawAmount) throw new Error('Payment amount is missing');
-
-                      // 3. Server always returns the amount in PAISE (Razorpay
-                      // Checkout SDK expects paise). Never multiply — a heuristic
-                      // mismatch would send a 100x amount to checkout and
-                      // Razorpay rejects the order (400).
-                      const amountInPaise = Math.round(Number(rawAmount));
-
-                      if (amountInPaise < 100) {
-                        throw new Error('Minimum payment amount is ₹1.00');
-                      }
-
-                      // Clean phone number: keep only digits
-                      const cleanPhone = (currentUser?.phone || currentUser?.mobile || "").replace(/\D/g, "");
-
-                      // 4. Open Razorpay Checkout
-                      const options = {
-                        key: finalKey,
-                        amount: amountInPaise,
-                        currency: finalCurrency,
-                        name: "RightTouch",
-                        description: `Order Payment for Booking #${bookingId?.slice(-6).toUpperCase()}`,
-                        order_id: finalOrderId,
-                        prefill: {
-                          name: (currentUser?.name || currentUser?.fname || "Customer").trim(),
-                          email: (currentUser?.email || "").trim(),
-                          contact: cleanPhone.length >= 10 ? cleanPhone : ""
-                        },
-                        theme: {
-                          color: "#22c55e"
-                        },
-                        handler: async function (response) {
-                          try {
-                            console.log('[Razorpay Success] Response:', response);
-                            // 5. Verify Payment
-                            const verifyRes = await verifyPayment({
-                              razorpay_order_id: response.razorpay_order_id,
-                              razorpay_payment_id: response.razorpay_payment_id,
-                              razorpay_signature: response.razorpay_signature,
-                              bookingId: bookingId
-                            });
-
-                            if (verifyRes?.success) {
-                              showToast('Payment Successful!', 'success');
-                              await fetchCart();
-                              onNavigate?.('bookings') || navigateInternal('/bookings');
+                        // 2. Launch Real Razorpay Payment via unified hook
+                        await initiatePayment({
+                          bookingId,
+                          customerUser: currentUser,
+                          onSuccess: async (payRes) => {
+                            if (payRes?.free) {
+                              showToast('Booking confirmed successfully (No payment required)!', 'success');
+                            } else if (payRes?.alreadyPaid) {
+                              showToast('Booking is already paid!', 'info');
                             } else {
-                              showToast(verifyRes?.message || 'Payment verification failed', 'error');
+                              showToast('Payment Successful! Booking confirmed.', 'success');
                             }
-                          } catch (error) {
-                            console.error('[Razorpay Verify Error]:', error);
-                            showToast('Error verifying payment', 'error');
-                          }
-                        },
-                        modal: {
-                          ondismiss: function() {
-                            console.log('[Razorpay] Checkout dismissed');
+                            await fetchCart();
+                            if (onNavigate) onNavigate('bookings');
+                            else navigateInternal('/bookings');
+                            setPaymentLoading(false);
+                          },
+                          onFailure: (err) => {
+                            console.error('[Checkout Payment Error]:', err);
+                            showToast(err?.message || 'Payment was not completed. You can pay anytime from My Bookings.', 'warning');
+                            fetchCart();
+                            if (onNavigate) onNavigate('bookings');
+                            else navigateInternal('/bookings');
                             setPaymentLoading(false);
                           }
-                        }
-                      };
-
-                      console.log('[Razorpay Options] Final Payload:', { ...options, key: finalKey.substring(0, 8) + '***' });
-                      
-                      try {
-                        const rzp = new window.Razorpay(options);
-                        rzp.on('payment.failed', function (response){
-                                console.error('[Razorpay Payment Failed]:', response.error);
-                                showToast(response.error.description || 'Payment failed', 'error');
                         });
-                        rzp.open();
-                      } catch (e) {
-                        console.error('[Razorpay Init Error]:', e);
-                        showToast('Failed to open payment gateway', 'error');
-                        setPaymentLoading(false);
-                      }
-
-
                       } catch (error) {
                         console.error('Payment flow error:', error);
-                        showToast(error.message || 'Payment initialization failed', 'error');
+                        showToast(error?.message || 'Payment initialization failed', 'error');
                         setPaymentLoading(false);
                       }
                     }}
-                    disabled={paymentLoading}
+                    disabled={paymentLoading || isRazorpayLoading}
                   >
-                    {paymentLoading ? 'Processing...' : `Pay ₹${total.toFixed(2)}`}
+                    {paymentLoading || isRazorpayLoading ? 'Processing...' : `Pay ₹${total.toFixed(2)}`}
                   </button>
                 </div>
               </div>

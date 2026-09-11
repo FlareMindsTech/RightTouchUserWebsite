@@ -204,8 +204,11 @@ const ProductServices = ({
     return (
       <div className="page-wrapper" style={{ textAlign: 'center', paddingTop: '100px' }}>
         <h2 style={{ color: '#ef4444' }}>{error || "Service Not Found"}</h2>
-        <button className="back-btn-simple" onClick={handleBack} style={{ marginTop: '20px' }}>
-          <ChevronLeft size={20} /> Back to Services
+        <button className="detail-back-btn-unique" onClick={handleBack} style={{ marginTop: '20px' }}>
+          <span className="back-icon-circle">
+            <ChevronLeft size={18} />
+          </span>
+          <span className="back-btn-label">Back to Services</span>
         </button>
       </div>
     );
@@ -243,12 +246,18 @@ const ProductServices = ({
       )}
 
       <section className={`page ${isActive ? '' : 'hidden'}`} id="page-product-services">
-        {/* Detail Header */}
-        <div className="services-hero">
-          <button className="back-btn-simple" onClick={handleBack}>
-            <ChevronLeft size={20} /> Back
+        {/* Top Navigation Back Button */}
+        <div className="detail-top-nav">
+          <button className="detail-back-btn-unique" onClick={handleBack} aria-label="Back to Services">
+            <span className="back-icon-circle">
+              <ChevronLeft size={18} />
+            </span>
+            <span className="back-btn-label">Back to Services</span>
           </button>
-          
+        </div>
+
+        {/* Detail Header Hero */}
+        <div className="services-hero">
           <div className="service-detail-hero-content">
             {/* Left Column: Service Image Section */}
             <div className="service-detail-image-wrap">
@@ -376,44 +385,48 @@ const ProductServices = ({
 
         <div className="detail-section-grid">
           {/* What's Included */}
-          <div className="detail-card-new">
-            <h3 className="detail-card-title">
-              <CheckCircle2 size={24} className="icon-success" /> What's Included
-            </h3>
-            <ul className="detail-list">
-              {(expandedSections.included ? service.whatIncluded : service.whatIncluded?.slice(0, 4))?.map((item, idx) => (
-                <li key={idx} className="detail-list-item">
-                  <Check className="detail-list-icon icon-success" size={16} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            {service.whatIncluded?.length > 4 && (
-              <button className="show-more-toggle" onClick={() => toggleSection('included')}>
-                {expandedSections.included ? 'Show Less' : `+${service.whatIncluded.length - 4} More`}
-              </button>
-            )}
-          </div>
+          {service.whatIncluded && service.whatIncluded.length > 0 && (
+            <div className="detail-card-new">
+              <h3 className="detail-card-title">
+                <CheckCircle2 size={24} className="icon-success" /> What's Included
+              </h3>
+              <ul className="detail-list">
+                {(expandedSections.included ? service.whatIncluded : service.whatIncluded.slice(0, 4)).map((item, idx) => (
+                  <li key={idx} className="detail-list-item">
+                    <Check className="detail-list-icon icon-success" size={16} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              {service.whatIncluded.length > 4 && (
+                <button className="show-more-toggle" onClick={() => toggleSection('included')}>
+                  {expandedSections.included ? 'Show Less' : `+${service.whatIncluded.length - 4} More`}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* What's Not Included */}
-          <div className="detail-card-new">
-            <h3 className="detail-card-title">
-              <XCircle size={24} className="icon-error" /> What's Not Included
-            </h3>
-            <ul className="detail-list">
-              {(expandedSections.notIncluded ? service.whatNotIncluded : service.whatNotIncluded?.slice(0, 4))?.map((item, idx) => (
-                <li key={idx} className="detail-list-item">
-                  <X className="detail-list-icon icon-error" size={16} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            {service.whatNotIncluded?.length > 4 && (
-              <button className="show-more-toggle" onClick={() => toggleSection('notIncluded')}>
-                {expandedSections.notIncluded ? 'Show Less' : `+${service.whatNotIncluded.length - 4} More`}
-              </button>
-            )}
-          </div>
+          {service.whatNotIncluded && service.whatNotIncluded.length > 0 && (
+            <div className="detail-card-new">
+              <h3 className="detail-card-title">
+                <XCircle size={24} className="icon-error" /> What's Not Included
+              </h3>
+              <ul className="detail-list">
+                {(expandedSections.notIncluded ? service.whatNotIncluded : service.whatNotIncluded.slice(0, 4)).map((item, idx) => (
+                  <li key={idx} className="detail-list-item">
+                    <X className="detail-list-icon icon-error" size={16} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              {service.whatNotIncluded.length > 4 && (
+                <button className="show-more-toggle" onClick={() => toggleSection('notIncluded')}>
+                  {expandedSections.notIncluded ? 'Show Less' : `+${service.whatNotIncluded.length - 4} More`}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Service Highlights & Warranty */}
           <div className="detail-card-new highlight-card">

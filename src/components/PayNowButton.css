@@ -1,0 +1,79 @@
+.pay-now-container {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pay-now-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #2DB84B 0%, #16a34a 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(45, 184, 75, 0.25);
+  box-sizing: border-box;
+}
+
+.pay-now-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(45, 184, 75, 0.35);
+}
+
+.pay-now-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pay-now-btn.pending-completion {
+  background: #f1f5f9;
+  color: #94a3b8;
+  box-shadow: none;
+  cursor: not-allowed;
+  border: 1px dashed #cbd5e1;
+}
+
+.pay-now-btn.compact {
+  padding: 6px 12px;
+  font-size: 12.5px;
+  border-radius: 8px;
+}
+
+.pay-now-badge.paid {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #bbf7d0;
+}
+
+.pay-now-error {
+  font-size: 11.5px;
+  color: #ef4444;
+  margin: 2px 0 0 0;
+  font-weight: 600;
+}
+
+.spinner-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

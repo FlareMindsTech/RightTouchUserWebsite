@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   MdShare, 
   MdOutlineLocationOn, 
@@ -14,7 +15,8 @@ import {
   MdArrowForwardIos,
   MdCheckCircle,
   MdReceipt,
-  MdPerson
+  MdPerson,
+  MdClose
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import './BookingDetailPage.css';
@@ -25,14 +27,24 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
   const navigate = useNavigate();
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingForm, setRatingForm] = useState({ rates: 5, comment: '' });
+  const [hoverStar, setHoverStar] = useState(0);
   const [ratingLoading, setRatingLoading] = useState(false);
 
+  const isAlreadyRated = Boolean(
+    booking?.isRated ||
+    booking?.rating ||
+    booking?.userRating ||
+    booking?.hasRated ||
+    booking?.ratingGiven ||
+    (booking?.ratings && booking.ratings.length > 0)
+  );
+
   useEffect(() => {
-    if (canRate || autoOpenRate) {
+    if ((canRate || autoOpenRate) && !isAlreadyRated) {
       setShowRatingModal(true);
       if (setAutoOpenRate) setAutoOpenRate(false);
     }
-  }, [canRate, autoOpenRate, setAutoOpenRate]);
+  }, [canRate, autoOpenRate, setAutoOpenRate, isAlreadyRated]);
 
   const handleSubmitRating = async () => {
     if (!ratingForm.comment.trim()) {
@@ -484,46 +496,91 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
         </button>
       </div>
 
-      {/* ── Rating Modal ── */}
-      {showRatingModal && (
-        <div className="rating-modal-overlay-v2" onClick={() => !ratingLoading && setShowRatingModal(false)}>
-          <div className="rating-modal-v2" onClick={e => e.stopPropagation()}>
-            <div className="rm-header">
-              <h3>How did we do?</h3>
-              <p>Your feedback helps us improve our service.</p>
+      {/* ── Simple Rating Modal Portal ── */}
+      {showRatingModal && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="rating-modal-overlay-v2" 
+          onClick={() => !ratingLoading && setShowRatingModal(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="rating-modal-v2 simple-rating-card" onClick={e => e.stopPropagation()}>
+            <button 
+              type="button"
+              className="rm-close-btn" 
+              onClick={() => !ratingLoading && setShowRatingModal(false)}
+              aria-label="Close rating modal"
+            >
+              <MdClose />
+            </button>
+
+            <div className="rm-header simple">
+              <h3>How was your experience?</h3>
+              <p className="rm-service-name">
+                {serviceName} {techName ? `• ${techName}` : ''}
+              </p>
             </div>
-            <div className="rm-stars">
-              {[1, 2, 3, 4, 5].map(star => {
-                const isActive = ratingForm.rates >= star;
-                return (
-                  <button
-                    type="button"
-                    key={star}
-                    className={`rm-star-btn ${isActive ? 'active' : ''}`}
-                    onClick={() => setRatingForm(prev => ({ ...prev, rates: star }))}
-                  >
-                    {isActive ? <MdStar /> : <MdStarOutline />}
-                  </button>
-                );
-              })}
+
+            <div className="rm-stars-section">
+              <div className="rm-stars">
+                {[1, 2, 3, 4, 5].map(star => {
+                  const effectiveStar = hoverStar || ratingForm.rates;
+                  const isActive = effectiveStar >= star;
+                  return (
+                    <button
+                      type="button"
+                      key={star}
+                      className={`rm-star-btn ${isActive ? 'active' : ''}`}
+                      onMouseEnter={() => setHoverStar(star)}
+                      onMouseLeave={() => setHoverStar(0)}
+                      onClick={() => setRatingForm(prev => ({ ...prev, rates: star }))}
+                      aria-label={`${star} star`}
+                    >
+                      {isActive ? <MdStar /> : <MdStarOutline />}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="rm-score-caption">
+                {(hoverStar || ratingForm.rates) === 5 && 'Excellent'}
+                {(hoverStar || ratingForm.rates) === 4 && 'Good'}
+                {(hoverStar || ratingForm.rates) === 3 && 'Average'}
+                {(hoverStar || ratingForm.rates) === 2 && 'Fair'}
+                {(hoverStar || ratingForm.rates) === 1 && 'Poor'}
+              </div>
             </div>
-            <div className="rm-input-wrapper">
+
+            <div className="rm-input-wrapper simple">
               <textarea
                 className="rm-textarea"
                 value={ratingForm.comment}
                 onChange={e => setRatingForm(prev => ({ ...prev, comment: e.target.value }))}
-                placeholder="Tell us about your experience..."
-                rows={4}
+                placeholder="Write a review (optional)..."
+                rows={3}
               />
             </div>
+
             <div className="rm-actions">
-              <button className="rm-cancel-btn" onClick={() => setShowRatingModal(false)} disabled={ratingLoading}>Cancel</button>
-              <button className="rm-submit-btn" onClick={handleSubmitRating} disabled={ratingLoading}>
-                {ratingLoading ? 'Submitting…' : 'Submit Review'}
+              <button 
+                type="button" 
+                className="rm-cancel-btn" 
+                onClick={() => setShowRatingModal(false)} 
+                disabled={ratingLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="rm-submit-btn" 
+                onClick={handleSubmitRating} 
+                disabled={ratingLoading}
+              >
+                {ratingLoading ? 'Submitting…' : 'Submit'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {showInvoice && (

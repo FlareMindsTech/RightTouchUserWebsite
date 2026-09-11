@@ -8,18 +8,23 @@ import {
   MdOutlineStarOutline,
   MdArrowBack,
   MdPlace,
-  MdMyLocation
+  MdMyLocation,
+  MdOutlineReportProblem,
+  MdOutlineInfo
 } from 'react-icons/md';
 import {
   LuClipboardList,
   LuHeadphones,
   LuBookOpen,
-  LuLogOut
+  LuLogOut,
+  LuCreditCard,
+  LuFileText
 } from 'react-icons/lu';
 import './AccountPage.css';
 import './CartPage.css';
 import ConfirmModal from '../components/ConfirmModal';
 import AddressModal from '../components/AddressModal';
+import PaymentManagementModal from '../components/PaymentManagementModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   getMyAddresses,
@@ -51,6 +56,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const navigate = useNavigate();
   const location = useLocation();
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(currentUser || {});
   const [loading, setLoading] = useState(false);
@@ -414,6 +420,12 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       case 'My bookings':
         onNavigate('bookings');
         break;
+      case 'Product Quotations':
+        navigate('/quotations');
+        break;
+      case 'Payment Management':
+        navigate('/payments');
+        break;
       case 'Manage address':
         setShowAddressModal(true);
         break;
@@ -433,8 +445,6 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         showToast(`${menuItem} coming soon!`);
     }
   };
-
-
 
   return (
     <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
@@ -464,63 +474,82 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
         )}
         {currentUser ? (
           <>
-            {/* Action List */}
-            <div className="account-menu-simple">
-              <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
-                <div className="menu-left-simple">
-                  <LuClipboardList className="icon" />
-                  <span>My Bookings</span>
+              {/* Action List Categorized */}
+              <div className="account-menu-simple">
+                <div className="account-menu-group-title">Orders & Payments</div>
+                <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
+                  <div className="menu-left-simple">
+                    <LuClipboardList className="icon" />
+                    <span>My Bookings</span>
+                  </div>
+                  <MdOutlineChevronRight className="arrow" />
                 </div>
-                <MdOutlineChevronRight className="arrow" />
+
+                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Product Quotations')}>
+                  <div className="menu-left-simple">
+                    <LuFileText className="icon" />
+                    <span>Product Quotations</span>
+                  </div>
+                  <MdOutlineChevronRight className="arrow" />
+                </div>
+
+                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Payment Management')}>
+                  <div className="menu-left-simple">
+                    <LuCreditCard className="icon" />
+                    <span>Payment Management</span>
+                  </div>
+                  <MdOutlineChevronRight className="arrow" />
+                </div>
+
+                <div className="account-menu-group-title">Saved Data</div>
+                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
+                  <div className="menu-left-simple">
+                    <MdOutlineLocationOn className="icon" />
+                    <span>Manage Addresses</span>
+                  </div>
+                  <MdOutlineChevronRight className="arrow" />
+                </div>
+
+                <div className="menu-item-simple" onClick={() => handleMenuItemClick('My rating')}>
+                  <div className="menu-left-simple">
+                    <MdOutlineStarOutline className="icon" />
+                    <span>My Ratings</span>
+                  </div>
+                  <MdOutlineChevronRight className="arrow" />
+                </div>
+
+                <div className="account-menu-group-title">Settings & Support</div>
+                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
+                  <div className="menu-left-simple">
+                    <LuHeadphones className="icon" />
+                    <span>Help & Support</span>
+                  </div>
+                  <MdOutlineChevronRight className="arrow" />
+                </div>
+
+                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
+                  <div className="menu-left-simple">
+                    <MdOutlineReportProblem className="icon" />
+                    <span>Report Issue</span>
+                  </div>
+                  <MdOutlineChevronRight className="arrow" />
+                </div>
+
+                <div className="menu-item-simple" onClick={() => handleMenuItemClick('About Us')}>
+                  <div className="menu-left-simple">
+                    <MdOutlineInfo className="icon" />
+                    <span>About Us</span>
+                  </div>
+                  <MdOutlineChevronRight className="arrow" />
+                </div>
               </div>
 
-              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
-                <div className="menu-left-simple">
-                  <MdOutlineLocationOn className="icon" />
-                  <span>Manage Addresses</span>
-                </div>
-                <MdOutlineChevronRight className="arrow" />
+              {/* Logout/Delete Buttons */}
+              <div className="account-footer-simple">
+                <button className="logout-button-simple" onClick={openLogoutConfirm} style={{ width: '100%' }}>
+                  <LuLogOut size={20} /> Logout
+                </button>
               </div>
-
-              <div className="menu-item-simple" onClick={() => handleMenuItemClick('My rating')}>
-                <div className="menu-left-simple">
-                  <MdOutlineStarOutline className="icon" />
-                  <span>My Ratings</span>
-                </div>
-                <MdOutlineChevronRight className="arrow" />
-              </div>
-
-              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
-                <div className="menu-left-simple">
-                  <LuHeadphones className="icon" />
-                  <span>Help & Support</span>
-                </div>
-                <MdOutlineChevronRight className="arrow" />
-              </div>
-
-              <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
-                <div className="menu-left-simple">
-                  <LuBookOpen className="icon" />
-                  <span>Report Issue</span>
-                </div>
-                <MdOutlineChevronRight className="arrow" />
-              </div>
-
-              <div className="menu-item-simple" onClick={() => handleMenuItemClick('About Us')}>
-                <div className="menu-left-simple">
-                  <LuBookOpen className="icon" />
-                  <span>About Us</span>
-                </div>
-                <MdOutlineChevronRight className="arrow" />
-              </div>
-            </div>
-
-            {/* Logout/Delete Buttons */}
-            <div className="account-footer-simple">
-              <button className="logout-button-simple" onClick={openLogoutConfirm} style={{ width: '100%' }}>
-                <LuLogOut size={20} /> Logout
-              </button>
-            </div>
           </>
         ) : (
           <div className="guest-account-prompt">
@@ -544,6 +573,13 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           }
           fetchAddresses();
         }}
+        showToast={showToast}
+      />
+
+      {/* Payment Management Modal */}
+      <PaymentManagementModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
         showToast={showToast}
       />
 

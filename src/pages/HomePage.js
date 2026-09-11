@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Wind,
@@ -13,6 +13,13 @@ import {
     RotateCcw,
     ArrowRight,
     Share2,
+    ChevronLeft,
+    ChevronRight,
+    Star,
+    Headphones,
+    Sparkles,
+    Gift,
+    Tag,
 } from 'lucide-react';
 import { getMyAddresses } from '../services/addressService';
 import AddressModal from '../components/AddressModal';
@@ -23,16 +30,84 @@ import '../styles/home.css';
 // --- Static Data ---
 
 const offers = [
-    { id: 1, badge: 'HOT DEAL', title: 'Deep clean with foam-jet AC services', desc: 'AC service & repair', icon: <Wind size={40} /> },
-    { id: 2, badge: 'NEW', title: 'Home affordable carpet cleaning', desc: 'Electrical & carpet services', icon: <Brush size={40} /> },
-    { id: 3, badge: 'SAVE 20%', title: 'Premium plumbing services', desc: 'Bathroom & kitchen repair', icon: <Wrench size={40} /> }
+    {
+        id: 1,
+        badge: '🔥 HOT DEAL',
+        title: 'Deep Clean Foam-Jet AC Service',
+        desc: 'Complete indoor & outdoor pressure wash + anti-bacterial spray',
+        discount: '35% OFF',
+        code: 'ACFOAM35',
+        icon: <Wind size={32} />,
+        theme: 'offer-theme-emerald'
+    },
+    {
+        id: 2,
+        badge: '⚡ FLASH SALE',
+        title: 'Home Electrical & Safety Check',
+        desc: 'Comprehensive inspection for MCBs, wiring & heavy appliances',
+        discount: 'FLAT ₹200 OFF',
+        code: 'SAFEHOME',
+        icon: <Zap size={32} />,
+        theme: 'offer-theme-blue'
+    },
+    {
+        id: 3,
+        badge: '🏷️ SAVE 25%',
+        title: 'Bathroom & Kitchen Leak Fixes',
+        desc: 'Expert plumber repair for taps, flush valves & water tank fittings',
+        discount: 'SAVE 25%',
+        code: 'PLUMB25',
+        icon: <Wrench size={32} />,
+        theme: 'offer-theme-amber'
+    },
+    {
+        id: 4,
+        badge: '✨ NEW LAUNCH',
+        title: 'Full Home Carpet & Sofa Spa',
+        desc: 'Deep extraction vacuuming & fabric stain removal treatment',
+        discount: 'UPTO 30% OFF',
+        code: 'CLEANSPA',
+        icon: <Brush size={32} />,
+        theme: 'offer-theme-purple'
+    }
 ];
 
 const WHY_CHOOSE_US = [
-    { icon: <ShieldCheck className="text-blue-500" />, title: 'Verified Experts', desc: 'All technicians are background-checked and certified.' },
-    { icon: <Zap className="text-yellow-500" />, title: 'Fast Response', desc: 'Get a technician at your doorstep within 2 hours.' },
-    { icon: <CircleDollarSign className="text-green-500" />, title: 'Best Prices', desc: 'Transparent pricing. No hidden charges.' },
-    { icon: <RotateCcw className="text-red-500" />, title: 'Money-Back', desc: 'Not satisfied? Get a full refund, no questions asked.' }
+    {
+        id: 'verified',
+        badge: 'CERTIFIED',
+        icon: <ShieldCheck className="why-icon-svg text-emerald" size={26} />,
+        title: 'Verified Technicians',
+        desc: '100% background-checked & certified professionals.'
+    },
+    {
+        id: 'fast',
+        badge: 'EXPRESS',
+        icon: <Zap className="why-icon-svg text-amber" size={26} />,
+        title: '2-Hour Quick Response',
+        desc: 'Fast doorstep arrival guaranteed within 120 minutes.'
+    },
+    {
+        id: 'transparent',
+        badge: 'TRANSPARENT',
+        icon: <CircleDollarSign className="why-icon-svg text-blue" size={26} />,
+        title: 'Upfront Best Prices',
+        desc: 'Approved fixed rate card. Absolutely zero hidden fees.'
+    },
+    {
+        id: 'support',
+        badge: '24/7 LIVE',
+        icon: <Headphones className="why-icon-svg text-indigo" size={26} />,
+        title: '24/7 Dedicated Assist',
+        desc: 'Live expert customer support available anytime.'
+    },
+    {
+        id: 'eco',
+        badge: 'BIO-SAFE',
+        icon: <Sparkles className="why-icon-svg text-teal" size={26} />,
+        title: 'Safe Eco Equipment',
+        desc: 'Non-toxic, high-grade organic cleaning tools & solvents.'
+    }
 ];
 
 // --- Category Icon Helper ---
@@ -71,6 +146,7 @@ const filterBySearch = (items, query) => {
 const HomePage = ({
     isActive,
     currentUser,
+    onLoginClick,
     searchQuery,
     showToast,
     serviceCategories: initialServiceCategories = [],
@@ -86,6 +162,45 @@ const HomePage = ({
     const [userAddress, setUserAddress] = useState('');
     const [locationLoading, setLocationLoading] = useState(true);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [pendingAddressOpen, setPendingAddressOpen] = useState(false);
+    const applianceCarouselRef = useRef(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(true);
+
+    const scrollTicking = useRef(false);
+
+    const checkScrollState = useCallback(() => {
+        if (!scrollTicking.current) {
+            scrollTicking.current = true;
+            requestAnimationFrame(() => {
+                if (applianceCarouselRef.current) {
+                    const { scrollLeft, scrollWidth, clientWidth } = applianceCarouselRef.current;
+                    setCanScrollLeft(scrollLeft > 5);
+                    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
+                }
+                scrollTicking.current = false;
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        const el = applianceCarouselRef.current;
+        if (el) {
+            checkScrollState();
+            el.addEventListener('scroll', checkScrollState, { passive: true });
+            window.addEventListener('resize', checkScrollState, { passive: true });
+            return () => {
+                el.removeEventListener('scroll', checkScrollState);
+                window.removeEventListener('resize', checkScrollState);
+            };
+        }
+    }, [services, checkScrollState]);
+
+    const scrollApplianceCarousel = (direction) => {
+        if (applianceCarouselRef.current) {
+            applianceCarouselRef.current.scrollBy({ left: direction, behavior: 'smooth' });
+        }
+    };
 
     useEffect(() => {
         setServiceCategories([...initialServiceCategories].sort((a, b) => b.category.localeCompare(a.category)));
@@ -135,17 +250,24 @@ const HomePage = ({
         };
     }, [currentUser?._id, isActive]);
 
+    // Automatically open AddressModal if login was triggered from location click
+    useEffect(() => {
+        if (currentUser?._id && pendingAddressOpen) {
+            setIsAddressModalOpen(true);
+            setPendingAddressOpen(false);
+        }
+    }, [currentUser?._id, pendingAddressOpen]);
+
     const handleLocationClick = () => {
+        if (!currentUser?._id) {
+            setPendingAddressOpen(true);
+            if (onLoginClick) {
+                onLoginClick();
+            }
+            return;
+        }
         setIsAddressModalOpen(true);
     };
-
-    // Filtered data
-    const filteredServiceCategories = filterBySearch(serviceCategories, searchQuery);
-    const filteredProductCategories = filterBySearch(productCategories, searchQuery);
-    const filteredServices = filterBySearch(services, searchQuery);
-
-    const hasSearchResults = searchQuery && searchQuery.trim() !== '' &&
-        (filteredServiceCategories.length > 0 || filteredProductCategories.length > 0 || filteredServices.length > 0);
 
     const handleCategoryClick = (category, type) => {
         if (type === 'product') {
@@ -270,107 +392,8 @@ const HomePage = ({
                 </div>
             </div>
 
-            {/* ===== SEARCH RESULTS (when searching) ===== */}
-            {isSearching ? (
-                <div className="search-results-section">
-                    <div className="search-results-header">
-                        <h2>Search <span className="accent">Results</span></h2>
-                        <div className="search-results-count">
-                            Found {filteredServiceCategories.length + filteredProductCategories.length + filteredServices.length} items
-                        </div>
-                    </div>
-
-                    {filteredServiceCategories.length > 0 && (
-                        <div className="section-wrap">
-                            <h3 className="search-sub-title">Service Categories</h3>
-                            <div className="category-grid">
-                                {filteredServiceCategories.map(cat => (
-                                    <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'service')}>
-                                        <div className="cat-icon-wrap">
-                                            <CategoryIcon category={cat} />
-                                        </div>
-                                        <span>{cat.category}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {filteredProductCategories.length > 0 && (
-                        <div className="section-wrap">
-                            <h3 className="search-sub-title">Product Categories</h3>
-                            <div className="category-grid">
-                                {filteredProductCategories.map(cat => (
-                                    <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'product')}>
-                                        <div className="cat-icon-wrap">
-                                            <CategoryIcon category={cat} />
-                                        </div>
-                                        <span>{cat.category}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {filteredServices.length > 0 && (
-                        <div className="section-wrap">
-                            <h3 className="search-sub-title">Services</h3>
-                            <div className="services-grid">
-                                {filteredServices.map(service => (
-                                    <div key={service._id} className="search-service-card" onClick={() => handleServiceClick(service)}>
-                                        <div className="search-service-img">
-                                            {service.serviceImages?.[0] ? (
-                                                <img src={service.serviceImages[0]} alt={service.serviceName} />
-                                            ) : (
-                                                <div className="service-img-placeholder"><Wrench size={28} /></div>
-                                            )}
-<button className="share-btn-round" onClick={(e) => {
-                                                e.stopPropagation();
-                                                const shareData = {
-                                                    title: service.serviceName,
-                                                    text: service.description || service.serviceName,
-                                                    url: `${window.location.origin}/product-services?serviceId=${service._id}`
-                                                };
-                                                // Show native share on mobile, WhatsApp on desktop
-                                                if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                                                    shareItem(shareData, showToast);
-                                                } else {
-                                                    // For desktop or non-native share, show options
-                                                    shareItem(shareData, showToast);
-                                                }
-                                            }} aria-label="Share service">
-                                            <Share2 size={14} />
-                                        </button>
-                                        </div>
-                                        <div className="search-service-info">
-                                            <h4 className="search-service-name">{service.serviceName}</h4>
-<div className="search-service-price-block">
-                                                <span className="search-service-price">₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
-                                                {service.serviceCost > (service.discountedPrice || 0) && (
-                                                    <span className="search-service-old-price">₹{formatPriceSmart(service.serviceCost)}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {!hasSearchResults && !loading && (
-                        <div className="no-results">
-                            <div className="no-results-icon"><Search size={40} /></div>
-                            <h3>No matches found</h3>
-                            <p>We couldn't find any services or categories matching "<strong>{searchQuery}</strong>"</p>
-                            <button className="btn-hero-primary" onClick={() => navigate('/services')}>
-                                Browse All Services
-                            </button>
-                        </div>
-                    )}
-                </div>
-            ) : (
-                /* ===== NORMAL VIEW ===== */
-                <>
+            {/* ===== NORMAL VIEW ===== */}
+            <>
                     {/* --- Service Categories --- */}
                     <div className="section-wrap">
                         <div className="section-header">
@@ -386,7 +409,14 @@ const HomePage = ({
                                 ))
                             ) : (
                                 serviceCategories.map(cat => (
-                                    <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'service')}>
+                                    <div
+                                        key={cat._id}
+                                        className="category-card"
+                                        onClick={() => handleCategoryClick(cat, 'service')}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCategoryClick(cat, 'service'); }}
+                                    >
                                         <div className="cat-icon-wrap">
                                             <CategoryIcon category={cat} />
                                         </div>
@@ -408,7 +438,14 @@ const HomePage = ({
                             </div>
                             <div className="category-grid">
                                 {productCategories.map(cat => (
-                                    <div key={cat._id} className="category-card" onClick={() => handleCategoryClick(cat, 'product')}>
+                                    <div
+                                        key={cat._id}
+                                        className="category-card"
+                                        onClick={() => handleCategoryClick(cat, 'product')}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCategoryClick(cat, 'product'); }}
+                                    >
                                         <div className="cat-icon-wrap">
                                             <CategoryIcon category={cat} />
                                         </div>
@@ -419,93 +456,178 @@ const HomePage = ({
                         </div>
                     )}
 
-                    {/* --- Offers Carousel --- */}
+                    {/* --- Offers Section (Unique Animated Cards with Glowing Accents) --- */}
                     <div className="section-wrap offers-section">
                         <div className="section-header">
-                            <h2 className="section-title">🔥 Exclusive <span className="accent">Offers</span></h2>
-                            <button className="section-view-all" onClick={() => navigate('/offers')}>
-                                See All <ArrowRight size={16} />
-                            </button>
+                            <div className="section-header-titles">
+                                <h2 className="section-title">🔥 Exclusive <span className="accent">Offers</span> &amp; Deals</h2>
+                                <span className="section-subtitle">Handpicked discount vouchers • Limited time doorstep specials</span>
+                            </div>
                         </div>
-                        <div className="offers-carousel">
+                        <div className="offers-grid">
                             {offers.map(offer => (
-                                <div key={offer.id} className={`offer-card ${offer.id === 2 ? 'offer-card-2' : offer.id === 3 ? 'offer-card-3' : ''}`}>
-                                    <div className="offer-badge">{offer.badge}</div>
-                                    <div className="offer-icon">{offer.icon}</div>
-                                    <div className="offer-text">
-                                        <h3>{offer.title}</h3>
-                                        <p>{offer.desc}</p>
-                                        <button className="btn-book-white" onClick={() => handleBookNow(offer)}>
-                                            Book Now →
-                                        </button>
+                                <div
+                                    key={offer.id}
+                                    className={`offer-card ${offer.theme}`}
+                                >
+                                    <div className="offer-card-glow" />
+                                    <div className="offer-card-badge">
+                                        <span className="offer-badge-text">{offer.badge}</span>
+                                    </div>
+                                    <div className="offer-card-body">
+                                        <div className="offer-icon-wrapper">
+                                            {offer.icon}
+                                        </div>
+                                        <div className="offer-content">
+                                            <span className="offer-discount-tag">{offer.discount}</span>
+                                            <h3 className="offer-title">{offer.title}</h3>
+                                            <p className="offer-desc">{offer.desc}</p>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* --- Appliance Repair & Services (Horizontal Scroll) --- */}
+                    {/* --- Appliance Repair & Services (Horizontal Scroll with Header & Floating Side Navigation, Fully Responsive) --- */}
                     {!loading && services.length > 0 && (
-                        <div className="section-wrap">
-                            <div className="section-header">
-                                <h2 className="section-title">🔧 Appliance <span className="accent">Repair</span> &amp; Services</h2>
-                                <button className="section-view-all" onClick={() => navigate('/services')}>
-                                    View All <ArrowRight size={16} />
-                                </button>
+                        <div className="section-wrap appliance-section-wrap">
+                            <div className="section-header appliance-section-header">
+                                <div className="section-header-titles">
+                                    <h2 className="section-title">🔧 Appliance <span className="accent">Repair</span> &amp; Services</h2>
+                                    <span className="section-subtitle">Verified experts • 2-Hour fast doorstep delivery</span>
+                                </div>
+                                <div className="section-header-actions">
+                                    <button className="section-view-all" onClick={() => navigate('/services')}>
+                                        View All <ArrowRight size={16} />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="appliance-carousel">
-                                {services.map(service => (
-                                    <div key={service._id} className="appliance-card" onClick={() => handleServiceClick(service)}>
-                                        <div className="appliance-img-wrap">
-                                            {service.serviceImages?.[0] ? (
-                                                <img src={service.serviceImages[0]} alt={service.serviceName} />
-                                            ) : (
-                                                <Wrench size={28} />
-                                            )}
-                                            <button className="share-btn-round" onClick={(e) => {
-                                                e.stopPropagation();
-                                                shareItem({
-                                                    title: service.serviceName,
-                                                    text: service.description || service.serviceName,
-                                                    url: `${window.location.origin}/product-services?serviceId=${service._id}`
-                                                }, showToast);
-                                            }} aria-label="Share service">
-                                                <Share2 size={13} />
-                                            </button>
-                                        </div>
-                                        <div className="appliance-info">
-                                            <span className="appliance-name">{service.serviceName}</span>
-                                            <div className="appliance-price-wrap">
-                                                <span className="appliance-price">₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
-                                                {service.serviceCost > (service.discountedPrice || 0) && service.discountedPrice && (
-                                                    <span className="appliance-old-price">₹{formatPriceSmart(service.serviceCost)}</span>
-                                                )}
+
+                            <div className="appliance-carousel-container">
+                                {canScrollLeft && (
+                                    <button
+                                        className="appliance-floating-nav nav-left"
+                                        onClick={() => scrollApplianceCarousel(-320)}
+                                        aria-label="Scroll Left"
+                                        type="button"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                )}
+
+                                <div className="appliance-carousel" ref={applianceCarouselRef}>
+                                    {services.map(service => {
+                                        const discountPercent = (service.serviceCost && service.discountedPrice && service.serviceCost > service.discountedPrice)
+                                            ? Math.round(((service.serviceCost - service.discountedPrice) / service.serviceCost) * 100)
+                                            : null;
+
+                                        return (
+                                            <div
+                                                key={service._id}
+                                                className="appliance-card"
+                                                onClick={() => handleServiceClick(service)}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleServiceClick(service); }}
+                                            >
+                                                <div className="appliance-img-wrap">
+                                                    {discountPercent ? (
+                                                        <span className="appliance-badge discount-badge">{discountPercent}% OFF</span>
+                                                    ) : (
+                                                        <span className="appliance-badge popular-badge">TOP SERVICE</span>
+                                                    )}
+                                                    {service.serviceImages?.[0] ? (
+                                                        <img src={service.serviceImages[0]} alt={service.serviceName} loading="lazy" />
+                                                    ) : (
+                                                        <div className="appliance-placeholder-icon">
+                                                            <Wrench size={36} />
+                                                        </div>
+                                                    )}
+                                                    <button className="share-btn-round" onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        shareItem({
+                                                            title: service.serviceName,
+                                                            text: service.description || service.serviceName,
+                                                            url: `${window.location.origin}/product-services?serviceId=${service._id}`
+                                                        }, showToast);
+                                                    }} aria-label="Share service">
+                                                        <Share2 size={13} />
+                                                    </button>
+                                                    <div className="appliance-img-gradient-overlay" />
+                                                </div>
+                                                <div className="appliance-info">
+                                                    <div className="appliance-meta-bar">
+                                                        <span className="appliance-warranty">
+                                                            <ShieldCheck size={12} /> 30-Day Warranty
+                                                        </span>
+                                                        <span className="appliance-rating">
+                                                            <Star size={11} className="star-icon" /> 4.9
+                                                        </span>
+                                                    </div>
+                                                    <span className="appliance-name" title={service.serviceName}>{service.serviceName}</span>
+                                                    <div className="appliance-price-wrap">
+                                                        <span className="appliance-price">₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
+                                                        {service.serviceCost > (service.discountedPrice || 0) && service.discountedPrice && (
+                                                            <span className="appliance-old-price">₹{formatPriceSmart(service.serviceCost)}</span>
+                                                        )}
+                                                        {discountPercent && (
+                                                            <span className="appliance-save-tag">Save {discountPercent}%</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="appliance-card-footer">
+                                                        <button className="appliance-book-btn">
+                                                            Book Service <ArrowRight size={14} />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <button className="appliance-book-btn">View</button>
-                                        </div>
-                                    </div>
-                                ))}
+                                        );
+                                    })}
+                                </div>
+
+                                {canScrollRight && (
+                                    <button
+                                        className="appliance-floating-nav nav-right"
+                                        onClick={() => scrollApplianceCarousel(320)}
+                                        aria-label="Scroll Right"
+                                        type="button"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* --- Why Choose Us --- */}
+                    {/* --- Why Choose Us (Unique Animated Interactive Motion Cards) --- */}
                     <div className="section-wrap why-choose-section">
-                        <div className="section-header">
-                            <h2 className="section-title">Why <span className="accent">RightTouch</span>?</h2>
+                        <div className="section-header why-header">
+                            <div className="section-header-titles">
+                                <h2 className="section-title">Why <span className="accent">RightTouch</span>?</h2>
+                                <span className="section-subtitle">The gold standard in home repair, safety &amp; reliability</span>
+                            </div>
                         </div>
                         <div className="why-grid">
                             {WHY_CHOOSE_US.map(item => (
-                                <div key={item.title} className="why-card">
-                                    <div className="why-icon">{item.icon}</div>
-                                    <h4>{item.title}</h4>
-                                    <p>{item.desc}</p>
+                                <div key={item.id} className="why-card">
+                                    <div className="why-card-top">
+                                        <div className="why-icon-box">
+                                            <div className="why-icon-pulse" />
+                                            {item.icon}
+                                        </div>
+                                        <span className="why-badge-pill">{item.badge}</span>
+                                    </div>
+                                    <div className="why-card-body">
+                                        <h4 className="why-card-title">{item.title}</h4>
+                                        <p className="why-card-desc">{item.desc}</p>
+                                    </div>
+                                    <div className="why-card-accent-bar" />
                                 </div>
                             ))}
                         </div>
                     </div>
                 </>
-            )}
 
             {/* Address Selection Modal */}
             <AddressModal
@@ -514,6 +636,7 @@ const HomePage = ({
                 currentUser={currentUser}
                 onSelectAddress={(newAddressLine) => setUserAddress(newAddressLine)}
                 showToast={showToast}
+                onLoginClick={onLoginClick}
             />
         </section>
     );

@@ -1,25 +1,22 @@
 .detail-section-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 30px;
-  padding: 0 20px;
-  grid-auto-rows: 1fr;
-  /* Ensures equal height in rows */
-  align-items: stretch;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 0;
+  align-items: start;
 }
 
 .detail-card-new {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 20px;
-  padding: 30px;
+  padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 100%;
+  height: auto;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   position: relative;
-  /* For absolutely positioned elements if any */
 }
 
 .detail-card-new:hover {

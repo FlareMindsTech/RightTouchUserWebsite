@@ -37,6 +37,8 @@
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--bg-secondary);
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .page {

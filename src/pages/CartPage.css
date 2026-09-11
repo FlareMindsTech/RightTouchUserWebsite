@@ -54,6 +54,8 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+  padding-right: 85px;
+  min-width: 0;
 }
 
 .address-icon {
@@ -62,6 +64,7 @@
   background: #f0fdf4;
   padding: 6px;
   border-radius: 10px;
+  flex-shrink: 0;
 }
 
 .address-title {
@@ -69,10 +72,12 @@
   font-weight: 700;
   color: #1e293b;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .address-details {
   padding-left: 0;
+  min-width: 0;
 }
 
 .address-name {
@@ -80,6 +85,7 @@
   font-weight: 800;
   color: #0f172a;
   margin: 0 0 6px 0;
+  word-break: break-word;
 }
 
 .address-text {
@@ -87,13 +93,15 @@
   color: #64748b;
   margin: 0;
   line-height: 1.6;
-  max-width: 80%;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .change-link {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: 16px;
+  right: 16px;
   font-size: 13px;
   color: #10b981;
   background: #f0fdf4;
@@ -539,7 +547,7 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  width: 100vw !important;
+  width: 100% !important;
   height: 100vh !important;
   z-index: 9999 !important;
   background: rgba(15, 23, 42, 0.7) !important;
@@ -1259,7 +1267,7 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  width: 100vw !important;
+  width: 100% !important;
   height: 100vh !important;
   z-index: 10000 !important;
   background: rgba(15, 23, 42, 0.7) !important;
@@ -1625,7 +1633,7 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  width: 100vw !important;
+  width: 100% !important;
   height: 100vh !important;
   z-index: 99999 !important;
   background: rgba(0, 0, 0, 0.6) !important;
@@ -1726,6 +1734,60 @@
    ============================================ */
 
 @media (max-width: 640px) {
+  .cart-item-card {
+    flex-wrap: wrap !important;
+    padding: 14px !important;
+    gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  .cart-item-left {
+    flex-shrink: 0 !important;
+  }
+
+  .cart-item-image {
+    width: 65px !important;
+    height: 65px !important;
+    border-radius: 12px !important;
+  }
+
+  .cart-item-middle {
+    flex: 1 1 calc(100% - 85px) !important;
+    min-width: 0 !important;
+  }
+
+  .cart-item-name {
+    font-size: 14.5px !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .cart-item-right {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-left: 0 !important;
+    padding-top: 10px !important;
+    margin-top: 4px !important;
+    border-top: 1px dashed #f1f5f9 !important;
+  }
+
+  .quantity-container-cart {
+    margin: 0 !important;
+  }
+
+  .item-subtotal {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+  }
+
   .address-popup {
     max-width: 100% !important;
     max-height: 95vh !important;
@@ -1804,7 +1866,7 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  width: 100vw !important;
+  width: 100% !important;
   height: 100vh !important;
   z-index: 99999 !important;
   background: rgba(0, 0, 0, 0.5) !important;

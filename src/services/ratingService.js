@@ -23,3 +23,9 @@ export const deleteRating = (id) =>
 
 export const getRatingById = (id) =>
   apiClient(ENDPOINTS.RATING.GET_BY_ID(id));
+
+export const getRatingsHistory = () =>
+  apiClient(ENDPOINTS.RATING.GET_RATINGS_LIST);
+
+export const getCustomerRatingById = (id) =>
+  apiClient(ENDPOINTS.RATING.GET_RATING_BY_ID_CUSTOMER(id));
