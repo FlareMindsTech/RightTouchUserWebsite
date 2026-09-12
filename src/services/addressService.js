@@ -50,15 +50,17 @@ export const searchAddress = async (query) => {
   return { result: Array.isArray(result) ? result : [] };
 };
 
-const reverseNominatim = async (lat, lng) => {
+export const reverseNominatim = async (lat, lng) => {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
 
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { Accept: "application/json" }
+      headers: { 
+        Accept: "application/json" 
+      }
     });
     clearTimeout(timeoutId);
     if (!res.ok) throw new Error(`Nominatim error ${res.status}`);
@@ -76,6 +78,7 @@ const reverseNominatim = async (lat, lng) => {
       "";
     const state = addr.state || addr.state_district || "";
     const pincode = addr.postcode || "";
+    const country = addr.country || "";
 
     const specificParts = [
       addr.amenity || addr.building,
@@ -99,9 +102,16 @@ const reverseNominatim = async (lat, lng) => {
       latitude: lat,
       longitude: lng,
       addressLine,
+      displayName: result?.display_name || addressLine,
+      houseNumber: addr.house_number ? `No. ${addr.house_number}` : "",
+      road: addr.road || "",
+      neighbourhood: addr.neighbourhood || addr.suburb || addr.residential || "",
       city,
       state,
-      pincode
+      pincode,
+      country,
+      raw: result,
+      source: "openstreetmap"
     };
   } catch (err) {
     clearTimeout(timeoutId);
@@ -316,3 +326,27 @@ export const getCurrentUserLocation = () => {
     );
   });
 };
+
+/**
+ * Convenience function to fetch the user's current GPS location coordinates
+ * and resolve them into a detailed street address using OpenStreetMap Nominatim.
+ */
+export const fetchCurrentLocationAddress = async () => {
+  const coords = await getCurrentUserLocation();
+  const addressDetails = await reverseAddress(coords.latitude, coords.longitude);
+  return {
+    ...coords,
+    ...addressDetails
+  };
+};
+
+/**
+ * Alias for fetchCurrentLocationAddress to fetch user address using OpenStreetMap.
+ */
+export const fetchUserAddress = fetchCurrentLocationAddress;
+
+/**
+ * Get address details from latitude and longitude coordinates.
+ */
+export const getAddressFromCoordinates = (lat, lng) => reverseAddress(lat, lng);
+
