@@ -189,13 +189,13 @@ const PaymentManagementModal = ({ isOpen, onClose, showToast }) => {
             </div>
           ) : (
             <div className="transactions-list">
-              {filteredList.map((item, idx) => {
+              {filteredList.map(item => {
                 const status = (item.status || item.paymentStatus || 'completed').toLowerCase();
                 const isPaid = status === 'paid' || status === 'completed' || status === 'success';
                 const isRefunded = status === 'refunded';
 
                 return (
-                  <div key={item._id || item.id || idx} className="transaction-item-card">
+                  <div key={item._id || item.id} className="transaction-item-card">
                     <div className="trans-left-icon">
                       {isPaid ? (
                         <div className="status-badge-circle paid"><MdCheckCircle /></div>

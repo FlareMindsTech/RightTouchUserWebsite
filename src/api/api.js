@@ -1,3 +1,5 @@
+import { logger } from "../utils/logger";
+
 const BASE_URL = process.env.REACT_APP_API_URL || "";
 
 export const apiClient = async (endpoint, options = {}) => {
@@ -29,7 +31,7 @@ export const apiClient = async (endpoint, options = {}) => {
     console.warn(`[API Warning] Mixed Content detected! The page is HTTPS but target is HTTP: ${url}. This request will likely fail in most browsers.`);
   }
 
-  console.log(`[API Request] Fetching: ${url} ${BASE_URL ? '(from env)' : '(via proxy)'}`);
+  logger.log(`[API Request] Fetching: ${url} ${BASE_URL ? '(from env)' : '(via proxy)'}`);
 
   try {
     const validToken = token && token !== "null" && token !== "undefined" ? token : null;

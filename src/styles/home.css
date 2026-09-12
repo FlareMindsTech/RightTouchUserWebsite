@@ -197,6 +197,7 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 12px 18px;
+    margin-top: 20px;
     margin-bottom: 20px;
     cursor: pointer;
     transition: var(--transition);
@@ -1684,6 +1685,17 @@ body {
 @media (max-width: 768px) {
     .home-page {
         padding: 0 16px 32px;
+        margin-top: 0;
+    }
+    .location-bar {
+        margin-top: 8px;
+        margin-bottom: 14px;
+    }
+    .hero-stats .stat-number {
+        color: #ffffff;
+    }
+    .hero-stats .stat-label {
+        color: #ffffff;
     }
     .section-title {
         font-size: 19px;
@@ -1898,8 +1910,13 @@ body {
     .home-page {
         padding: 0 10px 24px;
     }
+
     .category-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        width: 100%;
+        align-items: stretch;
         gap: 8px;
     }
     .category-card {

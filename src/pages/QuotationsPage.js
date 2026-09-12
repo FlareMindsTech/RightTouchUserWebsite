@@ -801,7 +801,7 @@ const evaluateQuotationStatus = (q, req) => {
                     <div className="q-card-header-bar">
                       <div className="q-card-prod-info">
                         <div className="q-card-img">
-                          {prodImg ? <img src={prodImg} alt={prodName} /> : <Package size={26} />}
+                          {prodImg ? <img src={prodImg} alt={prodName} loading="lazy" /> : <Package size={26} />}
                         </div>
                         <div className="q-card-details">
                           <h4>{prodName}</h4>
@@ -1004,7 +1004,7 @@ const evaluateQuotationStatus = (q, req) => {
               <div className="q-details-product-card">
                 <div className="q-details-prod-img">
                   {selectedItemForDetails.productImage ? (
-                    <img src={selectedItemForDetails.productImage} alt={selectedItemForDetails.productName} />
+                    <img src={selectedItemForDetails.productImage} alt={selectedItemForDetails.productName} loading="lazy" />
                   ) : (
                     <Package size={36} />
                   )}

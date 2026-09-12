@@ -17,6 +17,11 @@ import AddressModal from '../components/AddressModal';
 import { formatPriceSmart } from '../utils/format';
 import './CartPage.css';
 
+export const getCartSubtotal = (cartItems) => cartItems.reduce((total, item) => {
+  const qty = item.quantity || 1;
+  return total + (item.price * qty);
+}, 0);
+
 const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToast, currentUser, fetchCart, onLoginClick }) => {
   const navigate = useNavigate();
   const [profileData] = useState(currentUser || {});
@@ -419,10 +424,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
 
   // Calculate totals
   const getSubtotal = () => {
-    return cartItems.reduce((total, item) => {
-      const qty = item.quantity || 1;
-      return total + (item.price * qty);
-    }, 0);
+    return getCartSubtotal(cartItems);
   };
 
   const getTax = () => {
@@ -631,12 +633,12 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                   <p>Add services to get started</p>
                 </div>
               ) : (
-                cartItems.map((item, index) => (
-                  <div key={`${item.id}-${index}`} className="cart-item-card">
+                cartItems.map(item => (
+                  <div key={item.id} className="cart-item-card">
                     <div className="cart-item-left">
                       <div className="cart-item-image">
                         {item.image ? (
-                          <img src={item.image} alt={item.name} />
+                          <img src={item.image} alt={item.name} loading="lazy" />
                         ) : (
                           <div className="placeholder-image">🛒</div>
                         )}
@@ -784,9 +786,9 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                             <div className="days-selection">
                               <label className="section-label">Select Day</label>
                               <div className="days-grid">
-                                {slotsData?.schedule?.days?.map((day, idx) => (
+                                {slotsData?.schedule?.days?.map(day => (
                                   <button
-                                    key={idx}
+                                    key={day.fullDate}
                                     className={`day-card ${selectedDay?.fullDate === day.fullDate ? 'active' : ''}`}
                                     onClick={() => setSelectedDay(day)}
                                   >
@@ -800,9 +802,9 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                             <div className="time-slots-selection">
                               <label className="section-label">Select Time Slot</label>
                               <div className="slots-grid">
-                                {slotsData?.schedule?.timeSlots?.map((slot, idx) => (
+                                {slotsData?.schedule?.timeSlots?.map(slot => (
                                   <button
-                                    key={idx}
+                                    key={slot.value}
                                     className={`slot-pill ${selectedTime?.value === slot.value ? 'active' : ''}`}
                                     onClick={() => setSelectedTime(slot)}
                                   >
@@ -819,13 +821,13 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                     <div className="fault-reason-input">
                       <label className="section-label">Describe the Problem (Optional)</label>
                       
-                      {faultSections.map((section, sIdx) => (
-                        <div key={sIdx} className="fault-section-group">
+                      {faultSections.map(section => (
+                        <div key={section.title} className="fault-section-group">
                           <h5 className="fault-section-title">{section.title}</h5>
                           <div className="fault-reasons-chips">
-                            {section.reasons.map((reason, idx) => (
+                            {section.reasons.map(reason => (
                               <button
-                                key={idx}
+                                key={reason}
                                 className={`reason-chip ${faultReason === reason ? 'active' : ''}`}
                                 onClick={() => setFaultReason(reason)}
                               >
@@ -950,12 +952,12 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
                         <span className="confirm-section-title">ITEMS ({cartItems.length})</span>
                       </div>
                       <div className="confirm-items-list">
-                        {cartItems.map((item, idx) => (
-                          <div key={`confirm-item-${item.id || idx}`} className="confirm-item-card">
+                        {cartItems.map(item => (
+                          <div key={`confirm-item-${item.id}`} className="confirm-item-card">
                             <div className="confirm-item-main">
                               <div className="confirm-item-left-details">
                                 {item.image ? (
-                                  <img src={item.image} alt={item.name} className="confirm-item-img" />
+                                  <img src={item.image} alt={item.name} loading="lazy" className="confirm-item-img" />
                                 ) : (
                                   <div className="confirm-item-img-placeholder">🛒</div>
                                 )}

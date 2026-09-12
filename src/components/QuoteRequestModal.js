@@ -162,7 +162,7 @@ const QuoteRequestModal = ({
             <div className="quote-product-summary">
               <div className="quote-prod-img">
                 {product.productImages?.[0] ? (
-                  <img src={product.productImages[0]} alt={product.productName} />
+                  <img src={product.productImages[0]} alt={product.productName} loading="lazy" />
                 ) : (
                   <Package size={24} />
                 )}

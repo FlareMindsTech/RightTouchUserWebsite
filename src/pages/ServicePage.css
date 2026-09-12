@@ -55,6 +55,9 @@
   min-height: calc(100vh - 80px);
   background: var(--bg-secondary);
   animation: fadeInPage 0.5s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes fadeInPage {
@@ -233,11 +236,15 @@
 .content-area {
   display: flex;
   gap: 28px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .main-content-area {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
 }
 
 .desktop-filters {
@@ -388,6 +395,9 @@
   gap: 16px;
   margin-bottom: 32px;
   align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .product-grid-full {
@@ -397,6 +407,8 @@
   margin-bottom: 32px;
   align-items: stretch;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 1200px) {
@@ -433,8 +445,12 @@
   height: 100%;
   min-height: 340px;
   max-height: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   animation: cardSlideUp 0.6s ease both;
   position: relative;
+  box-sizing: border-box;
 }
 
 @keyframes cardSlideUp {
@@ -570,6 +586,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .card-header {
@@ -593,6 +611,8 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .card-category {
@@ -881,6 +901,7 @@
   position: relative;
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -976,6 +997,8 @@
   gap: 4px;
   margin-bottom: 5px;
   min-height: 18px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .compact-category-badge {
@@ -988,7 +1011,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 85px;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .compact-card-rating {
@@ -1003,6 +1028,7 @@
   border-radius: 4px;
   border: 1px solid #fef08a;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .compact-card-title {

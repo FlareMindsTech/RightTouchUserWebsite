@@ -20,64 +20,10 @@ import { goBackSmart } from '../utils/browserUtils';
 import { rtAlert } from '../components/RtAlert';
 import './PaymentsPage.css';
 
-// Sample fallback dataset to showcase professional e-commerce design template when user has no backend records
-const DEMO_TRANSACTIONS = [
-  {
-    _id: 'pay_demo_101',
-    bookingId: 'BK_AC_902',
-    serviceName: 'AC Deep Clean Foam-Jet Service',
-    itemType: 'service',
-    amount: 699,
-    status: 'paid',
-    paymentMethod: 'UPI / GPay (Razorpay)',
-    razorpayPaymentId: 'pay_P98234102941',
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-    invoiceNumber: 'INV-2026-0892'
-  },
-  {
-    _id: 'pay_demo_102',
-    bookingId: 'BK_WM_408',
-    serviceName: 'Washing Machine Motor & Drum Repair',
-    itemType: 'service',
-    amount: 1499,
-    status: 'failed',
-    failureReason: 'Bank Server Timeout / Transaction Declined by Issuer',
-    paymentMethod: 'Credit Card (Visa)',
-    razorpayPaymentId: 'pay_FAILED_408192',
-    createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-    invoiceNumber: 'INV-2026-0711'
-  },
-  {
-    _id: 'pay_demo_103',
-    bookingId: 'ORD_PROD_12',
-    serviceName: 'Pureit Water Purifier Mineral Cartridge Filter',
-    itemType: 'product',
-    amount: 899,
-    status: 'paid',
-    paymentMethod: 'Net Banking (HDFC)',
-    razorpayPaymentId: 'pay_P88410291041',
-    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-    invoiceNumber: 'INV-2026-0604'
-  },
-  {
-    _id: 'pay_demo_104',
-    bookingId: 'BK_RO_301',
-    serviceName: 'RO Water Purifier Inspection & Filter Change',
-    itemType: 'service',
-    amount: 499,
-    status: 'refunded',
-    refundAmount: 499,
-    failureReason: 'Customer Cancellation (Full Refund Initiated)',
-    paymentMethod: 'UPI / PhonePe',
-    razorpayPaymentId: 'pay_REF_3019482',
-    createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
-    invoiceNumber: 'INV-2026-0410'
-  }
-];
-
 export default function PaymentsPage({ showToast }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [summary, setSummary] = useState(null);
   const [payments, setPayments] = useState([]);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'paid' | 'failed' | 'refunds'
@@ -87,6 +33,7 @@ export default function PaymentsPage({ showToast }) {
 
   const fetchPaymentData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [summaryRes, listRes] = await Promise.allSettled([
         getPaymentSummary(),
@@ -105,25 +52,17 @@ export default function PaymentsPage({ showToast }) {
         if (Array.isArray(rawList) && rawList.length > 0) {
           loadedPayments = rawList;
         }
+      } else {
+        throw listRes.reason || new Error('Unable to load payment history');
       }
 
-      // If no payments from backend, load realistic e-commerce demo dataset for presentation
-      if (loadedPayments.length === 0) {
-        setPayments(DEMO_TRANSACTIONS);
-        setSummary({
-          totalSpent: 1598,
-          totalPaidCount: 2,
-          totalFailedCount: 1,
-          totalRefunded: 499,
-          totalTransactions: 4
-        });
-      } else {
-        setPayments(loadedPayments);
-        setSummary(loadedSummary);
-      }
+      setPayments(loadedPayments);
+      setSummary(loadedSummary);
     } catch (error) {
       console.error('Failed to load payment history:', error);
-      setPayments(DEMO_TRANSACTIONS);
+      setPayments([]);
+      setSummary(null);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -363,6 +302,25 @@ export default function PaymentsPage({ showToast }) {
           <div className="pay-loading-box">
             <MdRefresh size={32} className="spinning" />
             <span>Fetching payment transactions & receipts...</span>
+          </div>
+        ) : error ? (
+          <div className="pay-empty-box">
+            <MdErrorOutline size={56} className="empty-icon" />
+            <h3>Unable to load transactions</h3>
+            <p>We could not retrieve your payment history. Please try again.</p>
+            <button className="pay-browse-btn" onClick={fetchPaymentData}>
+              <MdRefresh size={18} />
+              Try Again
+            </button>
+          </div>
+        ) : payments.length === 0 ? (
+          <div className="pay-empty-box">
+            <MdOutlineReceiptLong size={56} className="empty-icon" />
+            <h3>No transactions yet</h3>
+            <p>Your payment history will appear here after your first purchase.</p>
+            <button className="pay-browse-btn" onClick={() => navigate('/services')}>
+              Explore Doorstep Services
+            </button>
           </div>
         ) : filteredPayments.length === 0 ? (
           <div className="pay-empty-box">

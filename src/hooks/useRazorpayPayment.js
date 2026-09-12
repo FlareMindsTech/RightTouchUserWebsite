@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createPaymentOrder, verifyPayment } from "../services/paymentService";
 import { loadRazorpayScript, resolveRazorpayKey } from "../utils/razorpay";
+import { logger } from "../utils/logger";
 
 export const useRazorpayPayment = () => {
   const [loading, setLoading] = useState(false);
@@ -44,14 +45,14 @@ export const useRazorpayPayment = () => {
         throw orderErr;
       }
 
-      console.log("========== PAYMENT ORDER RESPONSE ==========");
-      console.log("orderRes:", orderRes);
-      console.log("result:", orderRes?.result);
-      console.log("orderId:", orderRes?.result?.orderId);
-      console.log("amount:", orderRes?.result?.amount);
-      console.log("currency:", orderRes?.result?.currency);
-      console.log("keyId:", orderRes?.result?.keyId);
-      console.log("============================================");
+      logger.log("========== PAYMENT ORDER RESPONSE ==========");
+      logger.log("orderRes:", orderRes);
+      logger.log("result:", orderRes?.result);
+      logger.log("orderId:", orderRes?.result?.orderId);
+      logger.log("amount:", orderRes?.result?.amount);
+      logger.log("currency:", orderRes?.result?.currency);
+      logger.log("keyId:", orderRes?.result?.keyId);
+      logger.log("============================================");
 
       if (!orderRes?.success || !orderRes?.result) {
         throw new Error(orderRes?.message || "Failed to create payment order");
@@ -62,7 +63,7 @@ export const useRazorpayPayment = () => {
 
       // 3. Free Booking Flow Bypass (₹0 Total)
       if (resData?.free === true || (rawAmount != null && Number(rawAmount) === 0)) {
-        console.log("[useRazorpayPayment] Free booking flow bypass triggered.");
+        logger.log("[useRazorpayPayment] Free booking flow bypass triggered.");
         setLoading(false);
         if (onSuccess) {
           onSuccess({
@@ -106,13 +107,13 @@ export const useRazorpayPayment = () => {
       const finalCurrency = String(currency || "INR").toUpperCase();
       const amountInPaise = Math.round(Number(rawAmount));
 
-      console.log("========== RAZORPAY OPTIONS ==========");
-      console.log("Razorpay available:", !!window.Razorpay);
-      console.log("Final key:", finalKey);
-      console.log("Final order ID:", finalOrderId);
-      console.log("Amount paise:", amountInPaise);
-      console.log("Currency:", finalCurrency);
-      console.log("======================================");
+      logger.log("========== RAZORPAY OPTIONS ==========");
+      logger.log("Razorpay available:", !!window.Razorpay);
+      logger.log("Final key:", finalKey);
+      logger.log("Final order ID:", finalOrderId);
+      logger.log("Amount paise:", amountInPaise);
+      logger.log("Currency:", finalCurrency);
+      logger.log("======================================");
 
       if (!finalKey) throw new Error("Razorpay Key ID is missing");
       if (!finalOrderId) throw new Error("Razorpay Order ID is missing");
@@ -147,12 +148,12 @@ export const useRazorpayPayment = () => {
         modal: {
           ondismiss: function () {
             setLoading(false);
-            console.log("[Razorpay] Customer closed checkout modal without paying.");
+            logger.log("[Razorpay] Customer closed checkout modal without paying.");
           },
         },
         handler: async function (razorpayResponse) {
           try {
-            console.log("[Razorpay Success] Response:", razorpayResponse);
+            logger.log("[Razorpay Success] Response:", razorpayResponse);
 
             // 5. Send signature to backend for verification
             const verifyRes = await verifyPayment({
@@ -186,7 +187,7 @@ export const useRazorpayPayment = () => {
 
       // 6. Open Razorpay Modal
       const rzp = new window.Razorpay(options);
-      console.log("Razorpay instance created:", rzp);
+      logger.log("Razorpay instance created:", rzp);
 
       rzp.on("payment.failed", function (response) {
         console.error("RAZORPAY PAYMENT FAILED:", response);
@@ -196,9 +197,9 @@ export const useRazorpayPayment = () => {
         if (onFailure) onFailure(new Error(failMessage));
       });
 
-      console.log("Opening Razorpay...");
+      logger.log("Opening Razorpay...");
       rzp.open();
-      console.log("Razorpay open() called");
+      logger.log("Razorpay open() called");
     } catch (err) {
       setLoading(false);
       const errMsg = err.message || "Payment initialization failed";

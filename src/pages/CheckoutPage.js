@@ -192,16 +192,16 @@ const CheckoutPage = ({
               </span>
             </div>
             <div className="summary-items">
-              {cartItems.map((item, index) => {
+              {cartItems.map(item => {
                 const qty = item.quantity || 1;
                 const itemTotal = item.price * qty;
                 return (
-                  <div key={item.id || index} className="summary-item">
+                  <div key={item.id} className="summary-item">
                     <button className="trash-icon" onClick={() => handleDeleteItem(item.id)}>
                       <MdDelete />
                     </button>
                     <div className="item-image">
-                      {item.image ? <img src={item.image} alt={item.name} /> : 'No Image'}
+                      {item.image ? <img src={item.image} alt={item.name} loading="lazy" /> : 'No Image'}
                     </div>
                     <div className="item-details">
                       <h4>{item.name}</h4>

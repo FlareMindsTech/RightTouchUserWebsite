@@ -663,7 +663,7 @@ export default function ReportPage({ showToast }) {
               </div>
             ) : (
               <div className="rep-history-list">
-                {myReports.map((item, idx) => {
+                {myReports.map(item => {
                   const bookingInfo = getBookingInfoForReport(item);
                   const displayTitle = (item.subject && item.subject !== 'No Subject Provided')
                     ? item.subject
@@ -672,7 +672,7 @@ export default function ReportPage({ showToast }) {
 
                   return (
                     <div
-                      key={item._id || idx}
+                      key={item._id}
                       className="rep-history-card rep-history-card-clickable"
                       onClick={() => {
                         setSelectedReportForModal(item);
@@ -748,7 +748,7 @@ export default function ReportPage({ showToast }) {
                   <div className="rep-product-detail-card">
                     <div className="rep-prod-img-box">
                       {bookingInfo.image ? (
-                        <img src={bookingInfo.image} alt={bookingInfo.title} />
+                        <img src={bookingInfo.image} alt={bookingInfo.title} loading="lazy" />
                       ) : (
                         bookingInfo.type === 'product' ? <MdShoppingBag size={32} color="#0284c7" /> : <MdBuild size={32} color="#2563eb" />
                       )}
@@ -795,7 +795,7 @@ export default function ReportPage({ showToast }) {
                       <div className="rep-evidence-box">
                         <span className="rep-evidence-label">Attached Customer Evidence:</span>
                         <div className="rep-evidence-img-wrap">
-                          <img src={evidenceImg} alt="Customer Evidence" onClick={() => window.open(evidenceImg, '_blank')} />
+                          <img src={evidenceImg} alt="Customer Evidence" loading="lazy" onClick={() => window.open(evidenceImg, '_blank')} />
                         </div>
                       </div>
                     )}

@@ -262,7 +262,7 @@ const ProductServices = ({
             {/* Left Column: Service Image Section */}
             <div className="service-detail-image-wrap">
               {service.serviceImages?.[0] ? (
-                <img src={service.serviceImages[0]} alt={service.serviceName} className="service-main-img" />
+                <img src={service.serviceImages[0]} alt={service.serviceName} loading="lazy" className="service-main-img" />
               ) : (
                 <div className="service-img-placeholder-large">
                   <Hammer size={60} />

@@ -513,6 +513,11 @@ const removeFromCart = useCallback(async (itemId) => {
         </div>
 
         <div className="gmh-right">
+          {!currentUser && (
+            <button className="gmh-sign-in" onClick={() => setShowLoginDialog(true)}>
+              Sign In
+            </button>
+          )}
           <button className="gmh-cart-btn" onClick={handleCartClick} aria-label="Shopping Cart">
             <MdShoppingCart className="gmh-cart-icon" />
             {cartTotalQuantity > 0 && <span className="gmh-cart-badge">{cartTotalQuantity}</span>}

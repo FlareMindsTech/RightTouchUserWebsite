@@ -294,7 +294,7 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
           <div className="bdp-tech-main">
             <div className="bdp-tech-avatar">
               {techImage ? (
-                <img src={techImage} alt={techName} />
+                <img src={techImage} alt={techName} loading="lazy" />
               ) : (
                 <div className="bdp-tech-avatar-placeholder">{techName.charAt(0)}</div>
               )}
@@ -414,13 +414,13 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
           <div className="bdp-work-photos">
             {booking.workImages.beforeImage && (
               <div className="bdp-work-photo" onClick={() => window.open(booking.workImages.beforeImage, '_blank')}>
-                <img src={booking.workImages.beforeImage} alt="Before" />
+                <img src={booking.workImages.beforeImage} alt="Before" loading="lazy" />
                 <span className="bdp-photo-label">Before</span>
               </div>
             )}
             {booking.workImages.afterImage && (
               <div className="bdp-work-photo" onClick={() => window.open(booking.workImages.afterImage, '_blank')}>
-                <img src={booking.workImages.afterImage} alt="After" />
+                <img src={booking.workImages.afterImage} alt="After" loading="lazy" />
                 <span className="bdp-photo-label">After</span>
               </div>
             )}

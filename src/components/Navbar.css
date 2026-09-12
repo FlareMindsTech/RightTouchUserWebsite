@@ -171,8 +171,8 @@
 
   /* Mobile menu adjustments */
   .mobile-menu {
-    width: 300px;
-    max-width: 80vw;
+    width: 290px;
+    max-width: calc(100vw - 32px);
   }
 }
 
@@ -226,8 +226,11 @@
   }
 
   .mobile-menu {
-    width: 100%;
-    max-width: 100%;
+    width: calc(100% - 24px);
+    max-width: 320px;
+    top: calc(var(--nav-height-mobile) + 8px);
+    right: 12px;
+    left: auto;
   }
 }
 

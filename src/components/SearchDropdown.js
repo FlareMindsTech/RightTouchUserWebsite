@@ -213,7 +213,7 @@ const SearchDropdown = ({
                 >
                   <div className="search-result-thumb">
                     {item.image ? (
-                      <img src={item.image} alt={item.title} />
+                      <img src={item.image} alt={item.title} loading="lazy" />
                     ) : item.type === 'product' ? (
                       <Package size={20} className="thumb-icon" />
                     ) : item.type.includes('category') ? (

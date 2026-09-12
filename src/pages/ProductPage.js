@@ -127,7 +127,7 @@ const ProductPage = ({
             >
               <span className="category-nav-icon">
                 {cat.image ? (
-                  <img src={cat.image} alt={cat.category} />
+                  <img src={cat.image} alt={cat.category} loading="lazy" />
                 ) : (
                   getCategoryIcon(cat.category)
                 )}

@@ -24,6 +24,7 @@ import { getCustomerBookings, getBookings, bookAgain } from '../services/booking
 import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import { safeParseDate } from '../utils/browserUtils';
 import { goBackSmart } from '../utils/browserUtils';
+import { logger } from '../utils/logger';
 import ConfirmModal from '../components/ConfirmModal';
 import './BookingsPage.css';
 
@@ -180,7 +181,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
         navigator.share(sharePayload).catch(err => {
           if (err.name !== 'AbortError') {
             // User cancelled or share failed – silent
-            console.log('Share dismissed:', err);
+            logger.log('Share dismissed:', err);
           }
         });
       } else {
@@ -303,6 +304,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
               <img
                 src={serviceImage}
                 alt={serviceName}
+                loading="lazy"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
@@ -353,7 +355,7 @@ const BookingsPage = ({ isActive, showToast, onBack, cartItemCount = 0, currentU
             <div className="booking-tech-preview">
               <div className="tech-avatar-mini">
                 {booking.technicianId.profileImage ? (
-                  <img src={booking.technicianId.profileImage} alt="Tech" />
+                  <img src={booking.technicianId.profileImage} alt="Tech" loading="lazy" />
                 ) : (
                   <div className="avatar-placeholder">{booking.technicianId.userId?.fname?.charAt(0) || 'T'}</div>
                 )}
