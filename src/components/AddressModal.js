@@ -132,7 +132,10 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
 
       setLocationSearch(location.addressLine || '');
       setShowAddAddressForm(true);
-      if (showToast) showToast('Current location detected successfully');
+      if (showToast) {
+        const accInfo = coords.accuracy ? ` (±${Math.round(coords.accuracy)}m)` : '';
+        showToast(`Live GPS location detected${accInfo}`);
+      }
     } catch (err) {
       console.error('Error fetching location:', err);
       if (showToast) showToast(err.message || 'Unable to retrieve your location');
