@@ -80,28 +80,33 @@ export const reverseNominatim = async (lat, lng) => {
     const pincode = addr.postcode || "";
     const country = addr.country || "";
 
-    const specificParts = [
-      addr.amenity || addr.building,
-      addr.house_number ? `No. ${addr.house_number}` : "",
-      addr.road,
-      addr.neighbourhood || addr.suburb || addr.residential
-    ].filter(Boolean);
+    const landmark = addr.amenity || addr.building || addr.shop || "";
+    const houseNo = addr.house_number ? `No. ${addr.house_number}` : "";
+    const road = addr.road || addr.street || "";
+    const area = addr.suburb || addr.neighbourhood || addr.residential || "";
+    const cleanCity = addr.city || addr.town || addr.village || addr.municipality || "";
+    const cleanState = addr.state || "";
+    const cleanPincode = addr.postcode || "";
 
-    let addressLine = "";
-    if (specificParts.length > 0) {
-      addressLine = [specificParts.join(", "), city, state, pincode].filter(Boolean).join(", ");
-    }
-    
-    if (!addressLine || addressLine.length < 10) {
+    // Build deduplicated parts
+    const rawParts = [landmark, houseNo, road, area, cleanCity, cleanState, cleanPincode];
+    const parts = rawParts
+      .filter(Boolean)
+      .map((p) => p.trim())
+      .filter((item, pos, arr) => arr.indexOf(item) === pos);
+
+    let addressLine = parts.join(", ");
+    if (!addressLine || addressLine.length < 8) {
       addressLine = result?.display_name || "";
     }
 
-    if (!addressLine && !city) throw new Error("Nominatim returned empty location");
+    if (!addressLine && !cleanCity) throw new Error("Nominatim returned empty location");
 
     return {
       latitude: lat,
       longitude: lng,
       addressLine,
+<<<<<<< HEAD
       displayName: result?.display_name || addressLine,
       houseNumber: addr.house_number ? `No. ${addr.house_number}` : "",
       road: addr.road || "",
@@ -112,6 +117,11 @@ export const reverseNominatim = async (lat, lng) => {
       country,
       raw: result,
       source: "openstreetmap"
+=======
+      city: cleanCity || city,
+      state: cleanState || state,
+      pincode: cleanPincode || pincode
+>>>>>>> 3c3daefb95ede1effd0d5bd0eae5984974c9538b
     };
   } catch (err) {
     clearTimeout(timeoutId);
@@ -281,53 +291,121 @@ const fetchIpLocation = async () => {
 };
 
 /**
- * Gets user current location coordinates using browser HTML5 Geolocation API (frontend).
+ * Gets the user's precise live GPS location.
+ * Uses watchPosition with enableHighAccuracy: true to wait for true satellite GPS lock (<30m accuracy).
  */
-export const getCurrentUserLocation = () => {
+export const getCurrentUserLocation = (options = {}) => {
   return new Promise((resolve, reject) => {
+    // 1. Check if browser supports Geolocation API
     if (!navigator.geolocation) {
-      fetchIpLocation()
-        .then(resolve)
-        .catch(() => reject(new Error("Geolocation is not supported by your browser.")));
-      return;
+      return reject(new Error("Geolocation is not supported by your browser."));
     }
 
-    const highAccuracyOpts = { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 };
-    const lowAccuracyOpts = { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 };
+    // 2. Check if running on an insecure origin (e.g. http://192.168.x.x)
+    const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (!window.isSecureContext && !isLocalhost) {
+      console.warn("Live Geolocation requires HTTPS or localhost. Current origin:", window.location.origin);
+    }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-      },
-      (err) => {
-        console.warn("High-accuracy location attempt failed, trying low accuracy:", err.message);
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-          },
-          (err2) => {
-            console.warn("Low-accuracy location attempt failed, falling back to IP location:", err2.message);
-            fetchIpLocation()
-              .then(resolve)
-              .catch(() => {
-                let msg = "Unable to retrieve your location.";
-                if (err.code === 1) {
-                  msg = "Location access denied. Please enable location permissions in browser settings.";
-                } else if (err.code === 3) {
-                  msg = "Location request timed out. Please enter your address manually.";
-                }
-                reject(new Error(msg));
+    let bestPosition = null;
+    let watchId = null;
+    let timerId = null;
+
+    const cleanup = () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (timerId !== null) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+    };
+
+    const targetAccuracy = options.targetAccuracy || 30; // 30 meters
+    const maxWaitTime = options.timeout || 8000; // 8 seconds to get GPS lock
+
+    // Start watchPosition for true live GPS fix
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const accuracy = pos.coords.accuracy || 9999;
+          console.log(
+            `[Live GPS Fix] Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}, Accuracy: ±${Math.round(accuracy)}m`
+          );
+
+          if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
+            bestPosition = pos;
+          }
+
+          // If we achieved high precision (<30m), lock in immediately
+          if (accuracy <= targetAccuracy) {
+            cleanup();
+            resolve({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              accuracy: pos.coords.accuracy
+            });
+          }
+        },
+        (err) => {
+          console.warn("[GPS Watch Error]:", err.message);
+          // If permission explicitly denied, stop immediately
+          if (err.code === 1) {
+            cleanup();
+            let msg = "Location permission denied. Please allow location access in your browser settings.";
+            if (!window.isSecureContext && !isLocalhost) {
+              msg = "Live GPS is blocked on insecure HTTP (192.168.x.x). Please access via http://localhost:3000 or HTTPS.";
+            }
+            return reject(new Error(msg));
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0 // Do NOT accept stale cached coordinates
+        }
+      );
+
+      // Timeout after maxWaitTime: resolve with best live fix obtained, or fail
+      timerId = setTimeout(() => {
+        cleanup();
+        if (bestPosition) {
+          resolve({
+            latitude: bestPosition.coords.latitude,
+            longitude: bestPosition.coords.longitude,
+            accuracy: bestPosition.coords.accuracy
+          });
+        } else {
+          // Fallback to one-shot attempt
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              resolve({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy
               });
-          },
-          lowAccuracyOpts
-        );
-      },
-      highAccuracyOpts
-    );
+            },
+            (err) => {
+              let msg = "Unable to get live GPS location. Please enter your address or area manually.";
+              if (err.code === 1) {
+                msg = "Location permission denied. Please enable location access in browser settings.";
+              }
+              reject(new Error(msg));
+            },
+            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+          );
+        }
+      }, maxWaitTime);
+    } catch (e) {
+      cleanup();
+      reject(e);
+    }
   });
 };
 
 /**
+<<<<<<< HEAD
  * Convenience function to fetch the user's current GPS location coordinates
  * and resolve them into a detailed street address using OpenStreetMap Nominatim.
  */
@@ -350,3 +428,44 @@ export const fetchUserAddress = fetchCurrentLocationAddress;
  */
 export const getAddressFromCoordinates = (lat, lng) => reverseAddress(lat, lng);
 
+=======
+ * Continuous Live Location Tracker
+ * Subscribes to live position updates as the user moves.
+ * Returns an unsubscribe function to stop tracking.
+ */
+export const watchUserLiveLocation = (onLocationUpdate, onError, options = {}) => {
+  if (!navigator.geolocation) {
+    if (onError) onError(new Error("Geolocation not supported."));
+    return () => {};
+  }
+
+  const watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      if (onLocationUpdate) {
+        onLocationUpdate({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          speed: pos.coords.speed,
+          heading: pos.coords.heading,
+          timestamp: pos.timestamp
+        });
+      }
+    },
+    (err) => {
+      console.warn("Live location tracking error:", err);
+      if (onError) onError(err);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 15000,
+      ...options
+    }
+  );
+
+  return () => {
+    navigator.geolocation.clearWatch(watchId);
+  };
+};
+>>>>>>> 3c3daefb95ede1effd0d5bd0eae5984974c9538b

@@ -17,14 +17,18 @@ import {
   LuHeadphones,
   LuBookOpen,
   LuLogOut,
-  LuCreditCard,
   LuFileText
 } from 'react-icons/lu';
+import { ShieldCheck, Zap, RotateCcw, ArrowRight, Wrench, Package, CheckCircle2, User } from 'lucide-react';
 import './AccountPage.css';
 import './CartPage.css';
 import ConfirmModal from '../components/ConfirmModal';
 import AddressModal from '../components/AddressModal';
-import PaymentManagementModal from '../components/PaymentManagementModal';
+import acImg from '../assets/AC.jpg';
+import fridgeImg from '../assets/fridge.jpg';
+import washingMachineImg from '../assets/washing machine.jpg';
+import waterPurifierImg from '../assets/water purifier.jpg';
+import accountBannerImg from '../assets/account_banner.jpg';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   getMyAddresses,
@@ -423,14 +427,8 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       case 'Product Quotations':
         navigate('/quotations');
         break;
-      case 'Payment Management':
-        navigate('/payments');
-        break;
       case 'Manage address':
         setShowAddressModal(true);
-        break;
-      case 'My rating':
-        navigate('/ratings');
         break;
       case 'Help & Support':
         navigate('/help');
@@ -450,33 +448,11 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
       <div className="account-container-simple">
         {currentUser ? (
-          <div className="account-profile-header-simple">
-            <div className="avatar-simple">
-              {profileData.fname?.charAt(0) || currentUser?.name?.charAt(0) || 'U'}
-            </div>
-            <div className="profile-info-simple">
-              <h2 className="desktop-only">{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
-              <h2 className="mobile-only">{profileData.fname || currentUser?.name || 'User'}</h2>
-              <p className="email">{profileData.email || 'Complete your profile'}</p>
-              <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
-            </div>
-            <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
-              <MdEdit size={18} /> Edit Profile
-            </button>
-          </div>
-        ) : (
-          <div className="account-profile-header-simple">
-            <div className="profile-info-simple">
-              <h2>Welcome Guest</h2>
-              <p className="email">Please login to view your profile and bookings</p>
-            </div>
-          </div>
-        )}
-        {currentUser ? (
-          <>
-              {/* Action List Categorized */}
+          <div className="account-dashboard-layout">
+            {/* Left Column: Orders & Bookings at the very top, followed by other menus & logout */}
+            <div className="account-sidebar-col">
               <div className="account-menu-simple">
-                <div className="account-menu-group-title">Orders & Payments</div>
+                <div className="account-menu-group-title">Orders &amp; Bookings</div>
                 <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
                   <div className="menu-left-simple">
                     <LuClipboardList className="icon" />
@@ -493,15 +469,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                   <MdOutlineChevronRight className="arrow" />
                 </div>
 
-                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Payment Management')}>
-                  <div className="menu-left-simple">
-                    <LuCreditCard className="icon" />
-                    <span>Payment Management</span>
-                  </div>
-                  <MdOutlineChevronRight className="arrow" />
-                </div>
-
-                <div className="account-menu-group-title">Saved Data</div>
+                <div className="account-menu-group-title">Saved Locations</div>
                 <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
                   <div className="menu-left-simple">
                     <MdOutlineLocationOn className="icon" />
@@ -510,19 +478,11 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                   <MdOutlineChevronRight className="arrow" />
                 </div>
 
-                <div className="menu-item-simple" onClick={() => handleMenuItemClick('My rating')}>
-                  <div className="menu-left-simple">
-                    <MdOutlineStarOutline className="icon" />
-                    <span>My Ratings</span>
-                  </div>
-                  <MdOutlineChevronRight className="arrow" />
-                </div>
-
-                <div className="account-menu-group-title">Settings & Support</div>
+                <div className="account-menu-group-title">Settings &amp; Support</div>
                 <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
                   <div className="menu-left-simple">
                     <LuHeadphones className="icon" />
-                    <span>Help & Support</span>
+                    <span>Help &amp; Support</span>
                   </div>
                   <MdOutlineChevronRight className="arrow" />
                 </div>
@@ -544,13 +504,159 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                 </div>
               </div>
 
-              {/* Logout/Delete Buttons */}
+              {/* Logout Button */}
               <div className="account-footer-simple">
                 <button className="logout-button-simple" onClick={openLogoutConfirm} style={{ width: '100%' }}>
                   <LuLogOut size={20} /> Logout
                 </button>
               </div>
-          </>
+            </div>
+
+            {/* Right Column: User Profile at the top, followed by banners, services & trust */}
+            <div className="account-content-col">
+              {/* User Profile Card (Right Side) */}
+              <div className="account-profile-header-simple">
+                <div className="avatar-simple">
+                  <User size={26} strokeWidth={2.2} />
+                </div>
+                <div className="profile-info-simple">
+                  <h2 className="desktop-only">{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
+                  <h2 className="mobile-only">{profileData.fname || currentUser?.name || 'User'}</h2>
+                  <p className="email">{profileData.email || 'Complete your profile'}</p>
+                  <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
+                </div>
+                <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
+                  <MdEdit size={18} /> Edit Profile
+                </button>
+              </div>
+
+              {/* Service Hero Banner */}
+              <div className="acc-hero-banner">
+                <div className="acc-hero-banner-text">
+                  <span className="acc-hero-badge">
+                    <CheckCircle2 size={14} /> RIGHTTOUCH HOME SERVICES
+                  </span>
+                  <h3>Need an Appliance Repair or Checkup?</h3>
+                  <p>Certified, background-checked technicians at your doorstep within 120 minutes with genuine spares and 30-day warranty.</p>
+                  <div className="acc-hero-actions">
+                    <button
+                      className="acc-btn-primary"
+                      onClick={() => (onNavigate ? onNavigate('services') : navigate('/services'))}
+                    >
+                      <Wrench size={16} /> Book a Service
+                    </button>
+                    <button
+                      className="acc-btn-secondary"
+                      onClick={() => (onNavigate ? onNavigate('products') : navigate('/products'))}
+                    >
+                      <Package size={16} /> Explore Products
+                    </button>
+                  </div>
+                </div>
+                <div className="acc-hero-banner-img-wrap">
+                  <img src={accountBannerImg} alt="Appliance Repair & Maintenance" className="acc-hero-img" />
+                </div>
+              </div>
+
+              {/* Core Appliance Services Grid */}
+              <div className="acc-appliances-box">
+                <div className="acc-box-header">
+                  <h4>Popular Appliance Services</h4>
+                  <button
+                    className="acc-link-btn"
+                    onClick={() => (onNavigate ? onNavigate('services') : navigate('/services'))}
+                  >
+                    View All <ArrowRight size={14} />
+                  </button>
+                </div>
+                <div className="acc-appliances-grid">
+                  <div
+                    className="acc-appliance-card"
+                    onClick={() => (onNavigate ? onNavigate('services') : navigate('/services'))}
+                  >
+                    <div className="acc-appliance-img">
+                      <img src={acImg} alt="AC Repair" />
+                    </div>
+                    <h5>AC Servicing</h5>
+                    <p>Deep jet cleaning &amp; gas refill</p>
+                  </div>
+                  <div
+                    className="acc-appliance-card"
+                    onClick={() => (onNavigate ? onNavigate('services') : navigate('/services'))}
+                  >
+                    <div className="acc-appliance-img">
+                      <img src={washingMachineImg} alt="Washing Machine" />
+                    </div>
+                    <h5>Washing Machine</h5>
+                    <p>Drum check &amp; motor repair</p>
+                  </div>
+                  <div
+                    className="acc-appliance-card"
+                    onClick={() => (onNavigate ? onNavigate('services') : navigate('/services'))}
+                  >
+                    <div className="acc-appliance-img">
+                      <img src={fridgeImg} alt="Refrigerator" />
+                    </div>
+                    <h5>Refrigerator</h5>
+                    <p>Cooling coil &amp; thermostat</p>
+                  </div>
+                  <div
+                    className="acc-appliance-card"
+                    onClick={() => (onNavigate ? onNavigate('services') : navigate('/services'))}
+                  >
+                    <div className="acc-appliance-img">
+                      <img src={waterPurifierImg} alt="Water Purifier" />
+                    </div>
+                    <h5>Water Purifier</h5>
+                    <p>Filter change &amp; RO service</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Default Address & Support Row */}
+              <div className="acc-sub-row">
+                <div className="acc-sub-card">
+                  <div className="acc-sub-card-header">
+                    <h5>Default Service Address</h5>
+                    <button className="acc-sub-btn" onClick={() => setShowAddressModal(true)}>
+                      {addressForm.addressLine ? 'Change' : 'Add'}
+                    </button>
+                  </div>
+                  <div className="acc-sub-card-body">
+                    {addressForm.addressLine ? (
+                      <>
+                        <span className="acc-addr-tag">{addressForm.label || 'Home'}</span>
+                        <p className="acc-addr-line">{addressForm.addressLine}</p>
+                        {addressForm.phone && <p className="acc-addr-phone">Phone: {addressForm.phone}</p>}
+                      </>
+                    ) : (
+                      <p className="acc-addr-empty">No default address saved yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="acc-sub-card">
+                  <div className="acc-sub-card-header">
+                    <h5>RightTouch Guarantee</h5>
+                  </div>
+                  <div className="acc-sub-card-body acc-guarantee-list">
+                    <div className="acc-guarantee-item">
+                      <ShieldCheck size={16} className="text-emerald" />
+                      <span>100% Background-Checked Pros</span>
+                    </div>
+                    <div className="acc-guarantee-item">
+                      <Zap size={16} className="text-amber" />
+                      <span>120-Minute Doorstep Response</span>
+                    </div>
+                    <div className="acc-guarantee-item">
+                      <RotateCcw size={16} className="text-indigo" />
+                      <span>30-Day Re-service Guarantee</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="guest-account-prompt">
             <button className="login-prompt-btn" onClick={handleLoginClick}>
@@ -573,13 +679,6 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           }
           fetchAddresses();
         }}
-        showToast={showToast}
-      />
-
-      {/* Payment Management Modal */}
-      <PaymentManagementModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
         showToast={showToast}
       />
 

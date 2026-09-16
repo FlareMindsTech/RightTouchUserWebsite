@@ -29,6 +29,7 @@
    RESPONSIVE – MOBILE (≤767px)
 ═══════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
+
   #page-account .account-container-simple,
   #page-services .mobile-toolbar,
   #page-products .category-nav {
@@ -185,7 +186,7 @@
     height: 92px;
     border-radius: 10px;
   }
-  
+
   .cat-icon-wrap img {
     border-radius: 10px;
   }

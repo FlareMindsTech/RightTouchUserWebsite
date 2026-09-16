@@ -74,7 +74,7 @@ function App() {
 
   const currentPage = getCurrentPageFromPath();
 
-// Scroll to top on route change (robust version)
+  // Scroll to top on route change (robust version)
   useEffect(() => {
     const scrollToTop = () => {
       requestAnimationFrame(() => {
@@ -149,7 +149,7 @@ function App() {
       return;
     }
     const msg = String(message || '').toLowerCase();
-    const isError   = ['error', 'failed', 'invalid', 'unable'].some(k => msg.includes(k));
+    const isError = ['error', 'failed', 'invalid', 'unable'].some(k => msg.includes(k));
     const isWarning = ['cancelled', 'already', 'disabled', 'pending', 'option will be', 'not available'].some(k => msg.includes(k));
     rtAlert(message, isError ? 'error' : isWarning ? 'warning' : 'success');
   }, []);
@@ -302,11 +302,11 @@ function App() {
       if (response?.success && response.result) {
         showToast(`Item added to cart`);
         const newItem = formatCartItem(response.result);
-        
+
         // 🚀 SYNC: Replace optimistic item with real server data
         setCartItems(prev => {
           const filtered = prev.filter(item => item.id !== tempId);
-          const exists = filtered.findIndex(item => 
+          const exists = filtered.findIndex(item =>
             (item.originalId || item.itemId?._id) === (newItem.originalId || newItem.itemId?._id)
           );
           if (exists !== -1) {
@@ -327,10 +327,10 @@ function App() {
     }
   };
 
-const removeFromCart = useCallback(async (itemId) => {
+  const removeFromCart = useCallback(async (itemId) => {
     const originalItems = [...cartItems];
     const itemToRemove = cartItems.find(item => item.id === itemId || item._id === itemId);
-    
+
     // 🚀 OPTIMISTIC UPDATE: Remove locally immediately
     setCartItems(prev => prev.filter(item => item.id !== itemId && item._id !== itemId));
 
@@ -354,12 +354,12 @@ const removeFromCart = useCallback(async (itemId) => {
 
   const updateQuantity = useCallback(async (itemId, itemType, newQuantity) => {
     const originalItems = [...cartItems];
-    
+
     // 🚀 OPTIMISTIC UPDATE: Update quantity locally immediately
     if (newQuantity <= 0) {
       setCartItems(prev => prev.filter(item => (item.originalId || item.itemId?._id) !== itemId));
     } else {
-      setCartItems(prev => prev.map(item => 
+      setCartItems(prev => prev.map(item =>
         (item.originalId || item.itemId?._id) === itemId ? { ...item, quantity: newQuantity } : item
       ));
     }
@@ -370,14 +370,14 @@ const removeFromCart = useCallback(async (itemId) => {
         itemType,
         quantity: newQuantity
       });
-      
+
       if (response?.success && response.result) {
         if (response.result.deleted) {
           setCartItems(prev => prev.filter(item => (item.originalId || item.itemId?._id) !== itemId));
         } else {
           // Sync with server's precision data (populated)
           const updatedItem = formatCartItem(response.result);
-          setCartItems(prev => prev.map(item => 
+          setCartItems(prev => prev.map(item =>
             (item.originalId || item.itemId?._id) === itemId ? updatedItem : item
           ));
         }
@@ -627,18 +627,18 @@ const removeFromCart = useCallback(async (itemId) => {
               onLoginClick={() => setShowLoginDialog(true)}
             />
           } />
-            <Route path="/checkout" element={
-              <CheckoutPage
-                isActive={currentPage === 'checkout'}
-                cartItems={cartItems}
-                removeFromCart={removeFromCart}
-                updateQuantity={updateQuantity}
-                fetchCart={fetchCart}
-                showToast={showToast}
-                currentUser={currentUser}
-                onNavigate={handleNavigate}
-              />
-            } />
+          <Route path="/checkout" element={
+            <CheckoutPage
+              isActive={currentPage === 'checkout'}
+              cartItems={cartItems}
+              removeFromCart={removeFromCart}
+              updateQuantity={updateQuantity}
+              fetchCart={fetchCart}
+              showToast={showToast}
+              currentUser={currentUser}
+              onNavigate={handleNavigate}
+            />
+          } />
           <Route path="/product-detail" element={
             <ProductDetailPage
               isActive={currentPage === 'product-detail'}
@@ -692,9 +692,9 @@ const removeFromCart = useCallback(async (itemId) => {
         </Routes>
       </main>
 
-      <Footer 
-        currentUser={currentUser} 
-        onLoginClick={() => setShowLoginDialog(true)} 
+      <Footer
+        currentUser={currentUser}
+        onLoginClick={() => setShowLoginDialog(true)}
         serviceCategories={serviceCategories}
       />
 
@@ -721,7 +721,7 @@ const removeFromCart = useCallback(async (itemId) => {
         onShowToast={showToast}
       />
 
-<RegisterDialog
+      <RegisterDialog
         isOpen={showRegisterDialog}
         onClose={() => setShowRegisterDialog(false)}
         onRegisterSuccess={handleRegisterSuccess}
