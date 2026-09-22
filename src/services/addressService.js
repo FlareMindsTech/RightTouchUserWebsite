@@ -100,9 +100,10 @@ const reverseNominatim = async (lat, lng) => {
     if (!addressLine && !cleanCity) throw new Error("Nominatim returned empty location");
 
     return {
-      latitude: lat,
-      longitude: lng,
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lng),
       addressLine,
+      landmark,
       city: cleanCity || city,
       state: cleanState || state,
       pincode: cleanPincode || pincode
@@ -137,9 +138,10 @@ const reverseBigDataCloud = async (lat, lng) => {
   const addressLine = addressParts.join(", ") || [city, state, pincode].filter(Boolean).join(", ");
 
   return {
-    latitude: lat,
-    longitude: lng,
+    latitude: parseFloat(lat),
+    longitude: parseFloat(lng),
     addressLine: addressLine || `Location (${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)})`,
+    landmark: areaName && areaName !== city ? areaName : "",
     city,
     state,
     pincode
@@ -162,9 +164,10 @@ const reversePhoton = async (lat, lng) => {
   const addressLine = [locality, city, state, pincode].filter(Boolean).join(", ");
 
   return {
-    latitude: lat,
-    longitude: lng,
+    latitude: parseFloat(lat),
+    longitude: parseFloat(lng),
     addressLine,
+    landmark: props.name || locality || "",
     city,
     state,
     pincode
@@ -172,25 +175,28 @@ const reversePhoton = async (lat, lng) => {
 };
 
 export const reverseAddress = async (lat, lng) => {
+  const numLat = parseFloat(lat);
+  const numLng = parseFloat(lng);
   // 1. Try Nominatim jsonv2 first for maximum detail (house number, road, area, pincode)
   try {
-    return await reverseNominatim(lat, lng);
+    return await reverseNominatim(numLat, numLng);
   } catch (err1) {
-    console.warn("Nominatim reverse geocode failed, trying Photon:", err1);
-    // 2. Fallback to Photon (komoot) - free, CORS enabled, no API key
+    console.warn("Nominatim reverse geocode failed, trying BigDataCloud:", err1);
+    // 2. Fallback to BigDataCloud (fast, CORS enabled)
     try {
-      return await reversePhoton(lat, lng);
+      return await reverseBigDataCloud(numLat, numLng);
     } catch (err2) {
-      console.warn("Photon reverse geocode failed, trying BigDataCloud:", err2);
-      // 3. Fallback to BigDataCloud
+      console.warn("BigDataCloud reverse geocode failed, trying Photon:", err2);
+      // 3. Fallback to Photon
       try {
-        return await reverseBigDataCloud(lat, lng);
+        return await reversePhoton(numLat, numLng);
       } catch (err3) {
-        console.warn("BigDataCloud reverse geocode failed:", err3);
+        console.warn("Photon reverse geocode failed:", err3);
         return {
-          latitude: lat,
-          longitude: lng,
-          addressLine: `Location (${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)})`,
+          latitude: numLat,
+          longitude: numLng,
+          addressLine: `Location (${Number(numLat).toFixed(4)}, ${Number(numLng).toFixed(4)})`,
+          landmark: "",
           city: "",
           state: "",
           pincode: ""
@@ -206,11 +212,12 @@ const IP_PROVIDERS = [
     parse: (d) =>
       d && d.success !== false && d.latitude && d.longitude
         ? {
-            latitude: d.latitude,
-            longitude: d.longitude,
+            latitude: parseFloat(d.latitude),
+            longitude: parseFloat(d.longitude),
             city: d.city || "",
             state: d.region || d.region_code || "",
-            pincode: d.postal || ""
+            pincode: d.postal || "",
+            isIpFallback: true
           }
         : null
   },
@@ -224,7 +231,8 @@ const IP_PROVIDERS = [
         longitude,
         city: d.city || "",
         state: d.region || "",
-        pincode: d.postal || ""
+        pincode: d.postal || "",
+        isIpFallback: true
       };
     }
   },
@@ -237,7 +245,8 @@ const IP_PROVIDERS = [
             longitude: parseFloat(d.longitude),
             city: d.city || "",
             state: d.region || "",
-            pincode: d.postal_code || d.postal || ""
+            pincode: d.postal_code || d.postal || "",
+            isIpFallback: true
           }
         : null
   },
@@ -246,18 +255,19 @@ const IP_PROVIDERS = [
     parse: (d) =>
       d && !d.error && d.latitude && d.longitude
         ? {
-            latitude: d.latitude,
-            longitude: d.longitude,
+            latitude: parseFloat(d.latitude),
+            longitude: parseFloat(d.longitude),
             city: d.city || "",
             state: d.region || "",
-            pincode: d.postal || ""
+            pincode: d.postal || "",
+            isIpFallback: true
           }
         : null
   }
 ];
 
 // Fallback to IP-based location if browser GPS fails or is unavailable
-const fetchIpLocation = async () => {
+export const fetchIpLocation = async () => {
   for (const provider of IP_PROVIDERS) {
     try {
       const res = await fetch(provider.url, { headers: { Accept: "application/json" } });
@@ -275,22 +285,24 @@ const fetchIpLocation = async () => {
 };
 
 /**
- * Gets the user's precise live GPS location.
- * Uses watchPosition with enableHighAccuracy: true to wait for true satellite GPS lock (<30m accuracy).
+ * Gets the user's precise live GPS location with graceful fallback.
  */
-export const getCurrentUserLocation = (options = {}) => {
+export const getCurrentUserLocation = async (options = {}) => {
+  const tryFallback = async () => {
+    try {
+      const ipLoc = await fetchIpLocation();
+      if (ipLoc) return ipLoc;
+    } catch (ipErr) {
+      console.warn("IP location fallback failed:", ipErr);
+    }
+    throw new Error("Unable to detect location. Please check browser location permissions or enter address manually.");
+  };
+
+  if (!navigator.geolocation) {
+    return tryFallback();
+  }
+
   return new Promise((resolve, reject) => {
-    // 1. Check if browser supports Geolocation API
-    if (!navigator.geolocation) {
-      return reject(new Error("Geolocation is not supported by your browser."));
-    }
-
-    // 2. Check if running on an insecure origin (e.g. http://192.168.x.x)
-    const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-    if (!window.isSecureContext && !isLocalhost) {
-      console.warn("Live Geolocation requires HTTPS or localhost. Current origin:", window.location.origin);
-    }
-
     let bestPosition = null;
     let watchId = null;
     let timerId = null;
@@ -307,22 +319,16 @@ export const getCurrentUserLocation = (options = {}) => {
     };
 
     const targetAccuracy = options.targetAccuracy || 30; // 30 meters
-    const maxWaitTime = options.timeout || 8000; // 8 seconds to get GPS lock
+    const maxWaitTime = options.timeout || 7000;
 
-    // Start watchPosition for true live GPS fix
     try {
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const accuracy = pos.coords.accuracy || 9999;
-          console.log(
-            `[Live GPS Fix] Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}, Accuracy: ±${Math.round(accuracy)}m`
-          );
-
           if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
             bestPosition = pos;
           }
 
-          // If we achieved high precision (<30m), lock in immediately
           if (accuracy <= targetAccuracy) {
             cleanup();
             resolve({
@@ -332,27 +338,23 @@ export const getCurrentUserLocation = (options = {}) => {
             });
           }
         },
-        (err) => {
-          console.warn("[GPS Watch Error]:", err.message);
-          // If permission explicitly denied, stop immediately
-          if (err.code === 1) {
-            cleanup();
-            let msg = "Location permission denied. Please allow location access in your browser settings.";
-            if (!window.isSecureContext && !isLocalhost) {
-              msg = "Live GPS is blocked on insecure HTTP (192.168.x.x). Please access via http://localhost:3000 or HTTPS.";
-            }
-            return reject(new Error(msg));
+        async (err) => {
+          cleanup();
+          try {
+            const fallback = await tryFallback();
+            resolve(fallback);
+          } catch (e) {
+            reject(e);
           }
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0 // Do NOT accept stale cached coordinates
+          timeout: 8000,
+          maximumAge: 0
         }
       );
 
-      // Timeout after maxWaitTime: resolve with best live fix obtained, or fail
-      timerId = setTimeout(() => {
+      timerId = setTimeout(async () => {
         cleanup();
         if (bestPosition) {
           resolve({
@@ -361,29 +363,17 @@ export const getCurrentUserLocation = (options = {}) => {
             accuracy: bestPosition.coords.accuracy
           });
         } else {
-          // Fallback to one-shot attempt
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              resolve({
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-                accuracy: pos.coords.accuracy
-              });
-            },
-            (err) => {
-              let msg = "Unable to get live GPS location. Please enter your address or area manually.";
-              if (err.code === 1) {
-                msg = "Location permission denied. Please enable location access in browser settings.";
-              }
-              reject(new Error(msg));
-            },
-            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-          );
+          try {
+            const fallback = await tryFallback();
+            resolve(fallback);
+          } catch (e) {
+            reject(e);
+          }
         }
       }, maxWaitTime);
     } catch (e) {
       cleanup();
-      reject(e);
+      tryFallback().then(resolve).catch(reject);
     }
   });
 };

@@ -408,21 +408,32 @@ const HomePage = ({
                 <div key={i} className="category-card skeleton" style={{ height: '195px' }} />
               ))
             ) : (
-              serviceCategories.map(cat => (
-                <div
-                  key={cat._id}
-                  className="category-card"
-                  onClick={() => handleCategoryClick(cat, 'service')}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCategoryClick(cat, 'service'); }}
-                >
-                  <div className="cat-icon-wrap">
-                    <CategoryIcon category={cat} />
+              serviceCategories.map(cat => {
+                const isAvailable = cat.isAvailable !== false && cat.isActive !== false && cat.status !== 'inactive' && cat.status !== 'disabled';
+                return (
+                  <div
+                    key={cat._id}
+                    className={`category-card ${!isAvailable ? 'disabled-card' : ''}`}
+                    onClick={() => {
+                      if (isAvailable) handleCategoryClick(cat, 'service');
+                    }}
+                    role={isAvailable ? 'button' : 'region'}
+                    tabIndex={isAvailable ? 0 : -1}
+                    aria-disabled={!isAvailable}
+                    onKeyDown={(e) => {
+                      if (isAvailable && (e.key === 'Enter' || e.key === ' ')) {
+                        handleCategoryClick(cat, 'service');
+                      }
+                    }}
+                  >
+                    <div className="cat-icon-wrap">
+                      <CategoryIcon category={cat} />
+                      {!isAvailable && <span className="unavailable-badge">Unavailable</span>}
+                    </div>
+                    <span>{cat.category}</span>
                   </div>
-                  <span>{cat.category}</span>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -437,21 +448,32 @@ const HomePage = ({
               </button>
             </div>
             <div className="category-grid">
-              {productCategories.map(cat => (
-                <div
-                  key={cat._id}
-                  className="category-card"
-                  onClick={() => handleCategoryClick(cat, 'product')}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCategoryClick(cat, 'product'); }}
-                >
-                  <div className="cat-icon-wrap">
-                    <CategoryIcon category={cat} />
+              {productCategories.map(cat => {
+                const isAvailable = cat.isAvailable !== false && cat.isActive !== false && cat.status !== 'inactive' && cat.status !== 'disabled';
+                return (
+                  <div
+                    key={cat._id}
+                    className={`category-card ${!isAvailable ? 'disabled-card' : ''}`}
+                    onClick={() => {
+                      if (isAvailable) handleCategoryClick(cat, 'product');
+                    }}
+                    role={isAvailable ? 'button' : 'region'}
+                    tabIndex={isAvailable ? 0 : -1}
+                    aria-disabled={!isAvailable}
+                    onKeyDown={(e) => {
+                      if (isAvailable && (e.key === 'Enter' || e.key === ' ')) {
+                        handleCategoryClick(cat, 'product');
+                      }
+                    }}
+                  >
+                    <div className="cat-icon-wrap">
+                      <CategoryIcon category={cat} />
+                      {!isAvailable && <span className="unavailable-badge">Unavailable</span>}
+                    </div>
+                    <span>{cat.category}</span>
                   </div>
-                  <span>{cat.category}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -518,6 +540,7 @@ const HomePage = ({
 
               <div className="appliance-carousel" ref={applianceCarouselRef}>
                 {services.map(service => {
+                  const isAvailable = service.isAvailable !== false && service.isActive !== false && service.status !== 'inactive' && service.status !== 'disabled';
                   const discountPercent = (service.serviceCost && service.discountedPrice && service.serviceCost > service.discountedPrice)
                     ? Math.round(((service.serviceCost - service.discountedPrice) / service.serviceCost) * 100)
                     : null;
@@ -525,11 +548,18 @@ const HomePage = ({
                   return (
                     <div
                       key={service._id}
-                      className="appliance-card"
-                      onClick={() => handleServiceClick(service)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleServiceClick(service); }}
+                      className={`appliance-card ${!isAvailable ? 'disabled-card' : ''}`}
+                      onClick={() => {
+                        if (isAvailable) handleServiceClick(service);
+                      }}
+                      role={isAvailable ? 'button' : 'region'}
+                      tabIndex={isAvailable ? 0 : -1}
+                      aria-disabled={!isAvailable}
+                      onKeyDown={(e) => {
+                        if (isAvailable && (e.key === 'Enter' || e.key === ' ')) {
+                          handleServiceClick(service);
+                        }
+                      }}
                     >
                       <div className="appliance-img-wrap">
                         {discountPercent ? (
@@ -537,6 +567,7 @@ const HomePage = ({
                         ) : (
                           <span className="appliance-badge popular-badge">TOP SERVICE</span>
                         )}
+                        {!isAvailable && <span className="unavailable-badge">Unavailable</span>}
                         {service.serviceImages?.[0] ? (
                           <img src={service.serviceImages[0]} alt={service.serviceName} loading="lazy" />
                         ) : (

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './AuthDialog.css';
 import { signup, verifyOTP } from '../services/authServices';
+import { setAuthSession } from '../utils/browserUtils';
 
 const RegisterDialog = ({
   isOpen,
@@ -152,8 +153,17 @@ const RegisterDialog = ({
         otp: otp
       });
 
-      const resToken = response?.token || response?.result?.token;
-      const resUser = response?.user || response?.result?.user || response?.result;
+      const resToken =
+        response?.token ||
+        response?.result?.token ||
+        response?.data?.token ||
+        response?.accessToken ||
+        response?.result?.accessToken ||
+        response?.data?.accessToken ||
+        response?.result?.user?.token ||
+        response?.user?.token;
+
+      const resUser = response?.user || response?.result?.user || response?.result || response?.data?.user || response?.data;
 
       if (response?.success || resToken) {
         const role = (resUser?.role || '').toUpperCase();
@@ -161,10 +171,6 @@ const RegisterDialog = ({
           setOtpError('This account is an Admin/Technician account. Please log in on the Admin or Technician portal.');
           setIsLoading(false);
           return;
-        }
-
-        if (resToken) {
-          localStorage.setItem('token', resToken);
         }
 
         const userToSave = {
@@ -179,7 +185,7 @@ const RegisterDialog = ({
           token: resToken || ''
         };
 
-        localStorage.setItem('currentUser', JSON.stringify(userToSave));
+        setAuthSession(resToken, userToSave);
         onRegisterSuccess(userToSave);
         onClose();
         // Reset form

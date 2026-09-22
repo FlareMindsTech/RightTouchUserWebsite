@@ -110,7 +110,7 @@ const Footer = ({ currentUser, onLoginClick, serviceCategories = [] }) => {
                                 <MapPin size={18} className="icon" />
                                 <div className="text">
                                     <p className="label">Our HQ</p>
-                                    <p className="value">FlareMinds Tech, High-Tech City, India</p>
+                                    <p className="value">50/4, Unamancheri - Kolapakkam Rd, Nedunkundram, Chennai, Tamil Nadu 600127</p>
                                 </div>
                             </div>
                         </div>

@@ -39,6 +39,7 @@ import {
   getCurrentUserLocation
 } from '../services/addressService';
 import { getMyProfile, updateProfile, deleteMyAccount } from '../services/userService';
+import { safeStorage, setAuthSession, clearAuthSession } from '../utils/browserUtils';
 
 const mapAddressToSelection = (addr) => {
   let displayAddress = addr?.addressLine || addr?.address || '';
@@ -117,7 +118,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           gender: response.result.gender || '',
           mobileNumber: response.result.mobileNumber || response.result.identifier || ''
         });
-        localStorage.setItem('currentUser', JSON.stringify(response.result));
+        setAuthSession(null, response.result);
         window.dispatchEvent(new Event('userProfileUpdated'));
       }
     } catch (error) {
@@ -309,16 +310,18 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       setNewAddressForm((prev) => ({
         ...prev,
         addressLine: location.addressLine || prev.addressLine,
+        landmark: location.landmark || prev.landmark,
         city: location.city || coords.city || prev.city,
         state: location.state || coords.state || prev.state,
         pincode: location.pincode || coords.pincode || prev.pincode,
-        latitude: (location.latitude || coords.latitude).toString(),
-        longitude: (location.longitude || coords.longitude).toString()
+        latitude: (location.latitude ?? coords.latitude ?? '').toString(),
+        longitude: (location.longitude ?? coords.longitude ?? '').toString()
       }));
 
       setLocationSearch(location.addressLine || '');
       setShowAddAddressForm(true);
-      showToast('Current location detected successfully');
+      const accMsg = coords.accuracy ? ` (±${Math.round(coords.accuracy)}m)` : '';
+      showToast(`Current location detected${accMsg}`);
     } catch (error) {
       console.error('Geolocation error:', error);
       showToast(error.message || 'Unable to retrieve your location');
@@ -333,17 +336,19 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     const composedAddress = [
       addressMeta.house_number,
       addressMeta.road,
-      addressMeta.neighbourhood,
       addressMeta.suburb,
-      addressMeta.city_district
+      addressMeta.city || addressMeta.town,
+      addressMeta.state,
+      addressMeta.postcode
     ].filter(Boolean).join(', ');
 
     setNewAddressForm((prev) => ({
       ...prev,
       addressLine: suggestion?.display_name || composedAddress || prev.addressLine,
-      city: addressMeta.city || addressMeta.town || addressMeta.village || addressMeta.municipality || addressMeta.county || addressMeta.state_district || addressMeta.suburb || prev.city,
+      city: addressMeta.city || addressMeta.town || addressMeta.village || prev.city,
       state: addressMeta.state || prev.state,
       pincode: addressMeta.postcode || prev.pincode,
+      landmark: addressMeta.amenity || addressMeta.building || prev.landmark,
       latitude: suggestion?.lat || prev.latitude,
       longitude: suggestion?.lon || prev.longitude
     }));
@@ -359,8 +364,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   };
 
   const performLogout = () => {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('token');
+    clearAuthSession();
     showToast('Logged out successfully');
     if (onNavigate) {
       onNavigate('home');
@@ -379,8 +383,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     try {
       const response = await deleteMyAccount();
       if (response?.success) {
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('token');
+        clearAuthSession();
         showToast('Your account has been deleted');
         if (onNavigate) onNavigate('home');
         window.dispatchEvent(new Event('userLoggedOut'));
@@ -448,90 +451,91 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     <section className={`account-page-simple page ${isActive ? '' : 'hidden'}`} id="page-account">
       <div className="account-container-simple">
         {currentUser ? (
-          <div className="account-dashboard-layout">
-            {/* Left Column: Orders & Bookings at the very top, followed by other menus & logout */}
-            <div className="account-sidebar-col">
-              <div className="account-menu-simple">
-                <div className="account-menu-group-title">Orders &amp; Bookings</div>
-                <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
-                  <div className="menu-left-simple">
-                    <LuClipboardList className="icon" />
-                    <span>My Bookings</span>
-                  </div>
-                  <MdOutlineChevronRight className="arrow" />
-                </div>
-
-                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Product Quotations')}>
-                  <div className="menu-left-simple">
-                    <LuFileText className="icon" />
-                    <span>Product Quotations</span>
-                  </div>
-                  <MdOutlineChevronRight className="arrow" />
-                </div>
-
-                <div className="account-menu-group-title">Saved Locations</div>
-                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
-                  <div className="menu-left-simple">
-                    <MdOutlineLocationOn className="icon" />
-                    <span>Manage Addresses</span>
-                  </div>
-                  <MdOutlineChevronRight className="arrow" />
-                </div>
-
-                <div className="account-menu-group-title">Settings &amp; Support</div>
-                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
-                  <div className="menu-left-simple">
-                    <LuHeadphones className="icon" />
-                    <span>Help &amp; Support</span>
-                  </div>
-                  <MdOutlineChevronRight className="arrow" />
-                </div>
-
-                <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
-                  <div className="menu-left-simple">
-                    <MdOutlineReportProblem className="icon" />
-                    <span>Report Issue</span>
-                  </div>
-                  <MdOutlineChevronRight className="arrow" />
-                </div>
-
-                <div className="menu-item-simple" onClick={() => handleMenuItemClick('About Us')}>
-                  <div className="menu-left-simple">
-                    <MdOutlineInfo className="icon" />
-                    <span>About Us</span>
-                  </div>
-                  <MdOutlineChevronRight className="arrow" />
-                </div>
+          <>
+            {/* User Profile Card at the very top */}
+            <div className="account-profile-header-simple">
+              <div className="avatar-simple">
+                <User size={26} strokeWidth={2.2} />
               </div>
-
-              {/* Logout Button */}
-              <div className="account-footer-simple">
-                <button className="logout-button-simple" onClick={openLogoutConfirm} style={{ width: '100%' }}>
-                  <LuLogOut size={20} /> Logout
-                </button>
+              <div className="profile-info-simple">
+                <h2 className="desktop-only">{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
+                <h2 className="mobile-only">{profileData.fname || currentUser?.name || 'User'}</h2>
+                <p className="email">{profileData.email || 'Complete your profile'}</p>
+                <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
               </div>
+              <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
+                <MdEdit size={18} /> Edit Profile
+              </button>
             </div>
 
-            {/* Right Column: User Profile at the top, followed by banners, services & trust */}
-            <div className="account-content-col">
-              {/* User Profile Card (Right Side) */}
-              <div className="account-profile-header-simple">
-                <div className="avatar-simple">
-                  <User size={26} strokeWidth={2.2} />
+            <div className="account-dashboard-layout">
+              {/* Left Column: Orders & Bookings at the very top, followed by other menus & logout */}
+              <div className="account-sidebar-col">
+                <div className="account-menu-simple">
+                  <div className="account-menu-group-title">Orders &amp; Bookings</div>
+                  <div className="menu-item-simple" onClick={() => handleMenuItemClick('My bookings')}>
+                    <div className="menu-left-simple">
+                      <LuClipboardList className="icon" />
+                      <span>My Bookings</span>
+                    </div>
+                    <MdOutlineChevronRight className="arrow" />
+                  </div>
+
+                  <div className="menu-item-simple" onClick={() => handleMenuItemClick('Product Quotations')}>
+                    <div className="menu-left-simple">
+                      <LuFileText className="icon" />
+                      <span>Product Quotations</span>
+                    </div>
+                    <MdOutlineChevronRight className="arrow" />
+                  </div>
+
+                  <div className="account-menu-group-title">Saved Locations</div>
+                  <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
+                    <div className="menu-left-simple">
+                      <MdOutlineLocationOn className="icon" />
+                      <span>Manage Addresses</span>
+                    </div>
+                    <MdOutlineChevronRight className="arrow" />
+                  </div>
+
+                  <div className="account-menu-group-title">Settings &amp; Support</div>
+                  <div className="menu-item-simple" onClick={() => handleMenuItemClick('Help & Support')}>
+                    <div className="menu-left-simple">
+                      <LuHeadphones className="icon" />
+                      <span>Help &amp; Support</span>
+                    </div>
+                    <MdOutlineChevronRight className="arrow" />
+                  </div>
+
+                  <div className="menu-item-simple" onClick={() => handleMenuItemClick('Report issue')}>
+                    <div className="menu-left-simple">
+                      <MdOutlineReportProblem className="icon" />
+                      <span>Report Issue</span>
+                    </div>
+                    <MdOutlineChevronRight className="arrow" />
+                  </div>
+
+                  <div className="menu-item-simple" onClick={() => handleMenuItemClick('About Us')}>
+                    <div className="menu-left-simple">
+                      <MdOutlineInfo className="icon" />
+                      <span>About Us</span>
+                    </div>
+                    <MdOutlineChevronRight className="arrow" />
+                  </div>
                 </div>
-                <div className="profile-info-simple">
-                  <h2 className="desktop-only">{profileData.fname ? `${profileData.fname} ${profileData.lname || ''}` : (currentUser?.name || 'User')}</h2>
-                  <h2 className="mobile-only">{profileData.fname || currentUser?.name || 'User'}</h2>
-                  <p className="email">{profileData.email || 'Complete your profile'}</p>
-                  <p className="phone">{profileData.mobileNumber || profileData.identifier || currentUser?.mobileNumber || currentUser?.identifier || ''}</p>
+
+                {/* Logout Button */}
+                <div className="account-footer-simple">
+                  <button className="logout-button-simple" onClick={openLogoutConfirm} style={{ width: '100%' }}>
+                    <LuLogOut size={20} /> Logout
+                  </button>
                 </div>
-                <button className="edit-profile-btn-simple" onClick={() => setIsEditing(true)}>
-                  <MdEdit size={18} /> Edit Profile
-                </button>
               </div>
 
-              {/* Service Hero Banner */}
-              <div className="acc-hero-banner">
+              {/* Right Column: banners, services & trust */}
+              <div className="account-content-col">
+                {/* Service Hero Banner */}
+                <div className="acc-hero-banner">
                 <div className="acc-hero-banner-text">
                   <span className="acc-hero-badge">
                     <CheckCircle2 size={14} /> RIGHTTOUCH HOME SERVICES
@@ -657,8 +661,9 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
               </div>
             </div>
           </div>
-        ) : (
-          <div className="guest-account-prompt">
+        </>
+      ) : (
+        <div className="guest-account-prompt">
             <button className="login-prompt-btn" onClick={handleLoginClick}>
               <MdLogin size={20} /> Login Now
             </button>
