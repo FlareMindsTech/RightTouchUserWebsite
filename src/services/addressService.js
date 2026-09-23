@@ -106,30 +106,17 @@ export const reverseNominatim = async (lat, lng) => {
       latitude: parseFloat(lat),
       longitude: parseFloat(lng),
       addressLine,
-<<<<<<< HEAD
       displayName: result?.display_name || addressLine,
       houseNumber: addr.house_number ? `No. ${addr.house_number}` : "",
       road: addr.road || "",
       neighbourhood: addr.neighbourhood || addr.suburb || addr.residential || "",
-      city,
-      state,
-      pincode,
-      country,
-      raw: result,
-      source: "openstreetmap"
-=======
-<<<<<<< HEAD
-      city: cleanCity || city,
-      state: cleanState || state,
-      pincode: cleanPincode || pincode
->>>>>>> 3c3daefb95ede1effd0d5bd0eae5984974c9538b
-=======
       landmark,
       city: cleanCity || city,
       state: cleanState || state,
-      pincode: cleanPincode || pincode
->>>>>>> origin/bharath
->>>>>>> origin/vicky
+      pincode: cleanPincode || pincode,
+      country,
+      raw: result,
+      source: "openstreetmap"
     };
   } catch (err) {
     clearTimeout(timeoutId);
@@ -402,7 +389,6 @@ export const getCurrentUserLocation = async (options = {}) => {
 };
 
 /**
-<<<<<<< HEAD
  * Convenience function to fetch the user's current GPS location coordinates
  * and resolve them into a detailed street address using OpenStreetMap Nominatim.
  */
@@ -425,7 +411,7 @@ export const fetchUserAddress = fetchCurrentLocationAddress;
  */
 export const getAddressFromCoordinates = (lat, lng) => reverseAddress(lat, lng);
 
-=======
+/**
  * Continuous Live Location Tracker
  * Subscribes to live position updates as the user moves.
  * Returns an unsubscribe function to stop tracking.
@@ -465,8 +451,3 @@ export const watchUserLiveLocation = (onLocationUpdate, onError, options = {}) =
     navigator.geolocation.clearWatch(watchId);
   };
 };
-<<<<<<< HEAD
->>>>>>> 3c3daefb95ede1effd0d5bd0eae5984974c9538b
-=======
->>>>>>> origin/bharath
->>>>>>> origin/vicky
