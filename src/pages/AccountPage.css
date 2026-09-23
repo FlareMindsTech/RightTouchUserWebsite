@@ -11,6 +11,8 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .account-container-simple {
@@ -21,6 +23,7 @@
   padding: 24px 28px 32px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
+  box-sizing: border-box;
 }
 
 /* ===================== PROFILE HEADER ===================== */
@@ -502,28 +505,49 @@
 
 @media (max-width: 992px) {
   .account-dashboard-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
   }
 
   .account-sidebar-col {
     padding-right: 0;
     border-right: none;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .account-content-col {
+    width: 100%;
+    min-width: 0;
   }
 
   .acc-hero-banner {
     grid-template-columns: 1fr;
+    width: 100%;
+    min-width: 0;
   }
 
   .acc-hero-banner-img-wrap {
     height: 140px;
+    width: 100%;
+  }
+
+  .acc-appliances-box {
+    width: 100%;
+    min-width: 0;
   }
 
   .acc-appliances-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
   }
 
   .acc-sub-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
   }
 }
 
@@ -1343,10 +1367,170 @@
 }
 
 /* ======================= RESPONSIVE ======================= */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .account-page-simple {
+    padding: 10px 0 60px;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
   .account-container-simple {
-    border-radius: 12px;
-    padding: 16px 12px 20px;
+    border-radius: 14px;
+    padding: 14px 10px 20px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  .account-dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .account-sidebar-col {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0;
+    border: none;
+    box-sizing: border-box;
+  }
+
+  .account-content-col {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    gap: 14px;
+  }
+
+  .account-profile-header-simple {
+    padding: 14px 12px;
+    gap: 10px;
+    margin-bottom: 14px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .acc-hero-banner {
+    grid-template-columns: 1fr;
+    padding: 16px 14px;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .acc-hero-banner-text {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acc-hero-banner-text h3 {
+    font-size: 17px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .acc-hero-banner-text p {
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .acc-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .acc-btn-primary,
+  .acc-btn-secondary {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 120px;
+    padding: 8px 10px;
+    font-size: 12px;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .acc-hero-banner-img-wrap {
+    width: 100%;
+    max-width: 100%;
+    height: 140px;
+    box-sizing: border-box;
+  }
+
+  .acc-appliances-box {
+    padding: 14px 10px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .acc-appliances-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acc-appliance-card {
+    padding: 8px 6px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acc-appliance-img {
+    height: 70px;
+    width: 100%;
+  }
+
+  .acc-appliance-card h5 {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .acc-appliance-card p {
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .acc-sub-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acc-sub-card {
+    padding: 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .address-modal {
@@ -1414,9 +1598,58 @@
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
+  .account-page-simple {
+    padding: 6px 0 60px;
+  }
+
   .account-container-simple {
-    padding: 12px 10px 16px;
+    padding: 10px 8px 18px;
+    border-radius: 12px;
+  }
+
+  .acc-hero-banner {
+    padding: 14px 10px;
+  }
+
+  .acc-hero-banner-text h3 {
+    font-size: 15.5px;
+  }
+
+  .acc-hero-banner-text p {
+    font-size: 11.5px;
+  }
+
+  .acc-hero-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .acc-btn-primary,
+  .acc-btn-secondary {
+    width: 100%;
+    flex: 1 1 100%;
+    padding: 8px 10px;
+  }
+
+  .acc-hero-banner-img-wrap {
+    height: 120px;
+  }
+
+  .acc-appliances-box {
+    padding: 10px 8px;
+  }
+
+  .acc-appliances-grid {
+    gap: 6px;
+  }
+
+  .acc-appliance-card {
+    padding: 6px 4px;
+  }
+
+  .acc-appliance-img {
+    height: 60px;
   }
 
   .address-modal-header h2 {

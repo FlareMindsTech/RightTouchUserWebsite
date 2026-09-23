@@ -8,7 +8,11 @@ import {
   MdMyLocation,
   MdArrowBack,
   MdPlace,
-  MdCheck
+  MdCheck,
+  MdContentCopy,
+  MdCalendarToday,
+  MdCheckCircle,
+  MdArrowForward
 } from 'react-icons/md';
 import { createAddress, getMyAddresses, searchAddress, updateAddress, reverseAddress, getCurrentUserLocation } from '../services/addressService';
 import { checkout, getMyCart, getAvailableSlots, setSchedule } from '../services/cartService';
@@ -32,6 +36,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   const [showConfirmOrderModal, setShowConfirmOrderModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [bookingSuccessData, setBookingSuccessData] = useState(null);
+  const [copiedRef, setCopiedRef] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
@@ -102,13 +107,13 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     }
   ];
 
-  // Auto-close success modal after 3 seconds
+  // Auto-close success modal after 8 seconds (or manual dismiss/navigate)
   useEffect(() => {
     if (showSuccessModal) {
       const timer = setTimeout(() => {
         setShowSuccessModal(false);
         setBookingSuccessData(null);
-      }, 3000);
+      }, 8000);
       
       return () => clearTimeout(timer);
     }
@@ -247,9 +252,10 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
     setNewAddressForm((prev) => ({
       ...prev,
       addressLine: suggestion?.display_name || composedAddress || prev.addressLine,
-      city: addressMeta.city || addressMeta.town || addressMeta.village || addressMeta.municipality || addressMeta.county || addressMeta.state_district || addressMeta.suburb || prev.city,
+      city: addressMeta.city || addressMeta.town || addressMeta.village || prev.city,
       state: addressMeta.state || prev.state,
       pincode: addressMeta.postcode || prev.pincode,
+      landmark: addressMeta.amenity || addressMeta.building || prev.landmark,
       latitude: suggestion?.lat || prev.latitude,
       longitude: suggestion?.lon || prev.longitude
     }));
@@ -278,8 +284,7 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
         setLocationSuggestions(Array.isArray(data) ? data : []);
       } catch (error) {
         if (error.name !== 'AbortError') {
-          console.error('Location search failed:', error);
-          setLocationSuggestions([]);
+          console.error('Error searching location:', error);
         }
       } finally {
         setIsSearchingLocation(false);
@@ -301,16 +306,18 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       setNewAddressForm((prev) => ({
         ...prev,
         addressLine: location.addressLine || prev.addressLine,
+        landmark: location.landmark || prev.landmark,
         city: location.city || coords.city || prev.city,
         state: location.state || coords.state || prev.state,
         pincode: location.pincode || coords.pincode || prev.pincode,
-        latitude: (location.latitude || coords.latitude).toString(),
-        longitude: (location.longitude || coords.longitude).toString()
+        latitude: (location.latitude ?? coords.latitude ?? '').toString(),
+        longitude: (location.longitude ?? coords.longitude ?? '').toString()
       }));
 
       setLocationSearch(location.addressLine || '');
       setShowAddAddressForm(true);
-      showToast('Current location detected successfully');
+      const accMsg = coords.accuracy ? ` (±${Math.round(coords.accuracy)}m)` : '';
+      showToast(`Current location detected${accMsg}`);
     } catch (geoError) {
       console.error('Error fetching location:', geoError);
       showToast(geoError.message || 'Unable to retrieve your location');
@@ -1144,6 +1151,133 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
               <button className="confirm-btn confirm-remove" onClick={handleConfirmRemove}>
                 Remove
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Unique Animated Booking Success Modal */}
+      {showSuccessModal && (
+        <div className="booking-success-modal-overlay" onClick={() => { setShowSuccessModal(false); setBookingSuccessData(null); }}>
+          <div className="booking-success-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="modal-close-btn-premium" 
+              onClick={() => { setShowSuccessModal(false); setBookingSuccessData(null); }}
+              aria-label="Close modal"
+            >
+              <MdClose />
+            </button>
+
+            {/* Confetti Particles */}
+            <div className="celebration-particles" aria-hidden="true">
+              <span className="particle p1">✨</span>
+              <span className="particle p2">🎉</span>
+              <span className="particle p3">⭐</span>
+              <span className="particle p4">🎊</span>
+              <span className="particle p5">✨</span>
+              <span className="particle p6">🌟</span>
+            </div>
+
+            {/* Hero Animated Success Icon with Multi-Ring Ripple & Drawing SVG */}
+            <div className="success-hero-animation-wrap">
+              <div className="success-pulse-ring ring-1"></div>
+              <div className="success-pulse-ring ring-2"></div>
+              <div className="success-pulse-ring ring-3"></div>
+              
+              <div className="success-svg-circle-wrap">
+                <svg className="success-checkmark-svg" viewBox="0 0 80 80">
+                  <circle className="success-circle-bg" cx="40" cy="40" r="36" />
+                  <circle className="success-circle-outline" cx="40" cy="40" r="36" />
+                  <path className="success-check-path" d="M24 41 L35 52 L56 29" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Content & Typography */}
+            <div className="success-modal-body">
+              <div className="success-badge-pill">
+                <span className="badge-sparkle">✨</span> Booking Confirmed
+              </div>
+              <h2 className="success-title">Order Placed Successfully!</h2>
+              <p className="success-desc">
+                Your service appointment has been scheduled. Our verified expert technician will arrive at your doorstep on time.
+              </p>
+
+              {/* Reference ID with 1-click copy */}
+              {bookingSuccessData?.bookingId && (
+                <div className="success-ref-card">
+                  <span className="ref-label">Booking Reference</span>
+                  <div className="ref-code-wrap">
+                    <span className="ref-code">{bookingSuccessData.bookingId}</span>
+                    <button
+                      className="ref-copy-btn"
+                      onClick={() => {
+                        navigator.clipboard.writeText(bookingSuccessData.bookingId.replace("#", ""));
+                        setCopiedRef(true);
+                        setTimeout(() => setCopiedRef(false), 2000);
+                      }}
+                      title="Copy Reference ID"
+                    >
+                      {copiedRef ? (
+                        <>
+                          <MdCheck style={{ color: "#10b981", fontSize: "16px" }} /> Copied!
+                        </>
+                      ) : (
+                        <>
+                          <MdContentCopy style={{ fontSize: "14px" }} /> Copy
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Feature Assurance Grid */}
+              <div className="success-assurance-grid">
+                <div className="assurance-item">
+                  <span className="assurance-icon">⚡</span>
+                  <div className="assurance-text">
+                    <strong>On-Time Arrival</strong>
+                    <span>Technician assigned</span>
+                  </div>
+                </div>
+                <div className="assurance-item">
+                  <span className="assurance-icon">🛡️</span>
+                  <div className="assurance-text">
+                    <strong>Service Guarantee</strong>
+                    <span>30-day warranty</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="success-modal-actions">
+                <button
+                  className="success-btn-primary"
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    setBookingSuccessData(null);
+                    navigate("/bookings");
+                  }}
+                >
+                  <MdCalendarToday style={{ fontSize: "18px" }} />
+                  <span>Track My Bookings</span>
+                </button>
+                <button
+                  className="success-btn-secondary"
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    setBookingSuccessData(null);
+                    navigate("/services");
+                  }}
+                >
+                  <span>Explore More Services</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Timer Progress Indicator */}
+            <div className="success-progress-bar-wrap">
+              <div className="success-progress-bar"></div>
             </div>
           </div>
         </div>

@@ -294,8 +294,8 @@ body.dark-mode .filters-sidebar {
 
 .service-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .service-card {
@@ -1352,8 +1352,8 @@ body.dark-mode .filters-sidebar {
    ═══════════════════════════════════════════════════════ */
 .service-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -1616,58 +1616,82 @@ body.dark-mode .filters-sidebar {
   transform: translateY(0);
 }
 
+/* Compact cart controls on service detail */
 .massive-cart-controls {
-  width: 100%;
-  margin-top: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  margin-top: 16px;
+  align-self: flex-start;
 }
 
 .massive-quantity-container {
-  width: 100%;
-  height: 40px;
-  background: var(--green);
-  border-radius: 12px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  background: var(--bg-input, #f1f5f9);
+  border-radius: 12px;
   overflow: hidden;
+  border: 1.5px solid var(--border, #e2e8f0);
+  height: 42px;
+  width: auto;
+  min-width: 125px;
 }
 
 .massive-qty-btn {
-  width: 34px;
+  width: 38px;
   height: 100%;
   border: none;
   background: transparent;
-  color: white;
-  font-size: 20px;
+  color: var(--text-primary, #0f172a);
+  font-size: 18px;
   font-weight: 700;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .massive-qty-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--border, #e2e8f0);
+  color: var(--green, #22ba73);
 }
 
 .massive-qty-value {
   flex: 1;
+  min-width: 36px;
   text-align: center;
-  color: white;
+  color: var(--text-primary, #0f172a);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .massive-remove-btn {
   margin-top: 0;
-  background: #ef4444;
-  color: white;
-  border-color: #ef4444;
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1.5px solid #fecaca;
+  padding: 0 16px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
 .massive-remove-btn:hover {
-  background: #dc2626;
-  border-color: #dc2626;
+  background: #ef4444;
+  border-color: #ef4444;
   color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 @media (max-width: 640px) {

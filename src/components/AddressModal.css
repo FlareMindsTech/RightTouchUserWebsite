@@ -9,7 +9,7 @@
   width: 100vw !important;
   height: 100vh !important;
   z-index: 999999 !important;
-  background: rgba(15, 23, 42, 0.6) !important;
+  background: rgba(15, 23, 42, 0.65) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   display: flex !important;
@@ -30,12 +30,12 @@
 .address-popup.location-popup-premium {
   background: #ffffff !important;
   width: 100% !important;
-  max-width: 440px !important;
-  max-height: min(88vh, 700px) !important;
+  max-width: 460px !important;
+  max-height: min(88vh, 720px) !important;
   box-sizing: border-box !important;
-  border-radius: 20px !important;
+  border-radius: 24px !important;
   box-shadow: 
-    0 25px 50px -12px rgba(15, 23, 42, 0.25),
+    0 25px 60px -12px rgba(15, 23, 42, 0.28),
     0 0 0 1px rgba(15, 23, 42, 0.06) !important;
   display: flex !important;
   flex-direction: column !important;
@@ -58,11 +58,11 @@
 
 /* Mobile Sheet Drag Handle */
 .address-sheet-handle {
-  width: 38px !important;
+  width: 40px !important;
   height: 4px !important;
-  background: #cbd5e1 !important;
+  background: #e2e8f0 !important;
   border-radius: 4px !important;
-  margin: 8px auto 2px !important;
+  margin: 10px auto 4px !important;
   flex-shrink: 0 !important;
 }
 
@@ -71,59 +71,64 @@
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 14px 18px 12px !important;
+  padding: 16px 20px 14px !important;
   background: #ffffff !important;
   border-bottom: 1px solid #f1f5f9 !important;
   flex-shrink: 0 !important;
+  gap: 12px !important;
 }
 
 .title-with-icon {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
+  flex: 1 !important;
+  min-width: 0 !important;
 }
 
 .title-icon-badge {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 10px !important;
-  background: #f0fdf4 !important;
-  color: #16a34a !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+  background: #ecfdf5 !important;
+  color: #10b981 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 20px !important;
+  font-size: 22px !important;
   flex-shrink: 0 !important;
-  border: 1.5px solid #bbf7d0 !important;
+  border: 1.5px solid #a7f3d0 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12) !important;
 }
 
 .modal-heading-text {
-  font-size: 15.5px !important;
+  font-size: 16px !important;
   font-weight: 800 !important;
   color: #0f172a !important;
   margin: 0 !important;
   line-height: 1.25 !important;
-  letter-spacing: -0.2px !important;
+  letter-spacing: -0.3px !important;
 }
 
 .modal-subheading-text {
-  font-size: 11.5px !important;
+  font-size: 12px !important;
   color: #64748b !important;
-  margin: 1px 0 0 !important;
+  margin: 2px 0 0 !important;
   font-weight: 500 !important;
+  line-height: 1.3 !important;
 }
 
 .modal-close-icon-btn {
   background: #f8fafc !important;
   border: 1px solid #e2e8f0 !important;
-  width: 32px !important;
-  height: 32px !important;
+  width: 34px !important;
+  height: 34px !important;
   border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   color: #64748b !important;
-  font-size: 17px !important;
+  font-size: 18px !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   flex-shrink: 0 !important;
@@ -132,13 +137,13 @@
 .modal-close-icon-btn:hover {
   background: #fee2e2 !important;
   border-color: #fca5a5 !important;
-  color: #dc2626 !important;
+  color: #ef4444 !important;
   transform: rotate(90deg) scale(1.05) !important;
 }
 
 /* -------------------- Location Search Bar -------------------- */
 .location-header-premium {
-  padding: 10px 18px 8px !important;
+  padding: 12px 20px 8px !important;
   background: #ffffff !important;
   flex-shrink: 0 !important;
 }
@@ -146,36 +151,37 @@
 .location-search-wrapper {
   background: #f8fafc !important;
   border: 1.5px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  padding: 8px 12px !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
   transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
 }
 
 .location-search-wrapper:focus-within {
-  border-color: #2DB84B !important;
+  border-color: #22ba73 !important;
   background: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(45, 184, 75, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(34, 186, 115, 0.15) !important;
 }
 
 .search-leading-icon {
-  font-size: 18px !important;
+  font-size: 20px !important;
   color: #94a3b8 !important;
   flex-shrink: 0 !important;
   transition: color 0.2s ease !important;
 }
 
 .location-search-wrapper:focus-within .search-leading-icon {
-  color: #2DB84B !important;
+  color: #22ba73 !important;
 }
 
 .location-search-wrapper input {
   width: 100% !important;
   border: none !important;
   outline: none !important;
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   color: #0f172a !important;
   background: transparent !important;
   font-weight: 500 !important;
@@ -190,13 +196,13 @@
 .location-clear-btn {
   background: #e2e8f0 !important;
   border: none !important;
-  width: 20px !important;
-  height: 20px !important;
+  width: 22px !important;
+  height: 22px !important;
   border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
   cursor: pointer !important;
   color: #64748b !important;
   transition: all 0.2s ease !important;
@@ -210,9 +216,9 @@
 
 /* -------------------- Search Suggestions -------------------- */
 .location-suggestions-box {
-  margin: 0 18px 10px !important;
+  margin: 0 20px 10px !important;
   border: 1.5px solid #e2e8f0 !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   overflow: hidden !important;
   background: #ffffff !important;
   max-height: 200px !important;
@@ -230,7 +236,7 @@
   align-items: flex-start !important;
   gap: 10px !important;
   text-align: left !important;
-  padding: 10px 12px !important;
+  padding: 11px 14px !important;
   color: #334155 !important;
   cursor: pointer !important;
   transition: background 0.15s ease !important;
@@ -245,23 +251,23 @@
 }
 
 .sug-icon {
-  color: #2DB84B !important;
-  font-size: 18px !important;
+  color: #22ba73 !important;
+  font-size: 19px !important;
   flex-shrink: 0 !important;
   margin-top: 2px !important;
 }
 
 .sug-text {
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   line-height: 1.4 !important;
   font-weight: 500 !important;
   color: #0f172a !important;
 }
 
 .location-search-status {
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   color: #64748b !important;
-  padding: 4px 18px 8px !important;
+  padding: 4px 20px 8px !important;
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
@@ -269,16 +275,16 @@
 
 .spinner-icon {
   animation: addressModalSpin 0.8s linear infinite !important;
-  color: #2DB84B !important;
+  color: #22ba73 !important;
 }
 
 @keyframes addressModalSpin {
   100% { transform: rotate(360deg); }
 }
 
-/* -------------------- Current Location Hero Card -------------------- */
+/* -------------------- Current Location Action Card -------------------- */
 .location-actions-container {
-  padding: 0 18px 10px !important;
+  padding: 4px 20px 12px !important;
   flex-shrink: 0 !important;
 }
 
@@ -286,8 +292,8 @@
   width: 100% !important;
   display: flex !important;
   align-items: center !important;
-  padding: 10px 14px !important;
-  gap: 10px !important;
+  padding: 12px 14px !important;
+  gap: 12px !important;
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
   border: 1.5px solid #bbf7d0 !important;
   border-radius: 14px !important;
@@ -301,7 +307,7 @@
   background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
   border-color: #86efac !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(45, 184, 75, 0.15) !important;
+  box-shadow: 0 4px 14px rgba(34, 186, 115, 0.18) !important;
 }
 
 .use-current-loc-card:hover .gps-chevron {
@@ -314,18 +320,17 @@
 }
 
 .gps-icon-badge {
-  width: 34px !important;
-  height: 34px !important;
+  width: 36px !important;
+  height: 36px !important;
   border-radius: 10px !important;
-  background: #2DB84B !important;
+  background: linear-gradient(135deg, #22ba73 0%, #16a34a 100%) !important;
   color: #ffffff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 18px !important;
+  font-size: 19px !important;
   flex-shrink: 0 !important;
-  box-shadow: 0 3px 10px rgba(45, 184, 75, 0.3) !important;
-  transition: all 0.2s ease !important;
+  box-shadow: 0 3px 10px rgba(34, 186, 115, 0.3) !important;
 }
 
 .gps-icon-badge.pulsing {
@@ -333,43 +338,47 @@
 }
 
 @keyframes pulseGPS {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(45, 184, 75, 0.6); }
-  70% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(45, 184, 75, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(45, 184, 75, 0); }
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 186, 115, 0.6); }
+  70% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(34, 186, 115, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 186, 115, 0); }
 }
 
 .gps-text-content {
   flex: 1 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 1px !important;
+  gap: 2px !important;
+  min-width: 0 !important;
 }
 
 .gps-main-title {
   font-size: 13.5px !important;
   font-weight: 700 !important;
   color: #15803d !important;
+  line-height: 1.25 !important;
 }
 
 .gps-sub-title {
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   color: #166534 !important;
   font-weight: 500 !important;
+  line-height: 1.3 !important;
 }
 
 .gps-chevron {
-  font-size: 18px !important;
+  font-size: 20px !important;
   color: #15803d !important;
   transition: transform 0.2s ease !important;
+  flex-shrink: 0 !important;
 }
 
 /* -------------------- Saved Addresses List -------------------- */
 .location-list-premium {
   flex: 1 !important;
   overflow-y: auto !important;
-  padding: 0 18px 10px !important;
+  padding: 0 20px 14px !important;
   scroll-behavior: smooth !important;
-  min-height: 120px !important;
+  min-height: 140px !important;
 }
 
 .location-list-premium::-webkit-scrollbar {
@@ -387,12 +396,12 @@
 }
 
 .address-section-divider {
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
-  color: #94a3b8 !important;
+  color: #64748b !important;
   text-transform: uppercase !important;
   letter-spacing: 0.8px !important;
-  margin: 10px 0 6px 2px !important;
+  margin: 14px 0 8px 4px !important;
   padding: 0 !important;
 }
 
@@ -400,9 +409,9 @@
 .location-item-premium {
   display: flex !important;
   align-items: flex-start !important;
-  padding: 12px 14px !important;
-  gap: 12px !important;
-  border-radius: 14px !important;
+  padding: 14px 16px !important;
+  gap: 14px !important;
+  border-radius: 16px !important;
   border: 1.5px solid #e2e8f0 !important;
   cursor: pointer !important;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -410,29 +419,29 @@
   box-sizing: border-box !important;
   text-align: left !important;
   background: #ffffff !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 10px !important;
   position: relative !important;
 }
 
 .location-item-premium:hover {
   border-color: #86efac !important;
-  background: #fbfdfc !important;
+  background: #fafdfb !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05) !important;
 }
 
 .location-item-premium.active {
   background: #f0fdf4 !important;
-  border-color: #2DB84B !important;
-  box-shadow: 0 6px 20px rgba(45, 184, 75, 0.12) !important;
+  border-color: #22ba73 !important;
+  box-shadow: 0 6px 20px rgba(34, 186, 115, 0.14) !important;
   transform: translateY(-1px) !important;
 }
 
 /* Tag Themed Icon Badges */
 .loc-item-icon {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 10px !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -462,10 +471,10 @@
 }
 
 .location-item-premium.active .loc-item-icon {
-  background: #2DB84B !important;
+  background: linear-gradient(135deg, #22ba73 0%, #16a34a 100%) !important;
   color: #ffffff !important;
-  border-color: #22c55e !important;
-  box-shadow: 0 3px 10px rgba(45, 184, 75, 0.3) !important;
+  border-color: #16a34a !important;
+  box-shadow: 0 3px 10px rgba(34, 186, 115, 0.3) !important;
 }
 
 .loc-item-content {
@@ -481,12 +490,13 @@
 }
 
 .loc-item-title {
-  font-size: 14.5px !important;
+  font-size: 15px !important;
   font-weight: 700 !important;
   color: #0f172a !important;
   margin: 0 !important;
   text-transform: capitalize !important;
   letter-spacing: -0.2px !important;
+  line-height: 1.25 !important;
 }
 
 .default-pill {
@@ -499,12 +509,13 @@
   letter-spacing: 0.5px !important;
   text-transform: uppercase !important;
   border: 1px solid #bbf7d0 !important;
+  line-height: 1 !important;
 }
 
 .loc-item-subtitle {
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   color: #475569 !important;
-  margin: 0 0 6px !important;
+  margin: 0 0 8px !important;
   line-height: 1.45 !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
@@ -524,11 +535,12 @@
 .loc-pin-pill {
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #64748b !important;
+  color: #475569 !important;
   background: #f1f5f9 !important;
-  padding: 2px 8px !important;
+  padding: 3px 8px !important;
   border-radius: 6px !important;
   border: 1px solid #e2e8f0 !important;
+  line-height: 1.2 !important;
 }
 
 .location-item-premium.active .loc-city-pill,
@@ -544,7 +556,8 @@
   align-items: center !important;
   justify-content: center !important;
   flex-shrink: 0 !important;
-  margin-top: 4px !important;
+  align-self: center !important;
+  margin-left: 2px !important;
 }
 
 .radio-outer {
@@ -561,13 +574,13 @@
 }
 
 .location-item-premium:hover .radio-outer {
-  border-color: #2DB84B !important;
+  border-color: #22ba73 !important;
 }
 
 .radio-outer.selected {
-  border-color: #2DB84B !important;
-  background: #2DB84B !important;
-  box-shadow: 0 0 0 3px rgba(45, 184, 75, 0.2) !important;
+  border-color: #22ba73 !important;
+  background: #22ba73 !important;
+  box-shadow: 0 0 0 3.5px rgba(34, 186, 115, 0.22) !important;
 }
 
 .radio-inner {
@@ -586,36 +599,37 @@
 
 /* -------------------- Fixed Modal Footer & Add Address Button -------------------- */
 .modal-sticky-footer {
-  padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  padding: 12px 20px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
   background: #ffffff !important;
   border-top: 1px solid #f1f5f9 !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.03) !important;
 }
 
 .add-address-trigger-btn {
   width: 100% !important;
-  height: 44px !important;
+  height: 46px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
-  background: linear-gradient(135deg, #2DB84B 0%, #16a34a 100%) !important;
+  background: linear-gradient(135deg, #22ba73 0%, #16a34a 100%) !important;
   color: #ffffff !important;
   border: none !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   font-weight: 700 !important;
   font-size: 14px !important;
   cursor: pointer !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  box-shadow: 0 4px 14px rgba(45, 184, 75, 0.25) !important;
+  box-shadow: 0 4px 14px rgba(34, 186, 115, 0.25) !important;
   box-sizing: border-box !important;
 }
 
 .add-address-trigger-btn:hover {
   background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(45, 184, 75, 0.35) !important;
+  box-shadow: 0 6px 18px rgba(34, 186, 115, 0.35) !important;
 }
 
 .add-address-trigger-btn:active {
@@ -626,7 +640,7 @@
 .new-address-form-box {
   background: #f8fafc !important;
   border-top: 1px solid #f1f5f9 !important;
-  padding: 16px 18px 18px !important;
+  padding: 18px 20px 20px !important;
   flex: 1 !important;
   overflow-y: auto !important;
   box-sizing: border-box !important;
@@ -659,7 +673,7 @@
 .form-back-link {
   background: none !important;
   border: none !important;
-  color: #2DB84B !important;
+  color: #22ba73 !important;
   font-weight: 700 !important;
   font-size: 13px !important;
   display: flex !important;
@@ -718,7 +732,7 @@
 }
 
 .tag-pill-btn.active.tag-other {
-  border-color: #2DB84B !important;
+  border-color: #22ba73 !important;
   background: #dcfce7 !important;
   color: #15803d !important;
 }
@@ -763,8 +777,8 @@
 }
 
 .address-form-input:focus {
-  border-color: #2DB84B !important;
-  box-shadow: 0 0 0 3px rgba(45, 184, 75, 0.12) !important;
+  border-color: #22ba73 !important;
+  box-shadow: 0 0 0 3px rgba(34, 186, 115, 0.15) !important;
 }
 
 .address-form-input.textarea-input {
@@ -804,8 +818,8 @@
 }
 
 .custom-checkbox-label input:checked + .checkbox-custom-box {
-  background: #2DB84B !important;
-  border-color: #2DB84B !important;
+  background: #22ba73 !important;
+  border-color: #22ba73 !important;
 }
 
 .custom-checkbox-label input:checked + .checkbox-custom-box::after {
@@ -834,7 +848,7 @@
 
 .address-save-btn {
   flex: 1 !important;
-  background: linear-gradient(135deg, #2DB84B 0%, #16a34a 100%) !important;
+  background: linear-gradient(135deg, #22ba73 0%, #16a34a 100%) !important;
   color: #ffffff !important;
   border: none !important;
   padding: 12px 18px !important;
@@ -843,13 +857,13 @@
   font-size: 14px !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  box-shadow: 0 4px 12px rgba(45, 184, 75, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(34, 186, 115, 0.25) !important;
 }
 
 .address-save-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 16px rgba(45, 184, 75, 0.35) !important;
+  box-shadow: 0 6px 16px rgba(34, 186, 115, 0.35) !important;
 }
 
 .address-save-btn:disabled {
@@ -890,7 +904,7 @@
   height: 64px !important;
   border-radius: 20px !important;
   background: #f0fdf4 !important;
-  color: #2DB84B !important;
+  color: #22ba73 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -925,7 +939,7 @@
 
 .loading-state-container .spinner {
   animation: addressModalSpin 0.8s linear infinite !important;
-  color: #2DB84B !important;
+  color: #22ba73 !important;
 }
 
 /* ==========================================
@@ -939,10 +953,10 @@
 
   .address-popup.location-popup-premium {
     width: 100% !important;
-    max-width: 440px !important;
+    max-width: 480px !important;
     margin: 0 auto !important;
-    max-height: 85vh !important;
-    border-radius: 20px 20px 0 0 !important;
+    max-height: 88vh !important;
+    border-radius: 22px 22px 0 0 !important;
     animation: addressModalMobileSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
@@ -952,27 +966,27 @@
   }
 
   .modal-title-header {
-    padding: 12px 16px 10px !important;
+    padding: 14px 18px 12px !important;
   }
 
   .location-header-premium {
-    padding: 8px 16px 6px !important;
+    padding: 10px 18px 6px !important;
   }
 
   .location-actions-container {
-    padding: 0 16px 8px !important;
+    padding: 2px 18px 10px !important;
   }
 
   .location-list-premium {
-    padding: 0 16px 10px !important;
+    padding: 0 18px 12px !important;
   }
 
   .modal-sticky-footer {
-    padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .new-address-form-box {
-    padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .new-address-grid {

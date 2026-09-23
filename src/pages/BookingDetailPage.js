@@ -26,25 +26,33 @@ import { createRating } from '../services/ratingService';
 const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService, isPaidBooking, paymentLoading, canShowPayNow, handlePayButtonClick, canRate, showInvoice, setShowInvoice, currentUser, autoOpenRate, setAutoOpenRate }) => {
   const navigate = useNavigate();
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [hasSubmittedRating, setHasSubmittedRating] = useState(false);
   const [ratingForm, setRatingForm] = useState({ rates: 5, comment: '' });
   const [hoverStar, setHoverStar] = useState(0);
   const [ratingLoading, setRatingLoading] = useState(false);
 
-  const isAlreadyRated = Boolean(
+  const isAlreadyRated = hasSubmittedRating || Boolean(
     booking?.isRated ||
-    booking?.rating ||
-    booking?.userRating ||
+    booking?.rated ||
+    booking?.ratingId ||
     booking?.hasRated ||
     booking?.ratingGiven ||
-    (booking?.ratings && booking.ratings.length > 0)
+    booking?.userRating ||
+    booking?.review ||
+    (typeof booking?.rating === 'number' && booking.rating > 0) ||
+    (typeof booking?.rating === 'object' && booking.rating !== null && Object.keys(booking.rating).length > 0) ||
+    (Array.isArray(booking?.ratings) && booking.ratings.length > 0)
   );
 
   useEffect(() => {
-    if ((canRate || autoOpenRate) && !isAlreadyRated) {
+    // Only open rating modal if user specifically clicked the "Rate Service" button (autoOpenRate) and hasn't rated yet
+    if (autoOpenRate && !isAlreadyRated) {
       setShowRatingModal(true);
-      if (setAutoOpenRate) setAutoOpenRate(false);
     }
-  }, [canRate, autoOpenRate, setAutoOpenRate, isAlreadyRated]);
+    if (setAutoOpenRate) {
+      setAutoOpenRate(false);
+    }
+  }, [autoOpenRate, setAutoOpenRate, isAlreadyRated]);
 
   const handleSubmitRating = async () => {
     if (!ratingForm.comment.trim()) {
@@ -93,6 +101,7 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
       
       if (response?.success) {
         showToast('Thank you for your rating!', 'success');
+        setHasSubmittedRating(true);
         setShowRatingModal(false);
         setRatingForm({ rates: 5, comment: '' });
       } else {
@@ -484,12 +493,33 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
           </button>
         </div>
         {statusUpper === 'COMPLETED' && (
-          <button
-            className="bdp-btn bdp-btn-rate"
-            onClick={() => setShowRatingModal(true)}
-          >
-            ⭐ Rate This Service
-          </button>
+          isAlreadyRated ? (
+            <div 
+              className="bdp-btn bdp-btn-rated" 
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                background: 'rgba(34, 197, 94, 0.1)',
+                color: '#16a34a',
+                border: '1px solid rgba(34, 197, 94, 0.25)',
+                borderRadius: '12px',
+                padding: '12px 18px',
+                fontWeight: '700',
+                fontSize: '13.5px'
+              }}
+            >
+              <MdCheckCircle style={{ fontSize: '18px' }} /> Service Rated
+            </div>
+          ) : (
+            <button
+              className="bdp-btn bdp-btn-rate"
+              onClick={() => setShowRatingModal(true)}
+            >
+              ⭐ Rate This Service
+            </button>
+          )
         )}
         <button className="bdp-btn bdp-btn-rebook" onClick={handleRebook}>
           🔄 Book Again

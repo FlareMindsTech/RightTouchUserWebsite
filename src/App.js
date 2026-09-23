@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
-import { safeStorage, trackNavigation } from './utils/browserUtils';
+import { safeStorage, trackNavigation, setAuthSession, clearAuthSession, getAuthToken, getSavedUser, isTokenExpired } from './utils/browserUtils';
 // Import components
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
@@ -35,8 +35,10 @@ import { getAllCategories } from './services/categoryService';
 import { getAllServices } from './services/serviceService';
 import { getAllProducts } from './services/productService';
 import { getMyCart, addToCart as apiAddToCart, updateCartItem, removeFromCart as apiRemoveFromCart } from './services/cartService';
+import { getMyProfile } from './services/userService';
 import { RtAlertContainer, rtAlert } from './components/RtAlert';
 import ConfirmModal from './components/ConfirmModal';
+import ShareModal from './components/ShareModal';
 
 function App() {
   const navigate = useNavigate();
@@ -56,6 +58,17 @@ function App() {
 
   // Search state
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [shareModalData, setShareModalData] = useState(null);
+
+  useEffect(() => {
+    const handleOpenShare = (e) => {
+      if (e.detail) {
+        setShareModalData(e.detail);
+      }
+    };
+    window.addEventListener('open-share-modal', handleOpenShare);
+    return () => window.removeEventListener('open-share-modal', handleOpenShare);
+  }, []);
 
   // Global Data Store (Production-Level Caching)
   const [serviceCategories, setServiceCategories] = useState([]);
@@ -154,33 +167,59 @@ function App() {
     rtAlert(message, isError ? 'error' : isWarning ? 'warning' : 'success');
   }, []);
 
-  // Check for user login on mount
+  // Check for user login on mount & maintain persistent session
   useEffect(() => {
-    // 🧹 Clean up leftover adminToken or non-customer storage from localhost domain sharing
-    const savedUserStr = safeStorage.getItem('currentUser') || safeStorage.getItem('user');
-    let parsed = null;
-    try {
-      if (savedUserStr) parsed = JSON.parse(savedUserStr);
-    } catch (e) {
-      console.error('Failed to parse saved user:', e);
-      safeStorage.removeItem('currentUser');
-      safeStorage.removeItem('user');
-    }
+    const token = getAuthToken();
+    const savedUser = getSavedUser();
 
-    const userRole = (parsed?.role || '').toUpperCase();
-    const isNonCustomerRole = ['ADMIN', 'OWNER', 'TECHNICIAN', 'SUPERADMIN', 'EMPLOYEE'].includes(userRole);
+    if (token && savedUser) {
+      const userRole = (savedUser?.role || '').toUpperCase();
+      const isNonCustomerRole = ['ADMIN', 'OWNER', 'TECHNICIAN', 'SUPERADMIN', 'EMPLOYEE'].includes(userRole);
 
-    if (isNonCustomerRole) {
-      console.warn('[Auth Guard] Non-customer role session (Admin/Technician) detected in localStorage. Clearing non-customer storage.');
-      safeStorage.removeItem('adminToken');
-      safeStorage.removeItem('user');
-      safeStorage.removeItem('currentUser');
-      safeStorage.removeItem('token');
+      if (isNonCustomerRole) {
+        console.warn('[Auth Guard] Non-customer role session detected in localStorage. Clearing storage.');
+        clearAuthSession();
+        setCurrentUser(null);
+      } else {
+        if (!savedUser._id && savedUser.userId) savedUser._id = savedUser.userId;
+        setCurrentUser(savedUser);
+        fetchCart();
+
+        // Refresh user profile in the background without disturbing active session
+        getMyProfile()
+          .then((res) => {
+            if (res?.success && res.result) {
+              const freshUser = { ...savedUser, ...res.result, token };
+              setAuthSession(token, freshUser);
+              setCurrentUser(freshUser);
+            }
+          })
+          .catch((err) => {
+            if (err?.status === 401 && isTokenExpired(token)) {
+              clearAuthSession();
+              setCurrentUser(null);
+            }
+          });
+      }
+    } else if (token && !savedUser) {
+      // Token is valid but user object was not cached: restore user profile
+      getMyProfile()
+        .then((res) => {
+          if (res?.success && res.result) {
+            const freshUser = { ...res.result, token };
+            setAuthSession(token, freshUser);
+            setCurrentUser(freshUser);
+            fetchCart();
+          }
+        })
+        .catch((err) => {
+          if (err?.status === 401 && isTokenExpired(token)) {
+            clearAuthSession();
+            setCurrentUser(null);
+          }
+        });
+    } else {
       setCurrentUser(null);
-    } else if (parsed && (parsed._id || parsed.userId)) {
-      // Ensure _id is present for consistency
-      if (!parsed._id && parsed.userId) parsed._id = parsed.userId;
-      setCurrentUser(parsed);
     }
 
     // Check for dark mode preference
@@ -196,7 +235,6 @@ function App() {
       if (savedUserStr) {
         const parsedUser = JSON.parse(savedUserStr);
         setCurrentUser(prev => {
-          // Only update state if data actually changed to prevent infinite loops
           if (JSON.stringify(prev) === savedUserStr) return prev;
           return parsedUser;
         });
@@ -205,10 +243,6 @@ function App() {
 
     window.addEventListener('userLoggedOut', handleLogoutEvent);
     window.addEventListener('userProfileUpdated', handleProfileUpdateEvent);
-
-    if (parsed && (safeStorage.getItem('token') || parsed.token)) {
-      fetchCart();
-    }
 
     // Global data fetching
     const fetchGlobalData = async () => {
@@ -425,28 +459,18 @@ function App() {
 
   // Auth handlers
   const handleLoginSuccess = (user) => {
-    safeStorage.removeItem('adminToken');
-    safeStorage.removeItem('user');
-    if (user?.token) {
-      safeStorage.setItem('token', user.token);
-    }
-    safeStorage.setItem('currentUser', JSON.stringify(user));
-    setCurrentUser(user);
+    const savedUser = setAuthSession(user?.token, user);
+    setCurrentUser(savedUser);
     fetchCart();
-    const displayName = user.name || user.fname || user.identifier || 'User';
+    const displayName = savedUser.name || savedUser.fname || savedUser.identifier || 'User';
     showToast(`Welcome back, ${displayName}!`);
   };
 
   const handleRegisterSuccess = (user) => {
-    safeStorage.removeItem('adminToken');
-    safeStorage.removeItem('user');
-    if (user?.token) {
-      safeStorage.setItem('token', user.token);
-    }
-    safeStorage.setItem('currentUser', JSON.stringify(user));
-    setCurrentUser(user);
+    const savedUser = setAuthSession(user?.token, user);
+    setCurrentUser(savedUser);
     fetchCart();
-    const displayName = user.name || user.fname || user.identifier || 'User';
+    const displayName = savedUser.name || savedUser.fname || savedUser.identifier || 'User';
     showToast(`Welcome, ${displayName}!`);
   };
 
@@ -455,10 +479,7 @@ function App() {
   };
 
   const confirmLogout = () => {
-    safeStorage.removeItem('currentUser');
-    safeStorage.removeItem('user');
-    safeStorage.removeItem('token');
-    safeStorage.removeItem('adminToken');
+    clearAuthSession();
     setCurrentUser(null);
     setShowLogoutConfirm(false);
     showToast('Logged out successfully');
@@ -613,6 +634,7 @@ function App() {
               showToast={showToast}
               cartItemCount={cartItems.length}
               currentUser={currentUser}
+              onLoginClick={() => setShowLoginDialog(true)}
             />
           } />
           <Route path="/cart" element={
@@ -742,6 +764,13 @@ function App() {
         confirmClass="cm-confirm-warning"
         onConfirm={confirmLogout}
         onCancel={() => setShowLogoutConfirm(false)}
+      />
+
+      <ShareModal
+        isOpen={Boolean(shareModalData)}
+        shareData={shareModalData}
+        onClose={() => setShareModalData(null)}
+        showToast={showToast}
       />
 
       <RtAlertContainer />

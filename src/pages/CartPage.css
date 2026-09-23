@@ -1857,126 +1857,442 @@
 }
 
 /* ============================================
-   SUCCESS TOAST - SIMPLE AUTO-CLOSE
+   UNIQUE ANIMATED BOOKING SUCCESS MODAL
    ============================================ */
 
-.success-toast-overlay {
+.booking-success-modal-overlay {
   position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
+  inset: 0 !important;
+  width: 100vw !important;
   height: 100vh !important;
   z-index: 99999 !important;
-  background: rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 20px !important;
-  margin: 0 !important;
-  overflow: hidden !important;
-  animation: fadeIn 0.3s ease-out !important;
+  animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
-.success-toast {
-  background: white !important;
-  max-width: 400px !important;
-  width: 100% !important;
-  border-radius: 20px !important;
-  padding: 32px 24px !important;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  text-align: center !important;
-  position: relative !important;
-  overflow: hidden !important;
-  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(30px) scale(0.95); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-@keyframes fadeIn {
+@keyframes modalFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.success-toast-icon {
-  font-size: 56px !important;
-  margin-bottom: 12px !important;
-  animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-@keyframes bounceIn {
-  0% { transform: scale(0) rotate(-10deg); }
-  50% { transform: scale(1.2) rotate(5deg); }
-  100% { transform: scale(1) rotate(0); }
-}
-
-.success-toast-content {
+.booking-success-modal-card {
+  position: relative !important;
+  background: #ffffff !important;
+  max-width: 460px !important;
+  width: 100% !important;
+  border-radius: 28px !important;
+  padding: 36px 28px 24px !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(16, 185, 129, 0.15) !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 4px !important;
+  text-align: center !important;
+  overflow: hidden !important;
+  animation: modalPopSpring 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
 }
 
-.success-toast-title {
-  font-size: 22px !important;
+@keyframes modalPopSpring {
+  0% { transform: scale(0.7) translateY(40px); opacity: 0; }
+  70% { transform: scale(1.03) translateY(-5px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Modal Close Button */
+.modal-close-btn-premium {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  z-index: 5 !important;
+}
+
+.modal-close-btn-premium:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  transform: rotate(90deg) scale(1.05) !important;
+}
+
+/* Floating Confetti Particles */
+.celebration-particles {
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  z-index: 1 !important;
+}
+
+.celebration-particles .particle {
+  position: absolute !important;
+  font-size: 18px !important;
+  opacity: 0 !important;
+  animation: floatCelebration 2.5s ease-in-out infinite !important;
+}
+
+.celebration-particles .p1 { top: 12%; left: 12%; animation-delay: 0.1s !important; }
+.celebration-particles .p2 { top: 15%; right: 14%; animation-delay: 0.3s !important; }
+.celebration-particles .p3 { top: 40%; left: 6%; animation-delay: 0.5s !important; }
+.celebration-particles .p4 { top: 38%; right: 8%; animation-delay: 0.2s !important; }
+.celebration-particles .p5 { bottom: 25%; left: 10%; animation-delay: 0.6s !important; }
+.celebration-particles .p6 { bottom: 22%; right: 12%; animation-delay: 0.4s !important; }
+
+@keyframes floatCelebration {
+  0% { transform: translateY(15px) scale(0.4) rotate(0deg); opacity: 0; }
+  30% { transform: translateY(-5px) scale(1.1) rotate(15deg); opacity: 1; }
+  70% { transform: translateY(-15px) scale(1) rotate(-10deg); opacity: 0.8; }
+  100% { transform: translateY(-25px) scale(0.6) rotate(20deg); opacity: 0; }
+}
+
+/* Hero Animated Success Icon with Multi-Ring Ripple */
+.success-hero-animation-wrap {
+  position: relative !important;
+  width: 90px !important;
+  height: 90px !important;
+  margin-bottom: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 2 !important;
+}
+
+.success-pulse-ring {
+  position: absolute !important;
+  inset: -10px !important;
+  border-radius: 50% !important;
+  pointer-events: none !important;
+}
+
+.success-pulse-ring.ring-1 {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0) 70%) !important;
+  animation: auraPulse 2.4s ease-out infinite !important;
+}
+
+.success-pulse-ring.ring-2 {
+  inset: -20px !important;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0) 70%) !important;
+  animation: auraPulse 2.4s ease-out 0.6s infinite !important;
+}
+
+.success-pulse-ring.ring-3 {
+  inset: -30px !important;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0) 70%) !important;
+  animation: auraPulse 2.4s ease-out 1.2s infinite !important;
+}
+
+@keyframes auraPulse {
+  0% { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.success-svg-circle-wrap {
+  position: relative !important;
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50% !important;
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.45) !important;
+}
+
+.success-checkmark-svg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.success-circle-bg {
+  fill: #10b981 !important;
+  transform-origin: center !important;
+  animation: circlePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+@keyframes circlePop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+.success-circle-outline {
+  fill: none !important;
+  stroke: rgba(255, 255, 255, 0.3) !important;
+  stroke-width: 3 !important;
+}
+
+.success-check-path {
+  fill: none !important;
+  stroke: #ffffff !important;
+  stroke-width: 6 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  stroke-dasharray: 60 !important;
+  stroke-dashoffset: 60 !important;
+  animation: checkmarkDraw 0.6s cubic-bezier(0.65, 0, 0.45, 1) 0.35s forwards !important;
+}
+
+@keyframes checkmarkDraw {
+  0% { stroke-dashoffset: 60; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Modal Body */
+.success-modal-body {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  z-index: 2 !important;
+}
+
+.success-badge-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+  text-transform: uppercase !important;
+  padding: 5px 14px !important;
+  border-radius: 20px !important;
+  margin-bottom: 12px !important;
+}
+
+.badge-sparkle {
+  font-size: 14px !important;
+}
+
+.success-title {
+  font-size: 24px !important;
   font-weight: 800 !important;
   color: #0f172a !important;
-  margin: 0 !important;
+  margin: 0 0 8px 0 !important;
+  letter-spacing: -0.4px !important;
 }
 
-.success-toast-subtitle {
+.success-desc {
   font-size: 14px !important;
+  line-height: 1.5 !important;
   color: #64748b !important;
-  margin: 0 !important;
+  margin: 0 0 18px 0 !important;
+  max-width: 360px !important;
 }
 
-.success-toast-ref {
-  font-size: 13px !important;
+/* Booking Reference ID Card */
+.success-ref-card {
+  width: 100% !important;
+  background: #f8fafc !important;
+  border: 1.5px dashed #cbd5e1 !important;
+  border-radius: 14px !important;
+  padding: 10px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 16px !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.success-ref-card:hover {
+  border-color: #10b981 !important;
+}
+
+.ref-label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+}
+
+.ref-code-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.ref-code {
+  font-family: monospace, inherit !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: 0.5px !important;
+}
+
+.ref-copy-btn {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+  font-size: 11.5px !important;
   font-weight: 700 !important;
-  color: #10b981 !important;
-  background: #f0fdf4 !important;
-  padding: 4px 14px !important;
-  border-radius: 20px !important;
-  margin-top: 8px !important;
-  display: inline-block !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
 }
 
-.success-toast-progress {
+.ref-copy-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Feature Assurance Mini-Grid */
+.success-assurance-grid {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-bottom: 22px !important;
+}
+
+.assurance-item {
+  background: #f8fafc !important;
+  border: 1px solid #edf2f7 !important;
+  border-radius: 12px !important;
+  padding: 10px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-align: left !important;
+}
+
+.assurance-icon {
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+.assurance-text {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.assurance-text strong {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+}
+
+.assurance-text span {
+  font-size: 11px !important;
+  color: #64748b !important;
+}
+
+/* Action Buttons */
+.success-modal-actions {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.success-btn-primary {
+  width: 100% !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 13px 20px !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 6px 18px -3px rgba(16, 185, 129, 0.4) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.success-btn-primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 24px -4px rgba(16, 185, 129, 0.5) !important;
+  filter: brightness(1.05) !important;
+}
+
+.success-btn-secondary {
+  width: 100% !important;
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  padding: 11px 18px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.success-btn-secondary:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Progress indicator bar at the bottom */
+.success-progress-bar-wrap {
   position: absolute !important;
   bottom: 0 !important;
   left: 0 !important;
+  width: 100% !important;
   height: 4px !important;
-  background: linear-gradient(90deg, #10b981, #059669) !important;
-  animation: progressShrink 3s linear forwards !important;
-  border-radius: 0 0 20px 20px !important;
+  background: #f1f5f9 !important;
+  overflow: hidden !important;
 }
 
-@keyframes progressShrink {
+.success-progress-bar {
+  height: 100% !important;
+  background: linear-gradient(90deg, #10b981, #047857) !important;
+  animation: progressDrain 8s linear forwards !important;
+}
+
+@keyframes progressDrain {
   from { width: 100%; }
   to { width: 0%; }
 }
 
+/* Mobile & Tablet Responsive */
 @media (max-width: 480px) {
-  .success-toast {
-    max-width: 100% !important;
-    margin: 10px !important;
-    padding: 28px 20px !important;
+  .booking-success-modal-card {
+    padding: 28px 18px 20px !important;
+    border-radius: 22px !important;
   }
-  
-  .success-toast-icon {
-    font-size: 44px !important;
+
+  .success-hero-animation-wrap {
+    width: 76px !important;
+    height: 76px !important;
+    margin-bottom: 16px !important;
   }
-  
-  .success-toast-title {
-    font-size: 19px !important;
+
+  .success-svg-circle-wrap {
+    width: 68px !important;
+    height: 68px !important;
+  }
+
+  .success-title {
+    font-size: 20px !important;
+  }
+
+  .success-desc {
+    font-size: 13px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .success-assurance-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
   }
 }

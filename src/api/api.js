@@ -1,10 +1,15 @@
 import { logger } from "../utils/logger";
+import { safeStorage, getAuthToken, clearAuthSession, isTokenExpired } from "../utils/browserUtils";
 
-const BASE_URL = process.env.REACT_APP_API_URL || "";
+const BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  (typeof window !== "undefined" && window.location.hostname === "localhost"
+    ? "http://localhost:7372"
+    : "");
 
 export const apiClient = async (endpoint, options = {}) => {
-  let token = localStorage.getItem("token");
-  const currentUserStr = localStorage.getItem("currentUser");
+  let token = getAuthToken();
+  const currentUserStr = safeStorage.getItem("currentUser");
 
   if (currentUserStr) {
     try {
@@ -64,8 +69,7 @@ export const apiClient = async (endpoint, options = {}) => {
 
         const authErrorMessage = (errorData?.message || errorData?.error || '').toString().toLowerCase();
         const isGenuineAuthFailure = 
-          url.includes('/api/user/me') ||
-          url.includes('/api/user/profile') ||
+          isTokenExpired(validToken) ||
           authErrorMessage.includes('jwt expired') ||
           authErrorMessage.includes('token expired') ||
           authErrorMessage.includes('jwt malformed') ||
@@ -74,25 +78,30 @@ export const apiClient = async (endpoint, options = {}) => {
 
         if (validToken && !isPaymentEndpoint && !isGatewayError && isGenuineAuthFailure) {
           console.warn("[Auth] User auth token expired or invalid (401). Clearing session.");
-          localStorage.removeItem("token");
-          localStorage.removeItem("currentUser");
-          localStorage.removeItem("user");
+          clearAuthSession();
           window.dispatchEvent(new Event('userLoggedOut'));
         } else {
           console.warn("[API 401] 401 returned from endpoint without invalidating user session:", { url, isPaymentEndpoint, isGatewayError });
         }
       }
 
-      const errorMessage = 
+      let errorMessage = 
         errorData?.result?.error?.description ||
         errorData?.message || 
         errorData?.error?.message || 
-        (errorData?.result?.error ? JSON.stringify(errorData.result.error) : null) ||
-        `API request failed with status ${response.status}`;
+        (errorData?.result?.error ? JSON.stringify(errorData.result.error) : null);
+
+      if (!errorMessage) {
+        if (text && typeof text === 'string' && !text.trim().startsWith('<')) {
+          errorMessage = text;
+        } else {
+          errorMessage = `API request failed with status ${response.status}`;
+        }
+      }
 
       const error = new Error(errorMessage);
       error.status = response.status;
-      error.response = { data: errorData || { message: text } };
+      error.response = { data: errorData || { message: errorMessage } };
       throw error;
     }
 

@@ -1,64 +1,54 @@
 /**
- * Helper utility to share service/product details or current page link.
- * Uses Web Share API when available, otherwise falls back to copying link to clipboard.
+ * Helper utility to trigger the RightTouch interactive Share Modal.
+ * Emits a custom window event that is caught globally in App.js to display the Share Modal.
  */
-export const shareItem = async ({ title, text, url }, showToast) => {
+export const shareItem = async ({ title, text, url, image, price, category }, showToast) => {
   const shareUrl = url || window.location.href;
-  const shareTitle = title || 'RightTouch Home Services';
-  const shareText = text || 'Check out this service on RightTouch!';
+  const shareTitle = title || 'RightTouch Services & Products';
+  const shareText = text || `Check out ${shareTitle} on RightTouch!`;
 
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: shareTitle,
-        text: shareText,
-        url: shareUrl,
-      });
-      return;
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.warn('Share error:', err);
-      } else {
-        return;
-      }
-    }
+  // Dispatch custom event to open the modern interactive Share Modal
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('open-share-modal', {
+        detail: {
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+          image,
+          price,
+          category
+        }
+      })
+    );
   }
+};
 
-  // Fallback: Copy to clipboard
-  try {
-    const textToCopy = `${shareTitle}\n${shareText}\n\n${shareUrl}`;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(textToCopy);
-    } else {
-      const textArea = document.createElement('textarea');
-      textArea.value = textToCopy;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-    }
-    if (typeof showToast === 'function') {
-      showToast('Share details copied to clipboard!');
-    } else {
-      alert('Share details copied to clipboard!');
-    }
-  } catch (err) {
-    console.error('Failed to copy share text:', err);
+/**
+ * Open Share Modal explicitly
+ */
+export const openShareModal = (shareData) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('open-share-modal', {
+        detail: shareData
+      })
+    );
   }
 };
 
 /**
  * Share via WhatsApp
  */
-export const shareViaWhatsApp = ({ title, text, url }, showToast) => {
+export const shareViaWhatsApp = ({ title, text, url }) => {
   const shareUrl = url || window.location.href;
   const shareText = `${title || 'RightTouch Home Services'}\n${text || 'Check out this service on RightTouch!'}\n\n${shareUrl}`;
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
   window.open(whatsappUrl, '_blank');
 };
 
 /**
- * Copy link to clipboard
+ * Copy link directly to clipboard with user feedback
  */
 export const copyLink = async (url, showToast) => {
   const link = url || window.location.href;
@@ -75,8 +65,6 @@ export const copyLink = async (url, showToast) => {
     }
     if (typeof showToast === 'function') {
       showToast('Link copied to clipboard!');
-    } else {
-      alert('Link copied to clipboard!');
     }
   } catch (err) {
     console.error('Failed to copy link:', err);
@@ -87,27 +75,8 @@ export const copyLink = async (url, showToast) => {
 };
 
 /**
- * Show share options (native share, WhatsApp, copy link)
+ * Show share options (triggers modal)
  */
-export const showShareOptions = ({ title, text, url }, showToast) => {
-  const shareUrl = url || window.location.href;
-  
-  if (navigator.share) {
-    shareItem({ title, text, url: shareUrl }, showToast);
-    return;
-  }
-
-  // Fallback: create a simple share modal or use native options
-  const shareText = `${title || 'RightTouch Home Services'}\n${text || 'Check out this service on RightTouch!'}\n\n${shareUrl}`;
-  
-  // Try WhatsApp first
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-  
-  // For mobile, we can show action sheet or just open WhatsApp
-  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    window.open(whatsappUrl, '_blank');
-  } else {
-    // Desktop: copy to clipboard
-    copyLink(shareUrl, showToast);
-  }
+export const showShareOptions = (data, showToast) => {
+  shareItem(data, showToast);
 };

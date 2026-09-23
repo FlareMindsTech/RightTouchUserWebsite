@@ -181,7 +181,7 @@ body.dark-mode .global-mobile-header {
 }
 
 .gmh-logo {
-  height: 32px;
+  height: 38px;
   width: auto;
   object-fit: contain;
   transition: height 0.3s ease;
@@ -341,8 +341,8 @@ body.dark .gmh-cart-badge {
 /* Small Mobile (below 480px) */
 @media (max-width: 479px) {
   .page-wrapper {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 8px;
+    padding-right: 8px;
     padding-top: 0;
     padding-bottom: 90px;
   }
