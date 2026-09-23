@@ -94,22 +94,20 @@ function App() {
         window.scrollTo({
           top: 0,
           left: 0,
-          behavior: 'auto'
+          behavior: 'instant'
         });
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
-        // Scroll main content wrapper
-        const wrapper = document.querySelector('.page-wrapper');
-        if (wrapper) wrapper.scrollTop = 0;
-        // Scroll page content
-        const page = document.querySelector('.page');
-        if (page) page.scrollTop = 0;
+        const containers = document.querySelectorAll('.page-wrapper, .page, .bookings-page-premium, main');
+        containers.forEach(el => {
+          if (el) el.scrollTop = 0;
+        });
       });
     };
 
     scrollToTop();
-    // Multiple checks for animation/layout settling
     const timeoutIds = [
+      setTimeout(scrollToTop, 10),
       setTimeout(scrollToTop, 50),
       setTimeout(scrollToTop, 150),
       setTimeout(scrollToTop, 300)

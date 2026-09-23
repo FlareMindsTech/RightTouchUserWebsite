@@ -24,71 +24,20 @@
   cursor: text;
 }
 
-/* Glowing Neon Shimmer Beam across input on click / focus */
-.search-input-box::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 80%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(34, 186, 115, 0.25) 30%,
-    rgba(255, 255, 255, 0.8) 50%,
-    rgba(34, 186, 115, 0.25) 70%,
-    transparent 100%
-  );
-  transform: skewX(-22deg);
-  pointer-events: none;
-  opacity: 0;
-}
-
 .search-input-box:hover {
-  border-color: rgba(34, 186, 115, 0.5);
+  border-color: rgba(34, 186, 115, 0.4);
   background: var(--bg-card, #ffffff);
-  box-shadow: 0 4px 16px rgba(34, 186, 115, 0.12);
-  transform: translateY(-1px);
 }
 
 .search-input-box:active {
-  transform: scale(0.985);
-  transition: transform 0.1s ease;
+  transform: scale(0.99);
 }
 
-/* ── Focus / Click Interactive Elevation & Pulse ── */
+/* ── Focus / Click Interactive Elevation ── */
 .search-input-box:focus-within {
   background: var(--bg-card, #ffffff);
   border-color: var(--green, #22ba73);
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 0 0 4px rgba(34, 186, 115, 0.22), 0 12px 32px -4px rgba(34, 186, 115, 0.28);
-  animation: searchBoxAuraPulse 3s infinite alternate ease-in-out;
-}
-
-.search-input-box:focus-within::before {
-  opacity: 1;
-  animation: searchSweepBeam 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-@keyframes searchSweepBeam {
-  0% {
-    left: -150%;
-    opacity: 0.9;
-  }
-  100% {
-    left: 240%;
-    opacity: 0;
-  }
-}
-
-@keyframes searchBoxAuraPulse {
-  0% {
-    box-shadow: 0 0 0 3.5px rgba(34, 186, 115, 0.2), 0 8px 24px -2px rgba(34, 186, 115, 0.2);
-  }
-  100% {
-    box-shadow: 0 0 0 5.5px rgba(34, 186, 115, 0.32), 0 14px 36px -2px rgba(34, 186, 115, 0.32);
-  }
+  box-shadow: 0 0 0 3px rgba(34, 186, 115, 0.15);
 }
 
 /* ── Search Icon Interactive Pop Animation ── */

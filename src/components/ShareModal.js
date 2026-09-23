@@ -41,6 +41,24 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
   const text = shareData.text || `Check out ${title} on RightTouch!`;
   const shareMessage = `${title}\n${text}\n\n${url}`;
 
+  const isMobile = () => {
+    if (typeof navigator === 'undefined') return false;
+    return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  const isIOS = () => {
+    if (typeof navigator === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  };
+
+  const openApp = (targetUrl) => {
+    if (isMobile()) {
+      window.location.href = targetUrl;
+    } else {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const handleCopyLink = async () => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -89,7 +107,7 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
       color: '#25D366',
       bg: 'rgba(37, 211, 102, 0.12)',
       action: () => {
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`, '_blank');
+        openApp(`https://wa.me/?text=${encodeURIComponent(shareMessage)}`);
       }
     },
     {
@@ -98,7 +116,7 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
       color: '#229ED9',
       bg: 'rgba(34, 158, 217, 0.12)',
       action: () => {
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + '\n' + text)}`, '_blank');
+        openApp(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + '\n' + text)}`);
       }
     },
     {
@@ -107,7 +125,7 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
       color: '#0f1419',
       bg: 'rgba(15, 20, 25, 0.1)',
       action: () => {
-        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+        openApp(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMessage)}`);
       }
     },
     {
@@ -116,7 +134,7 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
       color: '#1877F2',
       bg: 'rgba(24, 119, 242, 0.12)',
       action: () => {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+        openApp(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`);
       }
     },
     {
@@ -125,7 +143,7 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
       color: '#0A66C2',
       bg: 'rgba(10, 102, 194, 0.12)',
       action: () => {
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+        openApp(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`);
       }
     },
     {
@@ -134,7 +152,7 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
       color: '#EA4335',
       bg: 'rgba(234, 67, 53, 0.12)',
       action: () => {
-        window.open(`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(shareMessage)}`, '_blank');
+        window.location.href = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(shareMessage)}`;
       }
     },
     {
@@ -143,7 +161,10 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
       color: '#10b981',
       bg: 'rgba(16, 185, 129, 0.12)',
       action: () => {
-        window.open(`sms:?&body=${encodeURIComponent(shareMessage)}`, '_blank');
+        const smsUrl = isIOS()
+          ? `sms:&body=${encodeURIComponent(shareMessage)}`
+          : `sms:?body=${encodeURIComponent(shareMessage)}`;
+        window.location.href = smsUrl;
       }
     },
     ...(typeof navigator !== 'undefined' && navigator.share ? [

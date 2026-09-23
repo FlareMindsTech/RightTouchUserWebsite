@@ -129,6 +129,7 @@ const Footer = ({ currentUser, onLoginClick, serviceCategories = [] }) => {
                             <span className="dot">•</span>
                             <span>Verified Pros</span>
                         </div>
+                        <p className="made-by">Made by <span>FlareMinds</span></p>
                     </div>
                 </div>
             </div>

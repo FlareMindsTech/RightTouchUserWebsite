@@ -708,11 +708,11 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
 
       {/* Profile Edit Modal */}
       {isEditing && (
-        <div className="modal-backdrop" onClick={() => setIsEditing(false)}>
-          <div className="address-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="address-modal-header">
+        <div className="modal-backdrop profile-edit-backdrop" onClick={() => setIsEditing(false)}>
+          <div className="profile-edit-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-edit-modal-header">
               <h2>Edit Profile</h2>
-              <button className="modal-close" onClick={() => setIsEditing(false)}>
+              <button className="modal-close" onClick={() => setIsEditing(false)} aria-label="Close">
                 <MdClose />
               </button>
             </div>

@@ -372,6 +372,20 @@
   font-size: 12px;
 }
 
+.made-by {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.made-by span {
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
 /* ════════════════════
    RESPONSIVE BREAKPOINTS
 ════════════════════ */

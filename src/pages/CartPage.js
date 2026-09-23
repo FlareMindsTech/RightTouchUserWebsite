@@ -439,8 +439,13 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
   };
 
   const getTipAmount = () => {
-    if (customTip) return parseInt(customTip) || 0;
-    return selectedTip || 0;
+    if (selectedTip === 'custom' || (selectedTip === null && customTip)) {
+      return parseInt(customTip, 10) || 0;
+    }
+    if (typeof selectedTip === 'number') {
+      return selectedTip;
+    }
+    return 0;
   };
 
   const getTotal = () => {
@@ -1073,36 +1078,69 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
             {/* Tip Section */}
             {cartItems.length > 0 && (
               <div className="tip-section">
-                <h4 className="tip-title">Add a tip to thank the professional</h4>
-                <div className="tip-options">
-                  {tipOptions.map((option, index) => (
+                <div className="tip-header-row">
+                  <h4 className="tip-title">Add a tip to thank the professional</h4>
+                  {(selectedTip !== null || customTip) && (
                     <button
-                      key={index}
-                      className={`tip-option ${selectedTip === option.amount ? 'selected' : ''} ${option.mostTipped ? 'most-tipped' : ''}`}
+                      type="button"
+                      className="tip-remove-btn"
                       onClick={() => {
-                        if (option.amount === 'custom') {
-                          setSelectedTip(null);
-                          setCustomTip('');
-                        } else {
-                          setSelectedTip(option.amount);
-                          setCustomTip('');
-                        }
+                        setSelectedTip(null);
+                        setCustomTip('');
                       }}
                     >
-                      {option.label}
-                      {option.mostTipped && <span className="most-tipped-badge">Most tipped</span>}
+                      Remove tip
                     </button>
-                  ))}
+                  )}
                 </div>
-                {selectedTip === null && (
+                <div className="tip-options">
+                  {tipOptions.map((option, index) => {
+                    const isSelected = selectedTip === option.amount;
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        className={`tip-option ${isSelected ? 'selected' : ''} ${option.mostTipped ? 'most-tipped' : ''}`}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedTip(null);
+                            setCustomTip('');
+                          } else {
+                            setSelectedTip(option.amount);
+                            setCustomTip('');
+                          }
+                        }}
+                      >
+                        <span className="tip-amount-text">{option.label}</span>
+                        {option.mostTipped && <span className="most-tipped-badge">Most tipped</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedTip === 'custom' && (
                   <div className="custom-tip-container">
-                    <input
-                      type="number"
-                      className="custom-tip-input"
-                      placeholder="Enter custom amount"
-                      value={customTip}
-                      onChange={(e) => setCustomTip(e.target.value)}
-                    />
+                    <div className="custom-tip-input-wrap">
+                      <span className="custom-tip-currency">₹</span>
+                      <input
+                        type="number"
+                        min="1"
+                        className="custom-tip-input"
+                        placeholder="Enter custom tip amount"
+                        value={customTip}
+                        onChange={(e) => setCustomTip(e.target.value)}
+                        autoFocus
+                      />
+                      {customTip && (
+                        <button
+                          type="button"
+                          className="custom-tip-clear"
+                          onClick={() => setCustomTip('')}
+                          title="Clear amount"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

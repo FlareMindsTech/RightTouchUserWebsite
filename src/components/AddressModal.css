@@ -18,12 +18,24 @@
   padding: 20px !important;
   margin: 0 !important;
   box-sizing: border-box !important;
-  animation: addressOverlayFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.address-popup-overlay.location-overlay-premium.is-opening {
+  animation: addressOverlayFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.address-popup-overlay.location-overlay-premium.is-closing {
+  animation: addressOverlayFadeOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 @keyframes addressOverlayFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes addressOverlayFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* -------------------- Modal Container Card -------------------- */
@@ -42,13 +54,23 @@
   overflow: hidden !important;
   position: relative !important;
   margin: auto !important;
-  animation: addressModalPopUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, opacity !important;
+  transform: translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
+}
+
+.address-popup.location-popup-premium.is-opening {
+  animation: addressModalPopUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.address-popup.location-popup-premium.is-closing {
+  animation: addressModalPopDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 @keyframes addressModalPopUp {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(14px);
+    transform: scale(0.96) translateY(16px);
   }
   to {
     opacity: 1;
@@ -56,14 +78,20 @@
   }
 }
 
+@keyframes addressModalPopDown {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(16px);
+  }
+}
+
 /* Mobile Sheet Drag Handle */
 .address-sheet-handle {
-  width: 40px !important;
-  height: 4px !important;
-  background: #e2e8f0 !important;
-  border-radius: 4px !important;
-  margin: 10px auto 4px !important;
-  flex-shrink: 0 !important;
+  display: none !important;
 }
 
 /* -------------------- Modal Header -------------------- */
@@ -71,7 +99,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 16px 20px 14px !important;
+  padding: 18px 20px 14px !important;
   background: #ffffff !important;
   border-bottom: 1px solid #f1f5f9 !important;
   flex-shrink: 0 !important;
@@ -725,7 +753,8 @@
   color: #0369a1 !important;
 }
 
-.tag-pill-btn.active.tag-office {
+.tag-pill-btn.active.tag-office,
+.tag-pill-btn.active.tag-work {
   border-color: #7c3aed !important;
   background: #f3e8ff !important;
   color: #6d28d9 !important;
@@ -953,11 +982,21 @@
 
   .address-popup.location-popup-premium {
     width: 100% !important;
-    max-width: 480px !important;
-    margin: 0 auto !important;
+    max-width: 100% !important;
+    margin: 0 !important;
     max-height: 88vh !important;
-    border-radius: 22px 22px 0 0 !important;
-    animation: addressModalMobileSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border-radius: 24px 24px 0 0 !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  /* Slide down-to-up on open */
+  .address-popup.location-popup-premium.is-opening {
+    animation: addressModalMobileSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  /* Slide up-to-down on cancel/close */
+  .address-popup.location-popup-premium.is-closing {
+    animation: addressModalMobileSlideDown 0.26s cubic-bezier(0.32, 0, 0.67, 0) forwards !important;
   }
 
   @keyframes addressModalMobileSlideUp {
@@ -965,8 +1004,23 @@
     to   { transform: translateY(0); }
   }
 
+  @keyframes addressModalMobileSlideDown {
+    from { transform: translateY(0); }
+    to   { transform: translateY(100%); }
+  }
+
+  .address-sheet-handle {
+    display: block !important;
+    width: 36px !important;
+    height: 4px !important;
+    background: #cbd5e1 !important;
+    border-radius: 4px !important;
+    margin: 10px auto 2px !important;
+    flex-shrink: 0 !important;
+  }
+
   .modal-title-header {
-    padding: 14px 18px 12px !important;
+    padding: 12px 18px 12px !important;
   }
 
   .location-header-premium {

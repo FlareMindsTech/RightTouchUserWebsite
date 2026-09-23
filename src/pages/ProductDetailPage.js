@@ -18,7 +18,7 @@ import { getProductById } from '../services/productService';
 import { goBackSmart } from '../utils/browserUtils';
 import QuoteRequestModal from '../components/QuoteRequestModal';
 import { formatPriceSmart } from '../utils/format';
-import './ServicePage.css';
+import './ProductDetailPage.css';
 
 const ProductDetailPage = ({ isActive, showToast, addToCart, isInCart, removeFromCart, cartItems, currentUser, onNavigate }) => {
     const [searchParams] = useSearchParams();
@@ -110,74 +110,29 @@ const ProductDetailPage = ({ isActive, showToast, addToCart, isInCart, removeFro
     return (
         <section className={`page ${isActive ? '' : 'hidden'}`} id="page-product-detail">
             {/* Top Navigation Row */}
-            <div style={{ marginBottom: '20px' }}>
+            <div className="pdetail-top-nav">
                 <button
                     onClick={handleBack}
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 16px',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
-                        borderRadius: '50px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        boxShadow: 'var(--shadow-sm)',
-                        transition: 'all 0.2s ease'
-                    }}
+                    className="pdetail-back-btn"
+                    aria-label="Back to Products"
                 >
-                    <ChevronLeft size={18} /> Back to Products
+                    <span className="pdetail-back-icon">
+                        <ChevronLeft size={18} />
+                    </span>
+                    <span>Back to Products</span>
                 </button>
             </div>
 
             {/* Product Hero Layout */}
-            <div
-                style={{
-                    background: 'var(--bg-card)',
-                    borderRadius: '24px',
-                    padding: '24px',
-                    boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-                    border: '1px solid var(--border-light)',
-                    marginBottom: '32px'
-                }}
-            >
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                        gap: '28px',
-                        alignItems: 'start'
-                    }}
-                >
+            <div className="pdetail-hero-card">
+                <div className="pdetail-hero-grid">
                     {/* Left Column: Product Image */}
-                    <div
-                        style={{
-                            width: '100%',
-                            borderRadius: '16px',
-                            overflow: 'hidden',
-                            background: '#f8fafc',
-                            border: '1px solid #e2e8f0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: '280px',
-                            maxHeight: '400px',
-                            position: 'relative'
-                        }}
-                    >
+                    <div className="pdetail-image-wrap">
                         {productImage ? (
                             <img
                                 src={productImage}
                                 alt={product.productName}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    maxHeight: '380px',
-                                    objectFit: 'cover'
-                                }}
+                                className="pdetail-main-img"
                             />
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: '#94a3b8' }}>
@@ -186,166 +141,95 @@ const ProductDetailPage = ({ isActive, showToast, addToCart, isInCart, removeFro
                             </div>
                         )}
                         {product.isActive && (
-                            <span
-                                style={{
-                                    position: 'absolute',
-                                    top: '12px',
-                                    left: '12px',
-                                    background: '#22ba73',
-                                    color: '#ffffff',
-                                    padding: '4px 12px',
-                                    borderRadius: '50px',
-                                    fontSize: '11px',
-                                    fontWeight: '700',
-                                    letterSpacing: '0.5px'
-                                }}
-                            >
+                            <span className="pdetail-badge-available">
                                 AVAILABLE
                             </span>
                         )}
                     </div>
 
                     {/* Middle Column: Title & Overview Info */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                            <span
-                                style={{
-                                    background: '#f0fdf4',
-                                    color: '#16a34a',
-                                    padding: '4px 12px',
-                                    borderRadius: '50px',
-                                    fontSize: '12px',
-                                    fontWeight: '700',
-                                    border: '1px solid #bbf7d0'
-                                }}
-                            >
+                    <div className="pdetail-info-col">
+                        <div className="pdetail-tags-row">
+                            <span className="pdetail-tag-category">
                                 {product.productType || product.category || 'Product'}
                             </span>
                             {product.usageType && (
-                                <span
-                                    style={{
-                                        background: '#e0f2fe',
-                                        color: '#0369a1',
-                                        padding: '4px 12px',
-                                        borderRadius: '50px',
-                                        fontSize: '12px',
-                                        fontWeight: '700'
-                                    }}
-                                >
+                                <span className="pdetail-tag-usage">
                                     {product.usageType}
                                 </span>
                             )}
                         </div>
 
-                        <h1 style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: '1.3' }}>
+                        <h1 className="pdetail-title">
                             {product.productName}
                         </h1>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontWeight: '700', fontSize: '15px' }}>
+                        <div className="pdetail-rating-row">
+                            <div className="pdetail-rating-score">
                                 <Star size={18} fill="#f59e0b" color="#f59e0b" />
                                 <span>{product.ratingSummary?.averageRating || 0}</span>
                             </div>
-                            <span style={{ color: '#64748b', fontSize: '14px' }}>
+                            <span className="pdetail-rating-count">
                                 ({product.ratingSummary?.totalRatings || 0} customer reviews)
                             </span>
                         </div>
 
                         {product.description && (
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+                            <p className="pdetail-desc">
                                 {product.description}
                             </p>
                         )}
-                    </div>
 
-                    {/* Right Column: Pricing & Action Box */}
-                    <div
-                        style={{
-                            background: '#f8fafc',
-                            borderRadius: '16px',
-                            padding: '20px',
-                            border: '1px solid #e2e8f0',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '16px'
-                        }}
-                    >
-                        <div>
-                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                {maxPrice > minPrice ? 'Price Range' : 'Price'}
-                            </span>
-                            <div style={{ fontSize: '26px', fontWeight: '800', color: '#22ba73', marginTop: '4px' }}>
-                                ₹{formatPriceSmart(minPrice)}
-                                {maxPrice > minPrice && ` - ₹${formatPriceSmart(maxPrice)}`}
-                            </div>
-                        </div>
-
-                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {product.installationDuration && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#475569' }}>
-                                    <CalendarCheck size={16} color="#22ba73" />
-                                    <span>Installation: <strong>{product.installationDuration}</strong></span>
+                        {/* Pricing & Action Box */}
+                        <div className="pdetail-price-box">
+                            <div>
+                                <span className="pdetail-price-label">
+                                    {maxPrice > minPrice ? 'Price Range' : 'Price'}
+                                </span>
+                                <div className="pdetail-price-amount">
+                                    ₹{formatPriceSmart(minPrice)}
+                                    {maxPrice > minPrice && ` - ₹${formatPriceSmart(maxPrice)}`}
                                 </div>
-                            )}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: product.siteInspectionRequired ? '#d97706' : '#22ba73' }}>
-                                <Truck size={16} />
-                                <span>{product.siteInspectionRequired ? 'Site Inspection Required' : 'No Site Visit Needed'}</span>
                             </div>
-                        </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
-                            <button
-                                onClick={() => {
-                                    if (!currentUser) {
-                                        if (showToast) showToast('Please sign in to request a quote');
-                                        return;
-                                    }
-                                    setShowQuoteModal(true);
-                                }}
-                                style={{
-                                    width: '100%',
-                                    height: '46px',
-                                    background: 'var(--primary-gradient)',
-                                    color: '#ffffff',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    fontWeight: '700',
-                                    fontSize: '15px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    boxShadow: '0 4px 12px rgba(34,186,115,0.25)'
-                                }}
-                            >
-                                <FileText size={18} /> Get Quote
-                            </button>
+                            <div className="pdetail-meta-list">
+                                {product.installationDuration && (
+                                    <div className="pdetail-meta-item">
+                                        <CalendarCheck size={16} color="#22ba73" />
+                                        <span>Installation: <strong>{product.installationDuration}</strong></span>
+                                    </div>
+                                )}
+                                <div className="pdetail-meta-item" style={{ color: product.siteInspectionRequired ? '#d97706' : '#22ba73' }}>
+                                    <Truck size={16} />
+                                    <span>{product.siteInspectionRequired ? 'Site Inspection Required' : 'No Site Visit Needed'}</span>
+                                </div>
+                            </div>
+
+                            <div style={{ marginTop: '4px' }}>
+                                <button
+                                    onClick={() => {
+                                        if (!currentUser) {
+                                            if (showToast) showToast('Please sign in to request a quote');
+                                            return;
+                                        }
+                                        setShowQuoteModal(true);
+                                    }}
+                                    className="pdetail-quote-btn"
+                                >
+                                    <FileText size={18} /> Get Quote
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Specifications & Details Section */}
-            <div
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                    gap: '20px'
-                }}
-            >
+            <div className="pdetail-sections-grid">
                 {/* Technical Specifications */}
                 {product.technicalSpecifications && Object.keys(product.technicalSpecifications).length > 0 && (
-                    <div
-                        style={{
-                            background: 'var(--bg-card)',
-                            borderRadius: '18px',
-                            padding: '20px',
-                            border: '1px solid var(--border-light)',
-                            boxShadow: 'var(--shadow-sm)'
-                        }}
-                    >
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '17px', margin: '0 0 16px 0', color: 'var(--text-primary)' }}>
+                    <div className="pdetail-card">
+                        <h3 className="pdetail-card-title">
                             <Settings size={20} color="#3b82f6" /> Technical Specifications
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -361,16 +245,8 @@ const ProductDetailPage = ({ isActive, showToast, addToCart, isInCart, removeFro
 
                 {/* Benefits / Included */}
                 {product.whatIncluded && product.whatIncluded.length > 0 && (
-                    <div
-                        style={{
-                            background: 'var(--bg-card)',
-                            borderRadius: '18px',
-                            padding: '20px',
-                            border: '1px solid var(--border-light)',
-                            boxShadow: 'var(--shadow-sm)'
-                        }}
-                    >
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '17px', margin: '0 0 16px 0', color: 'var(--text-primary)' }}>
+                    <div className="pdetail-card">
+                        <h3 className="pdetail-card-title">
                             <CheckCircle2 size={20} color="#22ba73" /> Included Components
                         </h3>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -384,15 +260,7 @@ const ProductDetailPage = ({ isActive, showToast, addToCart, isInCart, removeFro
                 )}
 
                 {/* Warranty & Compliances */}
-                <div
-                    style={{
-                        background: 'var(--bg-card)',
-                        borderRadius: '18px',
-                        padding: '20px',
-                        border: '1px solid var(--border-light)',
-                        boxShadow: 'var(--shadow-sm)'
-                    }}
-                >
+                <div className="pdetail-card">
                     {product.warrantyPeriod && (
                         <div style={{ marginBottom: '18px' }}>
                             <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', margin: '0 0 8px 0', color: '#1e293b' }}>
@@ -429,16 +297,8 @@ const ProductDetailPage = ({ isActive, showToast, addToCart, isInCart, removeFro
 
                 {/* Exclusions */}
                 {product.whatNotIncluded && product.whatNotIncluded.length > 0 && (
-                    <div
-                        style={{
-                            background: 'var(--bg-card)',
-                            borderRadius: '18px',
-                            padding: '20px',
-                            border: '1px solid var(--border-light)',
-                            boxShadow: 'var(--shadow-sm)'
-                        }}
-                    >
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '17px', margin: '0 0 16px 0', color: 'var(--text-primary)' }}>
+                    <div className="pdetail-card">
+                        <h3 className="pdetail-card-title">
                             <XCircle size={20} color="#ef4444" /> Standard Exclusions
                         </h3>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>

@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { CheckCircle2, AlertCircle, AlertTriangle, HelpCircle, X } from 'lucide-react';
 import './RtAlert.css';
 
 const TYPE_CONFIG = {
-  success: { icon: '✓', label: 'Done' },
-  error:   { icon: '✕', label: 'Error' },
-  warning: { icon: '⚠', label: 'Notice' },
-  confirm: { icon: '?', label: 'Confirm' },
+  success: { icon: <CheckCircle2 size={18} />, label: 'Success' },
+  error:   { icon: <AlertCircle size={18} />, label: 'Error' },
+  warning: { icon: <AlertTriangle size={18} />, label: 'Notice' },
+  confirm: { icon: <HelpCircle size={18} />, label: 'Confirm' },
 };
 
 let _addToQueue = null;
@@ -31,29 +32,33 @@ const AlertItem = ({ data, onDismiss }) => {
 
   return (
     <div className={`rt-alert rt-alert-${type}`}>
-      <div className="rt-alert-icon">{cfg.icon}</div>
+      <div className="rt-alert-icon-wrap">
+        {cfg.icon}
+      </div>
       <div className="rt-alert-body">
         <span className="rt-alert-title">{title || cfg.label}</span>
         <span className="rt-alert-desc">{desc || message || ''}</span>
         {isConfirm && (
           <div className="rt-alert-actions">
             <button
+              type="button"
               className="rt-confirm-btn rt-confirm-yes"
               onClick={() => { onConfirm?.(); onDismiss(id); }}
             >
-              ✔ Confirm
+              Confirm
             </button>
             <button
+              type="button"
               className="rt-confirm-btn rt-confirm-no"
               onClick={() => { onCancel?.(); onDismiss(id); }}
             >
-              ✕ Cancel
+              Cancel
             </button>
           </div>
         )}
       </div>
-      <button className="rt-alert-close" onClick={() => onDismiss(id)} aria-label="Close">
-        ✕
+      <button className="rt-alert-close" onClick={() => onDismiss(id)} aria-label="Close notification">
+        <X size={14} />
       </button>
     </div>
   );

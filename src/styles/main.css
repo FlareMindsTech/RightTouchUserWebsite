@@ -149,7 +149,7 @@
    GLOBAL MOBILE HEADER
 ═══════════════════════════════════════════════════════ */
 .global-mobile-header {
-  display: flex;
+  display: none;
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;

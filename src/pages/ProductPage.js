@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Package,
   Sun,
@@ -8,57 +7,106 @@ import {
   Zap,
   Building2,
   LayoutGrid,
-  ShoppingBag,
-  Share2,
   FileText,
-  RotateCcw
+  RotateCcw,
+  Filter,
+  X,
+  Share2,
 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { shareItem } from '../utils/share';
 import { formatPriceSmart } from '../utils/format';
 import QuoteRequestModal from '../components/QuoteRequestModal';
-import '../styles/services.css';
 import './ServicePage.css';
+
+const PRICE_RANGES = [
+  { label: 'All Prices', value: 'all' },
+  { label: 'Under ₹500', value: 'under-500' },
+  { label: '₹500 - ₹2000', value: '500-2000' },
+  { label: 'Above ₹2000', value: 'above-2000' },
+];
 
 const ProductPage = ({
   isActive,
-  addToCart,
-  isInCart,
-  cartItems,
-  removeFromCart,
   productCategories: initialCategories = [],
   allProducts: initialAllProducts = [],
   dataLoading: isGlobalLoading,
   currentUser,
   showToast,
   onNavigate,
-  searchQuery: globalSearchQuery = ''
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const categoryIdFromUrl = searchParams.get('category');
 
   const [categories, setCategories] = useState(initialCategories);
-  const [products, setProducts] = useState(initialAllProducts);
+  const [allProducts, setAllProducts] = useState(initialAllProducts);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(isGlobalLoading);
   const [error] = useState(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    priceRange: 'all',
+    rating: 0,
+  });
+  const [visibleCount, setVisibleCount] = useState(9);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [selectedProductForQuote, setSelectedProductForQuote] = useState(null);
-  const [hoveredCard, setHoveredCard] = useState(null);
 
   // Sync with global props
   useEffect(() => {
     setCategories(initialCategories);
-    setProducts(initialAllProducts);
+    setAllProducts(initialAllProducts);
     setLoading(isGlobalLoading);
   }, [initialCategories, initialAllProducts, isGlobalLoading]);
+
+  // Filter products by category + price + rating (same system as ServicePage)
+  useEffect(() => {
+    let result = allProducts;
+
+    if (selectedCategory) {
+      result = result.filter((p) => {
+        const pCatId = p.categoryId?._id || p.categoryId;
+        if (typeof pCatId === 'string') {
+          return (
+            pCatId === selectedCategory._id ||
+            (p.category || '').toLowerCase() === (selectedCategory.category || '').toLowerCase()
+          );
+        }
+        return (
+          pCatId === selectedCategory._id ||
+          (p.category || '').toLowerCase() === (selectedCategory.category || '').toLowerCase()
+        );
+      });
+    }
+
+    if (filters.priceRange !== 'all') {
+      result = result.filter((p) => {
+        const price = p.discountedPrice || p.productPrice || p.estimatedPriceFrom || 0;
+        if (filters.priceRange === 'under-500') return price < 500;
+        if (filters.priceRange === '500-2000') return price >= 500 && price <= 2000;
+        if (filters.priceRange === 'above-2000') return price > 2000;
+        return true;
+      });
+    }
+
+    if (filters.rating > 0) {
+      result = result.filter((p) => (p.ratingSummary?.averageRating || 0) >= filters.rating);
+    }
+
+    setFilteredProducts(result);
+    setVisibleCount(9);
+  }, [selectedCategory, allProducts, filters]);
 
   // Sync URL category param
   useEffect(() => {
     if (categories.length > 0) {
       if (categoryIdFromUrl) {
-        const cat = categories.find(c => c._id === categoryIdFromUrl);
-        if (cat) setSelectedCategory(cat);
+        const cat = categories.find((c) => c._id === categoryIdFromUrl);
+        if (cat) {
+          setSelectedCategory(cat);
+        }
       } else {
         setSelectedCategory(null);
       }
@@ -74,21 +122,10 @@ const ProductPage = ({
     return <Package size={16} />;
   };
 
-  const getCategoryColor = (categoryName) => {
-    const name = (categoryName || '').toLowerCase();
-    if (name.includes('solar')) return '#F39C12';
-    if (name.includes('inverter') || name.includes('battery')) return '#3498DB';
-    if (name.includes('commercial')) return '#8E44AD';
-    if (name.includes('security') || name.includes('cctv')) return '#E74C3C';
-    return '#22ba73';
-  };
-
   const handleCategoryClick = (category) => {
     if (!category) {
-      setSelectedCategory(null);
       navigate('/products');
     } else {
-      setSelectedCategory(category);
       navigate(`/products?category=${category._id}`);
     }
   };
@@ -97,171 +134,239 @@ const ProductPage = ({
     navigate(`/product-detail?productId=${product._id}`);
   };
 
-  const filteredProducts = products.filter(prod => {
-    return selectedCategory
-      ? (prod.categoryId === selectedCategory._id ||
-         prod.categoryId?._id === selectedCategory._id ||
-         (prod.category || '').toLowerCase() === (selectedCategory.category || '').toLowerCase())
-      : true;
-  });
+  const handleGetQuote = (product) => {
+    if (!currentUser) {
+      if (showToast) showToast('Please sign in to request a quote');
+      return;
+    }
+    setSelectedProductForQuote(product);
+    setShowQuoteModal(true);
+  };
+
+  const clearAllFilters = () => {
+    setFilters({ priceRange: 'all', rating: 0 });
+    setSelectedCategory(null);
+    navigate('/products');
+  };
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 9);
+  };
+
+  if (loading && isActive) {
+    return (
+      <section className={`page ${isActive ? '' : 'hidden'}`}>
+        <div className="loader-wrapper">
+          <div className="loader-spinner"></div>
+          <p className="loader-text">Loading products...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error && isActive) {
+    return (
+      <section className={`page ${isActive ? '' : 'hidden'}`}>
+        <div className="error-wrapper">
+          <div className="error-emoji">😕</div>
+          <h2 className="error-heading">Something went wrong</h2>
+          <p className="error-desc">{error}</p>
+          <button className="error-btn" onClick={() => window.location.reload()}>
+            Try Again
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   if (!isActive) return null;
 
   return (
     <section className={`page ${isActive ? '' : 'hidden'}`} id="page-products">
-      {/* Top Category Filter Ribbon */}
-      <nav className="category-nav">
+      {/* Mobile Filter Toolbar (same as ServicePage) */}
+      <div className="mobile-toolbar mobile-only">
+        <button className="toolbar-filter" onClick={() => setShowMobileFilters(true)}>
+          <Filter size={16} />
+          <span>Filter</span>
+          {(selectedCategory || filters.priceRange !== 'all' || filters.rating > 0) && (
+            <span className="toolbar-dot">•</span>
+          )}
+        </button>
+        <span className="toolbar-count">{filteredProducts.length} products</span>
+      </div>
+
+      {/* Top Category Filter Bar (same as ServicePage) */}
+      <nav className="category-nav desktop-only">
         <div className="category-nav-scroll">
           <button
             className={`category-nav-item ${!selectedCategory ? 'active' : ''}`}
             onClick={() => handleCategoryClick(null)}
           >
-            <span className="category-nav-icon"><LayoutGrid size={16} /></span>
+            <span className="category-nav-icon">
+              <LayoutGrid size={16} />
+            </span>
             <span>All Products</span>
           </button>
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <button
               key={cat._id}
-              className={`category-nav-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+              className={`category-nav-item ${
+                selectedCategory?._id === cat._id ? 'active' : ''
+              }`}
               onClick={() => handleCategoryClick(cat)}
             >
-              <span className="category-nav-icon">
-                {cat.image ? (
-                  <img src={cat.image} alt={cat.category} loading="lazy" />
-                ) : (
-                  getCategoryIcon(cat.category)
-                )}
-              </span>
+              <span className="category-nav-icon">{getCategoryIcon(cat.category)}</span>
               <span>{cat.category}</span>
             </button>
           ))}
         </div>
       </nav>
 
-      {/* Main Full-Width Content Container */}
-      <div className="content-area" style={{ display: 'block', width: '100%' }}>
-        <main className="main-content-area" style={{ width: '100%' }}>
-          {loading ? (
-            <div className="loader-wrapper">
-              <div className="loader-spinner"></div>
-              <p className="loader-text">Loading products...</p>
-            </div>
-          ) : error ? (
-            <div className="error-wrapper">
-              <div className="error-emoji">😕</div>
-              <h2 className="error-heading">Something went wrong</h2>
-              <p className="error-desc">{error}</p>
-              <button className="error-btn" onClick={() => window.location.reload()}>
-                Try Again
-              </button>
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            <div className="product-grid-full">
-              {filteredProducts.map((product, index) => {
-                const isHovered = hoveredCard === product._id;
-                const discount = product.originalPrice && product.discountedPrice
-                  ? Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)
-                  : 0;
+      <div className="content-area">
+        <main className="main-content-area">
+          {filteredProducts.length > 0 ? (
+            <>
+              {/* Unified Responsive Product Grid (same system as service-grid) */}
+              <div className="service-grid">
+                {filteredProducts.slice(0, visibleCount).map((product, index) => {
+                  const currentPrice =
+                    product.discountedPrice || product.productPrice || product.estimatedPriceFrom || 0;
+                  const originalPrice = product.originalPrice || 0;
+                  const hasDiscount = originalPrice > currentPrice && currentPrice > 0;
+                  const discountPercent = hasDiscount
+                    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+                    : 0;
+                  const saveAmount = hasDiscount ? originalPrice - currentPrice : 0;
 
-                const priceDisplay = product.discountedPrice || product.productPrice || product.estimatedPriceFrom || 0;
-                const inCart = isInCart && isInCart(product._id);
-                const categoryName = product.category || product.productType || 'Product';
-                const categoryColor = getCategoryColor(categoryName);
+                  const categoryName = product.category || product.productType || 'PRODUCT';
+                  const avgRating = product.ratingSummary?.averageRating || 0;
+                  const totalRatings = product.ratingSummary?.totalRatings || 0;
 
-                return (
-                  <div
-                    key={product._id}
-                    className={`service-card-modern ${isHovered ? 'hovered' : ''}`}
-                    onMouseEnter={() => setHoveredCard(product._id)}
-                    onMouseLeave={() => setHoveredCard(null)}
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <div className="card-image" onClick={() => handleProductClick(product)}>
-                      {product.productImages?.[0] ? (
-                        <img src={product.productImages[0]} alt={product.productName} loading="lazy" />
-                      ) : (
-                        <div className="card-image-placeholder">
-                          <Package size={32} />
-                        </div>
-                      )}
-                      {discount > 0 && (
-                        <div className="discount-badge">-{discount}%</div>
-                      )}
-                      <div className="card-image-overlay">
-                        <button className="card-view-link">View Product</button>
-                      </div>
-                      <button
-                        className="share-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          shareItem({
-                            title: product.productName,
-                            text: product.description || product.productName,
-                            url: `${window.location.origin}/product-detail?productId=${product._id}`
-                          }, showToast);
-                        }}
+                  return (
+                    <div
+                      key={product._id}
+                      className="service-card-modern"
+                      style={{ animationDelay: `${index * 0.03}s` }}
+                    >
+                      {/* Inset Image Card */}
+                      <div
+                        className="card-image-wrap"
+                        onClick={() => handleProductClick(product)}
                       >
-                        <Share2 size={16} />
-                      </button>
-                    </div>
+                        <div className="card-image">
+                          {product.productImages?.[0] ? (
+                            <img
+                              src={product.productImages[0]}
+                              alt={product.productName}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="card-image-placeholder">
+                              <Package size={32} />
+                            </div>
+                          )}
+                          <button
+                            className="card-share-btn"
+                            title="Share Product"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              shareItem({
+                                title: product.productName,
+                                text: product.description || `Check out ${product.productName} on RightTouch!`,
+                                url: `${window.location.origin}/#/product-detail?productId=${product._id}`,
+                                image: product.productImages?.[0],
+                                price: currentPrice,
+                                category: categoryName
+                              }, showToast);
+                            }}
+                            aria-label="Share product"
+                          >
+                            <Share2 size={15} />
+                          </button>
+                        </div>
+                      </div>
 
-                    <div className="card-body" onClick={() => handleProductClick(product)}>
-                      <div className="card-header">
-                        <h3 className="card-title">{product.productName}</h3>
-                        <span
-                          className="card-category"
-                          style={{
-                            background: `${categoryColor}18`,
-                            color: categoryColor
-                          }}
+                      {/* Card Body Details */}
+                      <div
+                        className="card-body"
+                        onClick={() => handleProductClick(product)}
+                      >
+                        {/* Category Badge */}
+                        <div className="card-category-row">
+                          <span className="card-category-pill">{categoryName}</span>
+                        </div>
+
+                        {/* Rating Row */}
+                        <div className="card-rating-row">
+                          <Star
+                            size={14}
+                            className="star-gold"
+                            fill="#F59E0B"
+                            color="#F59E0B"
+                          />
+                          <span className="rating-score">
+                            {avgRating}
+                          </span>
+                          <span className="rating-count">
+                            ({totalRatings} reviews)
+                          </span>
+                        </div>
+
+                        {/* Product Title */}
+                        <h3 className="card-title" title={product.productName}>
+                          {product.productName}
+                        </h3>
+
+                        {/* Price Row */}
+                        <div className="card-pricing-block">
+                          <div className="price-main-row">
+                            <span className="price-current">
+                              ₹{formatPriceSmart(currentPrice)}
+                            </span>
+                            {hasDiscount && (
+                              <span className="price-original">
+                                ₹{formatPriceSmart(originalPrice)}
+                              </span>
+                            )}
+                            {discountPercent > 0 && (
+                              <span className="discount-pill">{discountPercent}% OFF</span>
+                            )}
+                          </div>
+                          {saveAmount > 0 && (
+                            <div className="save-pill">
+                              Save ₹{formatPriceSmart(saveAmount)}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom Action Area: Get Quote only (no cart) */}
+                        <div
+                          className="card-bottom-btn"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {categoryName}
-                        </span>
-                      </div>
-
-                      <div className="card-meta">
-                        <div className="card-rating">
-                          <Star size={14} className="star-gold" fill="#F1C40F" color="#F1C40F" />
-                          <span className="rating-value">{product.ratingSummary?.averageRating || 0}</span>
-                          <span className="card-review-count">
-                            ({product.ratingSummary?.totalRatings || 0} reviews)
-                          </span>
+                          <button
+                            className="btn-get-quote"
+                            onClick={() => handleGetQuote(product)}
+                          >
+                            <FileText size={15} />
+                            <span>Get Quote</span>
+                          </button>
                         </div>
                       </div>
-
-                      <div className="card-price">
-                        <span className="price-current">₹{formatPriceSmart(priceDisplay)}</span>
-                        {product.originalPrice > priceDisplay && (
-                          <span className="price-original">₹{formatPriceSmart(product.originalPrice)}</span>
-                        )}
-                        {product.originalPrice > priceDisplay && (
-                          <span className="price-save">
-                            Save ₹{formatPriceSmart(product.originalPrice - priceDisplay)}
-                          </span>
-                        )}
-                      </div>
                     </div>
+                  );
+                })}
+              </div>
 
-                    <div className="card-actions product-card-actions" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        className="action-btn action-quote"
-                        style={{ width: '100%', justifyContent: 'center' }}
-                        onClick={() => {
-                          if (!currentUser) {
-                            if (showToast) showToast('Please sign in to request a quote');
-                            return;
-                          }
-                          setSelectedProductForQuote(product);
-                          setShowQuoteModal(true);
-                        }}
-                      >
-                        <FileText size={16} /> Get Quote
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+              {/* Load More */}
+              {visibleCount < filteredProducts.length && (
+                <div className="load-more-wrapper">
+                  <button className="load-more-btn-modern" onClick={handleLoadMore}>
+                    Load More Products ({filteredProducts.length - visibleCount} remaining)
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="empty-state-modern">
               <div className="empty-icon-wrapper">
@@ -269,15 +374,99 @@ const ProductPage = ({
               </div>
               <h3 className="empty-heading">No products found</h3>
               <p className="empty-desc">
-                We couldn't find any products matching your selected category or search.
+                We couldn't find any products matching your search or filters.
               </p>
-              <button className="empty-action" onClick={() => handleCategoryClick(null)}>
+              <button className="empty-action" onClick={clearAllFilters}>
                 <RotateCcw size={14} /> Reset Category
               </button>
             </div>
           )}
         </main>
       </div>
+
+      {/* Mobile Filter Drawer (same as ServicePage) */}
+      {showMobileFilters && (
+        <div
+          className="drawer-overlay-modern"
+          onClick={() => setShowMobileFilters(false)}
+        >
+          <div className="drawer-modern" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header-modern">
+              <div className="drawer-title-row">
+                <Filter size={18} />
+                <h3>Filters</h3>
+              </div>
+              <button
+                className="drawer-close"
+                onClick={() => setShowMobileFilters(false)}
+                aria-label="Close filters"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="drawer-body-modern">
+              {/* Category Filter */}
+              <div className="filter-section-modern">
+                <h4 className="filter-title-modern">Categories</h4>
+                <div className="filter-tags-grid">
+                  <button
+                    className={`filter-tag ${!selectedCategory ? 'active' : ''}`}
+                    onClick={() => handleCategoryClick(null)}
+                  >
+                    <LayoutGrid size={14} /> All
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat._id}
+                      className={`filter-tag ${
+                        selectedCategory?._id === cat._id ? 'active' : ''
+                      }`}
+                      onClick={() => handleCategoryClick(cat)}
+                    >
+                      {getCategoryIcon(cat.category)}
+                      {cat.category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="filter-section-modern">
+                <h4 className="filter-title-modern">Price Range</h4>
+                <div className="price-options-modern">
+                  {PRICE_RANGES.map((opt) => (
+                    <label key={opt.value} className="price-option-radio">
+                      <input
+                        type="radio"
+                        name="mobilePrice"
+                        checked={filters.priceRange === opt.value}
+                        onChange={() =>
+                          setFilters({ ...filters, priceRange: opt.value })
+                        }
+                      />
+                      <span className="radio-custom"></span>
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="drawer-footer-modern">
+              <button className="drawer-btn-clear" onClick={clearAllFilters}>
+                Clear
+              </button>
+              <button
+                className="drawer-btn-apply"
+                onClick={() => setShowMobileFilters(false)}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quotation Modal */}
       <QuoteRequestModal

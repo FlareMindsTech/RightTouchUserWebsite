@@ -25,15 +25,6 @@
   height: 16px;
 }
 
-/* Update the desktop-only utility */
-.desktop-only {
-  display: flex;
-}
-
-.mobile-only {
-  display: none;
-}
-
 /* ════════════════════
    RESPONSIVE BREAKPOINTS
 ════════════════════ */
@@ -45,8 +36,14 @@
   }
 
   .nav-container {
-    padding: 0 20px;
-    gap: 12px;
+    padding: 0 16px;
+    gap: 10px;
+  }
+
+  .nav-search-container {
+    max-width: 240px;
+    min-width: 130px;
+    margin: 0 8px;
   }
 
   .brand-icon {

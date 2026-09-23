@@ -183,7 +183,9 @@ const BookingDetailPage = ({ booking, onBack, handleAction, showToast, isService
   const faultProblem = booking.faultProblem || booking.note || null;
 
   const handleRebook = () => {
-    if (handleAction) handleAction('Rebook', booking);
+    if (handleAction) {
+      handleAction('rebook', booking);
+    }
   };
 
   const handleGoToService = () => {

@@ -18,17 +18,289 @@ import {
   MdRefresh,
   MdHandyman,
   MdContentCopy,
-  MdStorefront
+  MdStorefront,
+  MdLocationOn,
+  MdPhone,
+  MdClose
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import BookingDetailPage from "./BookingDetailPage";
+import AddressModal from "../components/AddressModal";
 import { getCustomerBookings, getCompletedServices, getBookings, bookAgain } from "../services/bookingService";
 import { getAllProductBookings } from "../services/productBookingService";
 import { useRazorpayPayment } from "../hooks/useRazorpayPayment";
 import { safeParseDate, goBackSmart, getAuthToken } from "../utils/browserUtils";
 import { logger } from "../utils/logger";
-import ConfirmModal from "../components/ConfirmModal";
 import "./BookingsPage.css";
+
+// ─── Rebook Summary Modal (Confirm Your Order) ────────────────────────────
+const RebookSummaryModal = ({
+  isOpen,
+  booking,
+  loading,
+  onConfirm,
+  onCancel,
+  currentUser,
+  showToast
+}) => {
+  const [bookingType, setBookingType] = useState(booking?.bookingType || "instant");
+  const [scheduledDate, setScheduledDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split("T")[0];
+  });
+  const [scheduledTime, setScheduledTime] = useState("10:00");
+  const [faultProblem, setFaultProblem] = useState(booking?.faultProblem || "");
+  const [showAddressModal, setShowAddressModal] = useState(false);
+
+  // Address state initialized from previous booking snapshot or address
+  const snap = booking?.addressSnapShot || {};
+  const [selectedAddress, setSelectedAddress] = useState(() => {
+    if (snap && (snap.addressLine || snap.city || snap.pincode)) {
+      return {
+        _id: booking?.addressId?._id || booking?.addressId || snap?._id,
+        label: snap.label || "Work",
+        addressLine: [snap.houseNo, snap.landmark, snap.addressLine, snap.city, snap.state, snap.pincode].filter(Boolean).join(", "),
+        mobileNumber: snap.mobileNumber || currentUser?.mobileNumber || "9345417496"
+      };
+    }
+    return {
+      _id: booking?.addressId?._id || booking?.addressId || null,
+      label: "Work",
+      addressLine: booking?.address || "Address not specified",
+      mobileNumber: currentUser?.mobileNumber || "9345417496"
+    };
+  });
+
+  if (!isOpen || !booking) return null;
+
+  const handleAddressSelect = (addressLine, addressObj) => {
+    setSelectedAddress({
+      _id: addressObj?._id || addressObj?.id || null,
+      label: addressObj?.label || "Work",
+      addressLine: addressLine || addressObj?.addressLine || "",
+      mobileNumber: addressObj?.mobileNumber || currentUser?.mobileNumber || "9345417496"
+    });
+    setShowAddressModal(false);
+  };
+
+  const serviceName =
+    booking.serviceId?.serviceName ||
+    booking.itemId?.serviceName ||
+    booking.serviceName ||
+    booking.productSnapshot?.productName ||
+    booking.productId?.productName ||
+    "Service Booking";
+
+  const serviceImage =
+    booking.serviceId?.serviceImages?.[0] ||
+    booking.itemId?.serviceImages?.[0] ||
+    booking.productSnapshot?.imageUrl ||
+    booking.productId?.productImages?.[0] ||
+    null;
+
+  const subtotal = booking.baseAmount || booking.totalPrice || booking.totalAmount || 1499;
+  const taxesFee = booking.taxAmount || (subtotal > 0 ? Math.round(subtotal * 0.08) : 120);
+  const totalAmount = booking.totalPrice || booking.totalAmount || (subtotal + taxesFee);
+
+  const paymentStatusUpper = (booking.paymentStatus || "PAID").toUpperCase();
+
+  const handlePlaceOrder = () => {
+    const payload = {
+      previousBookingId: booking._id || booking.id,
+      bookingType,
+      ...(bookingType === "scheduled" && {
+        scheduledDate,
+        scheduledTime
+      }),
+      addressId: selectedAddress?._id || booking.addressId?._id || booking.addressId,
+      faultProblem: faultProblem.trim()
+    };
+    onConfirm(payload);
+  };
+
+  return (
+    <>
+      <div className="cm-overlay rb-modal-overlay" onClick={() => !loading && onCancel()}>
+        <div className="cm-card rb-confirm-order-card" onClick={(e) => e.stopPropagation()}>
+          
+          {/* Modal Header */}
+          <div className="rb-modal-header">
+            <h3 className="rb-modal-title">Confirm Your Order</h3>
+            <button className="rb-modal-close-btn" onClick={onCancel} disabled={loading} aria-label="Close">
+              <MdClose size={20} />
+            </button>
+          </div>
+
+          <div className="rb-modal-scroll-body">
+            
+            {/* 1. Address Section */}
+            <div className="rb-section-card">
+              <div className="rb-addr-top-row">
+                <div className="rb-addr-left">
+                  <div className="rb-addr-icon-badge">
+                    <MdLocationOn size={20} />
+                  </div>
+                  <div className="rb-addr-info-col">
+                    <div className="rb-addr-header-wrap">
+                      <span className="rb-addr-tag-name">{selectedAddress.label || "Work"}</span>
+                      <span className="rb-addr-badge-pill">DELIVERY ADDRESS</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="rb-change-btn-inline"
+                      onClick={() => setShowAddressModal(true)}
+                    >
+                      Change
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="rb-addr-details-text">{selectedAddress.addressLine}</p>
+              {selectedAddress.mobileNumber && (
+                <p className="rb-addr-phone-text">
+                  <MdPhone size={13} className="rb-phone-icon" /> {selectedAddress.mobileNumber}
+                </p>
+              )}
+            </div>
+
+            {/* 2. Schedule Section */}
+            <div className="rb-section-card">
+              <div className="rb-section-subhead">
+                <MdAccessTime className="rb-subhead-icon" /> SCHEDULE
+              </div>
+              <div className="rb-schedule-toggle-grid">
+                <button
+                  type="button"
+                  className={`rb-schedule-pill-btn ${bookingType === "instant" ? "active" : ""}`}
+                  onClick={() => setBookingType("instant")}
+                >
+                  <MdFlashOn size={16} /> Instant Service
+                </button>
+                <button
+                  type="button"
+                  className={`rb-schedule-pill-btn ${bookingType === "scheduled" ? "active" : ""}`}
+                  onClick={() => setBookingType("scheduled")}
+                >
+                  <MdCalendarToday size={15} /> Pick Date &amp; Time
+                </button>
+              </div>
+
+              {bookingType === "scheduled" && (
+                <div className="rb-scheduled-picker-row">
+                  <div className="rb-picker-group">
+                    <label>Date</label>
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split("T")[0]}
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      className="rb-date-input"
+                    />
+                  </div>
+                  <div className="rb-picker-group">
+                    <label>Time Slot</label>
+                    <select
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="rb-time-select"
+                    >
+                      <option value="09:00">09:00 AM - 11:00 AM</option>
+                      <option value="11:00">11:00 AM - 01:00 PM</option>
+                      <option value="14:00">02:00 PM - 04:00 PM</option>
+                      <option value="16:00">04:00 PM - 06:00 PM</option>
+                      <option value="18:00">06:00 PM - 08:00 PM</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Items Section */}
+            <div className="rb-section-card">
+              <div className="rb-section-subhead">ITEMS (1)</div>
+              <div className="rb-item-row">
+                {serviceImage ? (
+                  <img src={serviceImage} alt={serviceName} className="rb-item-thumb" loading="lazy" />
+                ) : (
+                  <div className="rb-item-thumb-placeholder">🔧</div>
+                )}
+                <div className="rb-item-info">
+                  <h4 className="rb-item-title">{serviceName}</h4>
+                  <span className="rb-item-qty-pill">Qty: 1</span>
+                </div>
+                <div className="rb-item-price">₹{subtotal}</div>
+              </div>
+
+              {/* Fault Problem Input */}
+              <div className="rb-fault-box">
+                <label className="rb-fault-label">
+                  <MdHandyman size={14} /> Describe Problem / Fault
+                </label>
+                <textarea
+                  className="rb-fault-textarea"
+                  rows={2}
+                  placeholder="Describe your problem (e.g. AC not cooling, spark noise, water leakage...)"
+                  value={faultProblem}
+                  onChange={(e) => setFaultProblem(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* 4. Price Breakdown */}
+            <div className="rb-section-card rb-pricing-card">
+              <div className="rb-price-row">
+                <span>Subtotal</span>
+                <span>₹{subtotal}</span>
+              </div>
+              <div className="rb-price-row">
+                <span>Taxes &amp; Fee</span>
+                <span>₹{taxesFee}</span>
+              </div>
+              <div className="rb-price-divider" />
+              <div className="rb-price-row rb-total-row">
+                <span className="rb-total-title">Total Amount</span>
+                <span className="rb-total-value">₹{totalAmount}</span>
+              </div>
+            </div>
+
+            {/* Warning if previous booking payment was pending */}
+            {paymentStatusUpper !== "PAID" && (
+              <div className="rb-note">
+                ⚠️ Previous booking payment is {paymentStatusUpper === "PENDING" ? "pending" : paymentStatusUpper.toLowerCase()}.
+                Re-booking needs a completed &amp; paid booking.
+              </div>
+            )}
+
+          </div>
+
+          {/* Sticky Bottom Action */}
+          <div className="rb-modal-footer">
+            <button
+              type="button"
+              className="rb-place-order-btn"
+              onClick={handlePlaceOrder}
+              disabled={loading}
+            >
+              {loading ? "Placing Order..." : `Place Order • ₹${totalAmount}`}
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {showAddressModal && (
+        <AddressModal
+          isOpen={showAddressModal}
+          onClose={() => setShowAddressModal(false)}
+          currentUser={currentUser}
+          onSelectAddress={handleAddressSelect}
+          showToast={showToast}
+        />
+      )}
+    </>
+  );
+};
 
 const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, currentUser, onLoginClick }) => {
   const navigate = useNavigate();
@@ -217,23 +489,33 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
   });
 
   const handleAction = async (actionType, booking) => {
-    if (actionType === "rebook") {
+    const act = String(actionType || "").toLowerCase();
+    if (act === "rebook") {
       setBookingToRebook(booking);
       setShowRebookConfirm(true);
     }
   };
 
-  const executeRebook = async () => {
+  const executeRebook = async (customParams = {}) => {
     if (!bookingToRebook) return;
     try {
       setRebookLoading(true);
-      await bookAgain(bookingToRebook._id);
+      const bookingId = bookingToRebook._id || bookingToRebook.id;
+      const payload = {
+        previousBookingId: bookingId,
+        bookingId: bookingId,
+        id: bookingId,
+        ...customParams
+      };
+      await bookAgain(payload);
       showToast("Booking created successfully!", "success");
       setShowRebookConfirm(false);
       setBookingToRebook(null);
+      setSelectedBooking(null);
       await fetchMyBookings();
       setActiveTab("active");
     } catch (err) {
+      console.error("Rebook error:", err);
       showToast(err.message || "Failed to re-book", "error");
     } finally {
       setRebookLoading(false);
@@ -268,28 +550,40 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
     const canPay = status !== "CANCELLED" && status !== "EXPIRED" && !isPaid;
 
     return (
-      <BookingDetailPage
-        booking={selectedBooking}
-        onBack={handleBack}
-        handleAction={handleAction}
-        showToast={showToast}
-        currentUser={currentUser}
-        isPaidBooking={isPaid}
-        canShowPayNow={canPay}
-        paymentLoading={paymentLoading}
-        handlePayButtonClick={() => {
-          if (isPaid) {
-            setShowInvoice(true);
-          } else {
-            handlePayNow(selectedBooking);
-          }
-        }}
-        canRate={status === "COMPLETED"}
-        showInvoice={showInvoice}
-        setShowInvoice={setShowInvoice}
-        autoOpenRate={autoOpenRate}
-        setAutoOpenRate={setAutoOpenRate}
-      />
+      <>
+        <BookingDetailPage
+          booking={selectedBooking}
+          onBack={handleBack}
+          handleAction={handleAction}
+          showToast={showToast}
+          currentUser={currentUser}
+          isPaidBooking={isPaid}
+          canShowPayNow={canPay}
+          paymentLoading={paymentLoading}
+          handlePayButtonClick={() => {
+            if (isPaid) {
+              setShowInvoice(true);
+            } else {
+              handlePayNow(selectedBooking);
+            }
+          }}
+          canRate={status === "COMPLETED"}
+          showInvoice={showInvoice}
+          setShowInvoice={setShowInvoice}
+          autoOpenRate={autoOpenRate}
+          setAutoOpenRate={setAutoOpenRate}
+        />
+        <RebookSummaryModal
+          isOpen={showRebookConfirm}
+          booking={bookingToRebook}
+          loading={rebookLoading}
+          onConfirm={executeRebook}
+          onCancel={() => {
+            setShowRebookConfirm(false);
+            setBookingToRebook(null);
+          }}
+        />
+      </>
     );
   }
 
@@ -492,7 +786,7 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
   };
 
   return (
-    <section className={`bookings-page-premium ${isActive ? "" : "hidden"}`}>
+    <section className={`page bookings-page-premium ${isActive ? "" : "hidden"}`} id="page-bookings">
       {/* Header Section */}
       <div className="bookings-premium-header">
         <div className="header-top">
@@ -714,18 +1008,17 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
         )}
       </div>
 
-      <ConfirmModal
+      <RebookSummaryModal
         isOpen={showRebookConfirm}
-        title="Re-book Service"
-        message="Are you sure you want to book this service again with the same details?"
-        confirmText="Yes, Book Again"
-        cancelText="Cancel"
+        booking={bookingToRebook}
+        loading={rebookLoading}
         onConfirm={executeRebook}
         onCancel={() => {
           setShowRebookConfirm(false);
           setBookingToRebook(null);
         }}
-        isLoading={rebookLoading}
+        currentUser={currentUser}
+        showToast={showToast}
       />
     </section>
   );

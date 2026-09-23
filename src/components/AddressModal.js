@@ -46,7 +46,10 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
       setLoading(false);
       return;
     }
-    setLoading(true);
+    setAddresses((prev) => {
+      if (prev.length === 0) setLoading(true);
+      return prev;
+    });
     try {
       const res = await getMyAddresses();
       const list = res?.result || res?.data || res || [];
@@ -56,7 +59,7 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
       const getAddrId = (a) => a?._id || a?.id || a?.addressId;
       const defaultAddr = addrArr.find((a) => a.isDefault) || addrArr[0];
       if (defaultAddr) {
-        setSelectedId(getAddrId(defaultAddr));
+        setSelectedId((prevId) => prevId || getAddrId(defaultAddr));
       }
     } catch (err) {
       console.warn('Failed to load addresses:', err);
@@ -105,14 +108,56 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
     };
   }, [locationSearch, isOpen]);
 
-  if (!isOpen) return null;
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
 
-  const resetAddressPopupState = () => {
-    setLocationSearch('');
-    setLocationSuggestions([]);
-    setShowAddAddressForm(false);
-    onClose();
-  };
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      setIsClosing(false);
+      document.body.style.overflow = 'hidden';
+    } else if (isRendered && !isClosing) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        setIsClosing(false);
+        document.body.style.overflow = 'unset';
+      }, 260);
+      return () => clearTimeout(timer);
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, isRendered, isClosing]);
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setLocationSearch('');
+      setLocationSuggestions([]);
+      setShowAddAddressForm(false);
+      setIsClosing(false);
+      setIsRendered(false);
+      document.body.style.overflow = 'unset';
+      if (onClose) onClose();
+    }, 260);
+  }, [isClosing, onClose]);
+
+  useEffect(() => {
+    if (!isRendered) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRendered, handleClose]);
+
+  if (!isOpen && !isRendered) return null;
+
+  const resetAddressPopupState = handleClose;
 
   const handleUseCurrentLocation = async () => {
     setIsLocating(true);
@@ -246,8 +291,14 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
   const otherAddresses = addresses.filter((a) => !a.isDefault);
 
   return (
-    <div className="address-popup-overlay location-overlay-premium" onClick={resetAddressPopupState}>
-      <div className="address-popup location-popup-premium" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`address-popup-overlay location-overlay-premium ${isClosing ? 'is-closing' : 'is-opening'}`}
+      onClick={handleClose}
+    >
+      <div
+        className={`address-popup location-popup-premium ${isClosing ? 'is-closing' : 'is-opening'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* Mobile drag handle indicator */}
         <div className="address-sheet-handle mobile-only"></div>
@@ -351,10 +402,10 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
                   </button>
                   <button
                     type="button"
-                    className={`tag-pill-btn ${(newAddressForm.label || '').toLowerCase().includes('office') || (newAddressForm.label || '').toLowerCase().includes('work') ? 'active tag-office' : ''}`}
-                    onClick={() => setNewAddressForm((prev) => ({ ...prev, label: 'office' }))}
+                    className={`tag-pill-btn ${(newAddressForm.label || '').toLowerCase() === 'work' || (newAddressForm.label || '').toLowerCase() === 'office' ? 'active tag-work tag-office' : ''}`}
+                    onClick={() => setNewAddressForm((prev) => ({ ...prev, label: 'work' }))}
                   >
-                    <MdWork size={18} /> Work / Office
+                    <MdWork size={18} /> Work
                   </button>
                   <button
                     type="button"
@@ -488,7 +539,7 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
                     <MdPlace size={36} />
                   </div>
                   <p className="empty-msg-title">No addresses saved yet</p>
-                  <p className="empty-msg-text">Add your home or office address for faster checkout.</p>
+                  <p className="empty-msg-text">Add your home or work address for faster checkout.</p>
                   <button
                     className="add-address-trigger-btn"
                     onClick={() => setShowAddAddressForm(true)}

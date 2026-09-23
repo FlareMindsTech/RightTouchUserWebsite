@@ -33,11 +33,24 @@ export const getCompletedServices = (params = {}) => {
   return apiClient(endpoint);
 };
 
-export const bookAgain = (data) =>
-  apiClient(ENDPOINTS.SERVICE_BOOKING.BOOK_AGAIN, {
+export const bookAgain = (data) => {
+  let payload = {};
+  if (typeof data === "string") {
+    payload = { bookingId: data, previousBookingId: data, id: data };
+  } else if (data && typeof data === "object") {
+    const id = data.previousBookingId || data.bookingId || data.id || data._id;
+    payload = {
+      ...data,
+      previousBookingId: id,
+      bookingId: id,
+      id: id
+    };
+  }
+  return apiClient(ENDPOINTS.SERVICE_BOOKING.BOOK_AGAIN, {
     method: "POST",
-    body: JSON.stringify(data)
+    body: JSON.stringify(payload)
   });
+};
 
 export const deleteAllBookings = () =>
   apiClient(ENDPOINTS.SERVICE_BOOKING.DELETE_ALL, {

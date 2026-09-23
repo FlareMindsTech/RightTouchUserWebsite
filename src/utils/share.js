@@ -43,8 +43,13 @@ export const openShareModal = (shareData) => {
 export const shareViaWhatsApp = ({ title, text, url }) => {
   const shareUrl = url || window.location.href;
   const shareText = `${title || 'RightTouch Home Services'}\n${text || 'Check out this service on RightTouch!'}\n\n${shareUrl}`;
-  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-  window.open(whatsappUrl, '_blank');
+  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  if (isMobile) {
+    window.location.href = whatsappUrl;
+  } else {
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+  }
 };
 
 /**

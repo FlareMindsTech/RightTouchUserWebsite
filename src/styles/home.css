@@ -995,7 +995,7 @@ body {
 
 .appliance-floating-nav {
   position: absolute;
-  top: 50%;
+  top: 88px;
   transform: translateY(-50%);
   z-index: 10;
   width: 44px;
@@ -1004,7 +1004,7 @@ body {
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(39, 174, 96, 0.25);
+  border: 1.5px solid rgba(39, 174, 96, 0.25);
   color: var(--green);
   display: flex;
   align-items: center;
@@ -1027,11 +1027,11 @@ body {
 }
 
 .appliance-floating-nav.nav-left {
-  left: -14px;
+  left: -20px;
 }
 
 .appliance-floating-nav.nav-right {
-  right: -14px;
+  right: -20px;
 }
 
 /* Horizontal scroll container - ALWAYS Horizontal Scroll */
@@ -2000,14 +2000,15 @@ body {
   .appliance-floating-nav {
     width: 36px;
     height: 36px;
+    top: 70px;
   }
 
   .appliance-floating-nav.nav-left {
-    left: -4px;
+    left: -12px;
   }
 
   .appliance-floating-nav.nav-right {
-    right: -4px;
+    right: -12px;
   }
 
   .appliance-book-btn {
@@ -2163,6 +2164,20 @@ body {
 
   .appliance-section-header {
     margin-bottom: 14px;
+  }
+
+  .appliance-floating-nav {
+    width: 34px;
+    height: 34px;
+    top: 62px;
+  }
+
+  .appliance-floating-nav.nav-left {
+    left: -10px;
+  }
+
+  .appliance-floating-nav.nav-right {
+    right: -10px;
   }
 
   .appliance-card {
