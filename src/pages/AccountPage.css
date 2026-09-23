@@ -5,45 +5,53 @@
 
 /* ===================== MAIN CONTAINER ===================== */
 .account-page-simple {
-  padding: 16px 12px;
-  background: #f5f7fa;
+  padding: 24px 20px 60px;
+  background: #f8fafc;
   min-height: calc(100vh - 80px);
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .account-container-simple {
-  max-width: 480px;
+  max-width: 1200px;
   width: 100%;
   background: #ffffff;
   border-radius: 16px;
-  padding: 20px 16px 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 24px 28px 32px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  box-sizing: border-box;
 }
 
 /* ===================== PROFILE HEADER ===================== */
 .account-profile-header-simple {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #eef2f6;
+  gap: 16px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 22px;
   margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .avatar-simple {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(21, 128, 61, 0.25);
 }
 
 .profile-info-simple {
@@ -52,25 +60,25 @@
 }
 
 .profile-info-simple h2 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin: 0 0 2px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 3px 0;
   line-height: 1.3;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
 
 .profile-info-simple .email {
-  color: #6b7280;
+  color: #4b5563;
   font-size: 13px;
-  margin: 0;
+  margin: 0 0 2px 0;
   word-break: break-all;
   overflow-wrap: anywhere;
 }
 
 .profile-info-simple .phone {
-  color: #6b7280;
+  color: #64748b;
   font-size: 13px;
   margin: 0;
   word-break: break-word;
@@ -81,23 +89,25 @@
 }
 
 .edit-profile-btn-simple {
-  background: none;
-  border: none;
-  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  padding: 8px 14px;
   border-radius: 8px;
   font-size: 13px;
-  font-weight: 500;
-  color: #6b7280;
+  font-weight: 600;
+  color: #374151;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .edit-profile-btn-simple:hover {
-  background: #f3f4f6;
-  color: #1a1a2e;
+  background: #f9fafb;
+  border-color: #15803d;
+  color: #15803d;
 }
 
 /* ===================== MENU ITEMS ===================== */
@@ -116,6 +126,7 @@
   letter-spacing: 0.8px;
   margin: 16px 0 6px 6px;
 }
+
 .account-menu-group-title:first-child {
   margin-top: 4px;
 }
@@ -186,6 +197,360 @@
   background: #fef2f2;
 }
 
+/* ===================== DASHBOARD 2-COLUMN LAYOUT ===================== */
+.account-dashboard-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.account-sidebar-col {
+  display: flex;
+  flex-direction: column;
+  padding-right: 18px;
+  border-right: 1px solid #f1f5f9;
+}
+
+.account-content-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Acc Hero Banner */
+.acc-hero-banner {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+  border-radius: 14px;
+  padding: 24px 26px;
+  color: #ffffff;
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 20px;
+  align-items: center;
+  box-shadow: 0 6px 18px rgba(6, 78, 59, 0.2);
+}
+
+.acc-hero-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acc-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #a7f3d0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  align-self: flex-start;
+}
+
+.acc-hero-banner-text h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.acc-hero-banner-text p {
+  font-size: 13.5px;
+  color: #d1fae5;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.acc-hero-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.acc-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #065f46;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.acc-btn-primary:hover {
+  background: #f0fdf4;
+}
+
+.acc-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.acc-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.acc-hero-banner-img-wrap {
+  width: 100%;
+  height: 160px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.acc-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Appliances box */
+.acc-appliances-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.acc-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.acc-box-header h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.acc-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.acc-appliances-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.acc-appliance-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.acc-appliance-card:hover {
+  border-color: #86efac;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.acc-appliance-img {
+  width: 100%;
+  height: 85px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.acc-appliance-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.acc-appliance-card h5 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 3px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acc-appliance-card p {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sub row */
+.acc-sub-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.acc-sub-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.acc-sub-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.acc-sub-card-header h5 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.acc-sub-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.acc-addr-tag {
+  display: inline-block;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.acc-addr-line {
+  font-size: 13px;
+  color: #334155;
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.acc-addr-phone {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+.acc-addr-empty {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.acc-guarantee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acc-guarantee-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+}
+
+@media (max-width: 992px) {
+  .account-dashboard-layout {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .account-sidebar-col {
+    padding-right: 0;
+    border-right: none;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .account-content-col {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .acc-hero-banner {
+    grid-template-columns: 1fr;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .acc-hero-banner-img-wrap {
+    height: 140px;
+    width: 100%;
+  }
+
+  .acc-appliances-box {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .acc-appliances-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+  }
+
+  .acc-sub-row {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 /* ===================== GUEST STATE ===================== */
 .guest-account-prompt {
   text-align: center;
@@ -230,8 +595,13 @@
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ===================== ADDRESS MODAL ===================== */
@@ -249,8 +619,15 @@
 }
 
 @keyframes modalSlideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .address-modal-header {
@@ -505,8 +882,15 @@
 }
 
 @keyframes dropdownFade {
-  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .dropdown-item {
@@ -645,7 +1029,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .location-clear-btn {
@@ -943,7 +1329,7 @@
 }
 
 /* ===================== PROFILE EDIT FORM ===================== */
-.address-modal > form.profile-edit-form {
+.address-modal>form.profile-edit-form {
   padding: 16px 20px 20px;
   overflow-y: auto;
   flex: 1;
@@ -981,10 +1367,170 @@
 }
 
 /* ======================= RESPONSIVE ======================= */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .account-page-simple {
+    padding: 10px 0 60px;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
   .account-container-simple {
-    border-radius: 12px;
-    padding: 16px 12px 20px;
+    border-radius: 14px;
+    padding: 14px 10px 20px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  .account-dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .account-sidebar-col {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0;
+    border: none;
+    box-sizing: border-box;
+  }
+
+  .account-content-col {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    gap: 14px;
+  }
+
+  .account-profile-header-simple {
+    padding: 14px 12px;
+    gap: 10px;
+    margin-bottom: 14px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .acc-hero-banner {
+    grid-template-columns: 1fr;
+    padding: 16px 14px;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .acc-hero-banner-text {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acc-hero-banner-text h3 {
+    font-size: 17px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .acc-hero-banner-text p {
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .acc-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .acc-btn-primary,
+  .acc-btn-secondary {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 120px;
+    padding: 8px 10px;
+    font-size: 12px;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .acc-hero-banner-img-wrap {
+    width: 100%;
+    max-width: 100%;
+    height: 140px;
+    box-sizing: border-box;
+  }
+
+  .acc-appliances-box {
+    padding: 14px 10px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .acc-appliances-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acc-appliance-card {
+    padding: 8px 6px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acc-appliance-img {
+    height: 70px;
+    width: 100%;
+  }
+
+  .acc-appliance-card h5 {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .acc-appliance-card p {
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .acc-sub-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acc-sub-card {
+    padding: 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .address-modal {
@@ -1000,7 +1546,7 @@
     padding: 12px 16px 16px;
   }
 
-  .address-modal > form.profile-edit-form {
+  .address-modal>form.profile-edit-form {
     padding: 12px 16px 16px;
   }
 
@@ -1052,9 +1598,58 @@
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
+  .account-page-simple {
+    padding: 6px 0 60px;
+  }
+
   .account-container-simple {
-    padding: 12px 10px 16px;
+    padding: 10px 8px 18px;
+    border-radius: 12px;
+  }
+
+  .acc-hero-banner {
+    padding: 14px 10px;
+  }
+
+  .acc-hero-banner-text h3 {
+    font-size: 15.5px;
+  }
+
+  .acc-hero-banner-text p {
+    font-size: 11.5px;
+  }
+
+  .acc-hero-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .acc-btn-primary,
+  .acc-btn-secondary {
+    width: 100%;
+    flex: 1 1 100%;
+    padding: 8px 10px;
+  }
+
+  .acc-hero-banner-img-wrap {
+    height: 120px;
+  }
+
+  .acc-appliances-box {
+    padding: 10px 8px;
+  }
+
+  .acc-appliances-grid {
+    gap: 6px;
+  }
+
+  .acc-appliance-card {
+    padding: 6px 4px;
+  }
+
+  .acc-appliance-img {
+    height: 60px;
   }
 
   .address-modal-header h2 {
@@ -1088,6 +1683,7 @@
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

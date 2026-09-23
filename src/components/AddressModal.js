@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  MdArrowBack, 
-  MdClose, 
-  MdMyLocation, 
-  MdPlace, 
-  MdSearch, 
-  MdHome, 
-  MdWork, 
+import {
+  MdArrowBack,
+  MdClose,
+  MdMyLocation,
+  MdPlace,
+  MdSearch,
+  MdHome,
+  MdWork,
   MdLocationOn,
   MdChevronRight
 } from 'react-icons/md';
@@ -18,7 +18,7 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
-  
+
   // Location Search & Auto-suggest state
   const [locationSearch, setLocationSearch] = useState('');
   const [locationSuggestions, setLocationSuggestions] = useState([]);
@@ -123,16 +123,20 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
       setNewAddressForm((prev) => ({
         ...prev,
         addressLine: location.addressLine || prev.addressLine,
+        landmark: location.landmark || prev.landmark,
         city: location.city || coords.city || prev.city,
         state: location.state || coords.state || prev.state,
         pincode: location.pincode || coords.pincode || prev.pincode,
-        latitude: (location.latitude || coords.latitude).toString(),
-        longitude: (location.longitude || coords.longitude).toString()
+        latitude: (location.latitude ?? coords.latitude ?? '').toString(),
+        longitude: (location.longitude ?? coords.longitude ?? '').toString()
       }));
 
       setLocationSearch(location.addressLine || '');
       setShowAddAddressForm(true);
-      if (showToast) showToast('Current location detected successfully');
+      if (showToast) {
+        const accInfo = coords.accuracy ? ` (±${Math.round(coords.accuracy)}m)` : '';
+        showToast(`Live location detected${accInfo}`);
+      }
     } catch (err) {
       console.error('Error fetching location:', err);
       if (showToast) showToast(err.message || 'Unable to retrieve your location');
@@ -156,6 +160,7 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
       city: suggestion?.address?.city || suggestion?.address?.town || suggestion?.address?.village || prev.city,
       state: suggestion?.address?.state || prev.state,
       pincode: suggestion?.address?.postcode || prev.pincode,
+      landmark: suggestion?.address?.amenity || suggestion?.address?.building || prev.landmark,
       latitude: suggestion?.lat || prev.latitude,
       longitude: suggestion?.lon || prev.longitude
     }));
@@ -183,9 +188,10 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
         city: newAddressForm.city.trim(),
         state: newAddressForm.state.trim(),
         pincode: newAddressForm.pincode.trim(),
+        landmark: newAddressForm.landmark.trim(),
         isDefault: newAddressForm.isDefault,
-        latitude: newAddressForm.latitude,
-        longitude: newAddressForm.longitude
+        latitude: parseFloat(newAddressForm.latitude) || 0,
+        longitude: parseFloat(newAddressForm.longitude) || 0
       };
 
       const res = await createAddress(payload);
@@ -242,7 +248,7 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
   return (
     <div className="address-popup-overlay location-overlay-premium" onClick={resetAddressPopupState}>
       <div className="address-popup location-popup-premium" onClick={(e) => e.stopPropagation()}>
-        
+
         {/* Mobile drag handle indicator */}
         <div className="address-sheet-handle mobile-only"></div>
 
@@ -323,9 +329,9 @@ const AddressModal = ({ isOpen, onClose, currentUser, onSelectAddress, showToast
           <div className="new-address-form-box">
             <div className="form-header-row">
               <h4 className="form-section-title">Add New Address</h4>
-              <button 
-                type="button" 
-                className="form-back-link" 
+              <button
+                type="button"
+                className="form-back-link"
                 onClick={() => setShowAddAddressForm(false)}
               >
                 <MdArrowBack /> Back to addresses

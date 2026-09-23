@@ -272,101 +272,106 @@ const ProductServices = ({
 
             {/* Right Column: Title, Ratings, Price & Booking Controls */}
             <div className="price-card-sticky">
-              {/* Title & Rating */}
-              <h1 className="service-title">{service.serviceName}</h1>
-
-              <div className="rating-wrapper">
-                <div className="rating-stars">
-                  <Star className="star-icon" />
-                  <span>{service.ratingSummary?.averageRating || 0}</span>
+              {/* Category Badge & Rating Meta */}
+              <div className="detail-meta-top">
+                <span className="service-badge">
+                  {service.serviceType || "Service"}
+                </span>
+                <div className="rating-wrapper">
+                  <div className="rating-stars">
+                    <Star className="star-icon" />
+                    <span>{service.ratingSummary?.averageRating || 0}</span>
+                  </div>
                   <span className="rating-count">
                     ({service.ratingSummary?.totalRatings || 0} reviews)
                   </span>
                 </div>
-                <span className="service-badge">
-                  {service.serviceType || 'Service'}
-                </span>
               </div>
+
+              {/* Title */}
+              <h1 className="service-title">{service.serviceName}</h1>
 
               {/* Price & Savings */}
               <div className="price-section">
                 <div className="price-main">
                   <span className="price-current">₹{formatPriceSmart(service.discountedPrice || service.serviceCost)}</span>
                   {service.serviceCost > (service.discountedPrice || 0) && (
-                    <>
-                      <span className="price-original">₹{formatPriceSmart(service.serviceCost)}</span>
-                      <span className="price-discount">{service.serviceDiscountPercentage}% OFF</span>
-                    </>
+                    <span className="price-original">₹{formatPriceSmart(service.serviceCost)}</span>
+                  )}
+                  {service.serviceDiscountPercentage > 0 && (
+                    <span className="price-discount">{service.serviceDiscountPercentage}% OFF</span>
+                  )}
+                  {service.discountAmount > 0 && (
+                    <span className="price-savings">
+                      Save ₹{formatPriceSmart(service.discountAmount)}
+                    </span>
                   )}
                 </div>
-
-                {service.discountAmount > 0 && (
-                  <div className="price-savings">
-                    You Save ₹{formatPriceSmart(service.discountAmount)}
-                  </div>
-                )}
               </div>
 
               {/* Action Buttons */}
-              {isInCart(service._id) ? (
-                <div className="massive-cart-controls" onClick={(e) => e.stopPropagation()}>
-                  <div className="massive-quantity-container">
+              <div className="detail-action-row">
+                {isInCart(service._id) ? (
+                  <div className="massive-cart-controls" onClick={(e) => e.stopPropagation()}>
+                    <div className="massive-quantity-container">
+                      <button
+                        className="massive-qty-btn"
+                        onClick={() => handleDecrementService(service)}
+                        aria-label={`Decrease quantity for ${service.serviceName}`}
+                      >
+                        -
+                      </button>
+                      <span className="massive-qty-value">{getServiceQuantity(service._id)}</span>
+                      <button
+                        className="massive-qty-btn"
+                        onClick={() => handleIncrementService(service)}
+                        aria-label={`Increase quantity for ${service.serviceName}`}
+                      >
+                        +
+                      </button>
+                    </div>
                     <button
-                      className="massive-qty-btn"
-                      onClick={() => handleDecrementService(service)}
-                      aria-label={`Decrease quantity for ${service.serviceName}`}
+                      className="massive-remove-btn"
+                      onClick={() => confirmAndRemoveService(service)}
                     >
-                      -
-                    </button>
-                    <span className="massive-qty-value">{getServiceQuantity(service._id)}</span>
-                    <button
-                      className="massive-qty-btn"
-                      onClick={() => handleIncrementService(service)}
-                      aria-label={`Increase quantity for ${service.serviceName}`}
-                    >
-                      +
+                      Remove
                     </button>
                   </div>
+                ) : (
                   <button
-                    className="massive-remove-btn"
-                    onClick={() => confirmAndRemoveService(service)}
+                    className="massive-add-btn"
+                    onClick={() => {
+                      handleIncrementService(service);
+                    }}
                   >
-                    Remove
+                    Add to Cart
                   </button>
-                </div>
-              ) : (
-                <button
-                  className="massive-add-btn"
-                  onClick={() => {
-                    handleIncrementService(service);
-                  }}
-                >
-                  Add to Cart
-                </button>
-              )}
-
-              {/* Duration Box */}
-              <div className="detail-feature-bar">
-                <div className="feature-item">
-                  <Clock size={18} className="feature-icon" />
-                  <div className="feature-content">
-                    <span className="feature-label">Duration</span>
-                    <p className="feature-value">{service.duration || 'Flexible'}</p>
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* Supported Brands */}
-              {service.supportedBrands && service.supportedBrands.length > 0 && (
-                <div className="brands-section">
-                  <span className="brands-label">Supported Brands</span>
-                  <div className="brands-list">
-                    {service.supportedBrands.map(brand => (
-                      <span key={brand} className="brand-tag">{brand}</span>
-                    ))}
+              {/* Specifications / Highlights Grid (Duration + Brands) */}
+              <div className="detail-specs-grid">
+                <div className="feature-item">
+                  <div className="feature-icon-circle">
+                    <Clock size={16} />
+                  </div>
+                  <div className="feature-content">
+                    <span className="feature-label">Duration</span>
+                    <p className="feature-value">{service.duration || "Flexible"}</p>
                   </div>
                 </div>
-              )}
+
+                {service.supportedBrands && service.supportedBrands.length > 0 && (
+                  <div className="brands-feature-item">
+                    <span className="feature-label">Supported Brands</span>
+                    <div className="brands-list">
+                      {service.supportedBrands.map(brand => (
+                        <span key={brand} className="brand-tag">{brand}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

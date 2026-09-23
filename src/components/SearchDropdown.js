@@ -183,12 +183,10 @@ const SearchDropdown = ({
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
         />
-        {searchQuery ? (
+        {searchQuery && (
           <button className="search-box-clear" onClick={handleClear} aria-label="Clear search">
             <X size={16} />
           </button>
-        ) : (
-          <kbd className="search-shortcut desktop-only">⌘K</kbd>
         )}
       </div>
 

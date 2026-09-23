@@ -14,7 +14,7 @@ import {
   MdDeleteForever
 } from 'react-icons/md';
 import { deleteMyAccount } from '../services/userService';
-import { goBackSmart } from '../utils/browserUtils';
+import { goBackSmart, clearAuthSession } from '../utils/browserUtils';
 
 const SettingsPage = ({ isActive, isDarkMode, onToggleDarkMode, showToast }) => {
   const navigate = useNavigate();
@@ -49,8 +49,7 @@ const SettingsPage = ({ isActive, isDarkMode, onToggleDarkMode, showToast }) => 
       const response = await deleteMyAccount();
       if (response?.success) {
         showToast('Account deleted successfully');
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('token');
+        clearAuthSession();
         window.dispatchEvent(new Event('userLoggedOut'));
         navigate('/');
       } else {

@@ -64,8 +64,8 @@ const Footer = ({ currentUser, onLoginClick, serviceCategories = [] }) => {
                                     <>
                                         <li><Link to="/bookings">My Bookings</Link></li>
                                         <li>
-                                            <Link 
-                                                to="/account?edit=address" 
+                                            <Link
+                                                to="/account?edit=address"
                                                 onClick={(e) => handleRestrictedLink(e, '/account?edit=address')}
                                             >
                                                 My Addresses
@@ -75,8 +75,8 @@ const Footer = ({ currentUser, onLoginClick, serviceCategories = [] }) => {
                                 )}
                                 {!currentUser && (
                                     <li>
-                                        <Link 
-                                            to="/bookings" 
+                                        <Link
+                                            to="/bookings"
                                             onClick={(e) => handleRestrictedLink(e, '/bookings')}
                                         >
                                             Track Bookings
@@ -110,7 +110,7 @@ const Footer = ({ currentUser, onLoginClick, serviceCategories = [] }) => {
                                 <MapPin size={18} className="icon" />
                                 <div className="text">
                                     <p className="label">Our HQ</p>
-                                    <p className="value">FlareMinds Tech, High-Tech City, India</p>
+                                    <p className="value">50/4, Unamancheri - Kolapakkam Rd, Nedunkundram, Chennai, Tamil Nadu 600127</p>
                                 </div>
                             </div>
                         </div>

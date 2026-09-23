@@ -80,28 +80,33 @@ export const reverseNominatim = async (lat, lng) => {
     const pincode = addr.postcode || "";
     const country = addr.country || "";
 
-    const specificParts = [
-      addr.amenity || addr.building,
-      addr.house_number ? `No. ${addr.house_number}` : "",
-      addr.road,
-      addr.neighbourhood || addr.suburb || addr.residential
-    ].filter(Boolean);
+    const landmark = addr.amenity || addr.building || addr.shop || "";
+    const houseNo = addr.house_number ? `No. ${addr.house_number}` : "";
+    const road = addr.road || addr.street || "";
+    const area = addr.suburb || addr.neighbourhood || addr.residential || "";
+    const cleanCity = addr.city || addr.town || addr.village || addr.municipality || "";
+    const cleanState = addr.state || "";
+    const cleanPincode = addr.postcode || "";
 
-    let addressLine = "";
-    if (specificParts.length > 0) {
-      addressLine = [specificParts.join(", "), city, state, pincode].filter(Boolean).join(", ");
-    }
-    
-    if (!addressLine || addressLine.length < 10) {
+    // Build deduplicated parts
+    const rawParts = [landmark, houseNo, road, area, cleanCity, cleanState, cleanPincode];
+    const parts = rawParts
+      .filter(Boolean)
+      .map((p) => p.trim())
+      .filter((item, pos, arr) => arr.indexOf(item) === pos);
+
+    let addressLine = parts.join(", ");
+    if (!addressLine || addressLine.length < 8) {
       addressLine = result?.display_name || "";
     }
 
-    if (!addressLine && !city) throw new Error("Nominatim returned empty location");
+    if (!addressLine && !cleanCity) throw new Error("Nominatim returned empty location");
 
     return {
-      latitude: lat,
-      longitude: lng,
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lng),
       addressLine,
+<<<<<<< HEAD
       displayName: result?.display_name || addressLine,
       houseNumber: addr.house_number ? `No. ${addr.house_number}` : "",
       road: addr.road || "",
@@ -112,6 +117,12 @@ export const reverseNominatim = async (lat, lng) => {
       country,
       raw: result,
       source: "openstreetmap"
+=======
+      landmark,
+      city: cleanCity || city,
+      state: cleanState || state,
+      pincode: cleanPincode || pincode
+>>>>>>> origin/bharath
     };
   } catch (err) {
     clearTimeout(timeoutId);
@@ -143,9 +154,10 @@ const reverseBigDataCloud = async (lat, lng) => {
   const addressLine = addressParts.join(", ") || [city, state, pincode].filter(Boolean).join(", ");
 
   return {
-    latitude: lat,
-    longitude: lng,
+    latitude: parseFloat(lat),
+    longitude: parseFloat(lng),
     addressLine: addressLine || `Location (${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)})`,
+    landmark: areaName && areaName !== city ? areaName : "",
     city,
     state,
     pincode
@@ -168,9 +180,10 @@ const reversePhoton = async (lat, lng) => {
   const addressLine = [locality, city, state, pincode].filter(Boolean).join(", ");
 
   return {
-    latitude: lat,
-    longitude: lng,
+    latitude: parseFloat(lat),
+    longitude: parseFloat(lng),
     addressLine,
+    landmark: props.name || locality || "",
     city,
     state,
     pincode
@@ -178,25 +191,28 @@ const reversePhoton = async (lat, lng) => {
 };
 
 export const reverseAddress = async (lat, lng) => {
+  const numLat = parseFloat(lat);
+  const numLng = parseFloat(lng);
   // 1. Try Nominatim jsonv2 first for maximum detail (house number, road, area, pincode)
   try {
-    return await reverseNominatim(lat, lng);
+    return await reverseNominatim(numLat, numLng);
   } catch (err1) {
-    console.warn("Nominatim reverse geocode failed, trying Photon:", err1);
-    // 2. Fallback to Photon (komoot) - free, CORS enabled, no API key
+    console.warn("Nominatim reverse geocode failed, trying BigDataCloud:", err1);
+    // 2. Fallback to BigDataCloud (fast, CORS enabled)
     try {
-      return await reversePhoton(lat, lng);
+      return await reverseBigDataCloud(numLat, numLng);
     } catch (err2) {
-      console.warn("Photon reverse geocode failed, trying BigDataCloud:", err2);
-      // 3. Fallback to BigDataCloud
+      console.warn("BigDataCloud reverse geocode failed, trying Photon:", err2);
+      // 3. Fallback to Photon
       try {
-        return await reverseBigDataCloud(lat, lng);
+        return await reversePhoton(numLat, numLng);
       } catch (err3) {
-        console.warn("BigDataCloud reverse geocode failed:", err3);
+        console.warn("Photon reverse geocode failed:", err3);
         return {
-          latitude: lat,
-          longitude: lng,
-          addressLine: `Location (${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)})`,
+          latitude: numLat,
+          longitude: numLng,
+          addressLine: `Location (${Number(numLat).toFixed(4)}, ${Number(numLng).toFixed(4)})`,
+          landmark: "",
           city: "",
           state: "",
           pincode: ""
@@ -212,11 +228,12 @@ const IP_PROVIDERS = [
     parse: (d) =>
       d && d.success !== false && d.latitude && d.longitude
         ? {
-            latitude: d.latitude,
-            longitude: d.longitude,
+            latitude: parseFloat(d.latitude),
+            longitude: parseFloat(d.longitude),
             city: d.city || "",
             state: d.region || d.region_code || "",
-            pincode: d.postal || ""
+            pincode: d.postal || "",
+            isIpFallback: true
           }
         : null
   },
@@ -230,7 +247,8 @@ const IP_PROVIDERS = [
         longitude,
         city: d.city || "",
         state: d.region || "",
-        pincode: d.postal || ""
+        pincode: d.postal || "",
+        isIpFallback: true
       };
     }
   },
@@ -243,7 +261,8 @@ const IP_PROVIDERS = [
             longitude: parseFloat(d.longitude),
             city: d.city || "",
             state: d.region || "",
-            pincode: d.postal_code || d.postal || ""
+            pincode: d.postal_code || d.postal || "",
+            isIpFallback: true
           }
         : null
   },
@@ -252,18 +271,19 @@ const IP_PROVIDERS = [
     parse: (d) =>
       d && !d.error && d.latitude && d.longitude
         ? {
-            latitude: d.latitude,
-            longitude: d.longitude,
+            latitude: parseFloat(d.latitude),
+            longitude: parseFloat(d.longitude),
             city: d.city || "",
             state: d.region || "",
-            pincode: d.postal || ""
+            pincode: d.postal || "",
+            isIpFallback: true
           }
         : null
   }
 ];
 
 // Fallback to IP-based location if browser GPS fails or is unavailable
-const fetchIpLocation = async () => {
+export const fetchIpLocation = async () => {
   for (const provider of IP_PROVIDERS) {
     try {
       const res = await fetch(provider.url, { headers: { Accept: "application/json" } });
@@ -281,53 +301,101 @@ const fetchIpLocation = async () => {
 };
 
 /**
- * Gets user current location coordinates using browser HTML5 Geolocation API (frontend).
+ * Gets the user's precise live GPS location with graceful fallback.
  */
-export const getCurrentUserLocation = () => {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      fetchIpLocation()
-        .then(resolve)
-        .catch(() => reject(new Error("Geolocation is not supported by your browser.")));
-      return;
+export const getCurrentUserLocation = async (options = {}) => {
+  const tryFallback = async () => {
+    try {
+      const ipLoc = await fetchIpLocation();
+      if (ipLoc) return ipLoc;
+    } catch (ipErr) {
+      console.warn("IP location fallback failed:", ipErr);
     }
+    throw new Error("Unable to detect location. Please check browser location permissions or enter address manually.");
+  };
 
-    const highAccuracyOpts = { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 };
-    const lowAccuracyOpts = { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 };
+  if (!navigator.geolocation) {
+    return tryFallback();
+  }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-      },
-      (err) => {
-        console.warn("High-accuracy location attempt failed, trying low accuracy:", err.message);
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-          },
-          (err2) => {
-            console.warn("Low-accuracy location attempt failed, falling back to IP location:", err2.message);
-            fetchIpLocation()
-              .then(resolve)
-              .catch(() => {
-                let msg = "Unable to retrieve your location.";
-                if (err.code === 1) {
-                  msg = "Location access denied. Please enable location permissions in browser settings.";
-                } else if (err.code === 3) {
-                  msg = "Location request timed out. Please enter your address manually.";
-                }
-                reject(new Error(msg));
-              });
-          },
-          lowAccuracyOpts
-        );
-      },
-      highAccuracyOpts
-    );
+  return new Promise((resolve, reject) => {
+    let bestPosition = null;
+    let watchId = null;
+    let timerId = null;
+
+    const cleanup = () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (timerId !== null) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+    };
+
+    const targetAccuracy = options.targetAccuracy || 30; // 30 meters
+    const maxWaitTime = options.timeout || 7000;
+
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const accuracy = pos.coords.accuracy || 9999;
+          if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
+            bestPosition = pos;
+          }
+
+          if (accuracy <= targetAccuracy) {
+            cleanup();
+            resolve({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              accuracy: pos.coords.accuracy
+            });
+          }
+        },
+        async (err) => {
+          cleanup();
+          try {
+            const fallback = await tryFallback();
+            resolve(fallback);
+          } catch (e) {
+            reject(e);
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 0
+        }
+      );
+
+      timerId = setTimeout(async () => {
+        cleanup();
+        if (bestPosition) {
+          resolve({
+            latitude: bestPosition.coords.latitude,
+            longitude: bestPosition.coords.longitude,
+            accuracy: bestPosition.coords.accuracy
+          });
+        } else {
+          try {
+            const fallback = await tryFallback();
+            resolve(fallback);
+          } catch (e) {
+            reject(e);
+          }
+        }
+      }, maxWaitTime);
+    } catch (e) {
+      cleanup();
+      tryFallback().then(resolve).catch(reject);
+    }
   });
 };
 
 /**
+<<<<<<< HEAD
  * Convenience function to fetch the user's current GPS location coordinates
  * and resolve them into a detailed street address using OpenStreetMap Nominatim.
  */
@@ -350,3 +418,44 @@ export const fetchUserAddress = fetchCurrentLocationAddress;
  */
 export const getAddressFromCoordinates = (lat, lng) => reverseAddress(lat, lng);
 
+=======
+ * Continuous Live Location Tracker
+ * Subscribes to live position updates as the user moves.
+ * Returns an unsubscribe function to stop tracking.
+ */
+export const watchUserLiveLocation = (onLocationUpdate, onError, options = {}) => {
+  if (!navigator.geolocation) {
+    if (onError) onError(new Error("Geolocation not supported."));
+    return () => {};
+  }
+
+  const watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      if (onLocationUpdate) {
+        onLocationUpdate({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          speed: pos.coords.speed,
+          heading: pos.coords.heading,
+          timestamp: pos.timestamp
+        });
+      }
+    },
+    (err) => {
+      console.warn("Live location tracking error:", err);
+      if (onError) onError(err);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 15000,
+      ...options
+    }
+  );
+
+  return () => {
+    navigator.geolocation.clearWatch(watchId);
+  };
+};
+>>>>>>> origin/bharath

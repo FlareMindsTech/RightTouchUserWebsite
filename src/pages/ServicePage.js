@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Star,
-  Search,
   Filter,
   X,
   Wrench,
@@ -13,15 +12,17 @@ import {
   Sparkles,
   Cpu,
   Paintbrush,
-  ChevronRight,
   LayoutGrid,
   ShoppingBag,
   Clock,
   Share2,
+  Minus,
+  Plus,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { shareItem } from '../utils/share';
 import { formatPriceSmart } from '../utils/format';
+import ConfirmModal from '../components/ConfirmModal';
 import './ServicePage.css';
 
 const ServicePage = ({
@@ -56,26 +57,12 @@ const ServicePage = ({
     rating: 0,
   });
   const [visibleCount, setVisibleCount] = useState(9);
-  const [shuffledCategories, setShuffledCategories] = useState([]);
   const [hoveredCard, setHoveredCard] = useState(null);
-
-  // Shuffle function
-  const shuffleArray = (array) => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
 
   useEffect(() => {
     setCategories(initialCategories);
     setAllServices(initialAllServices);
     setLoading(isGlobalLoading);
-    if (initialCategories.length > 0) {
-      setShuffledCategories(shuffleArray(initialCategories));
-    }
   }, [initialCategories, initialAllServices, isGlobalLoading]);
 
   useEffect(() => {
@@ -134,17 +121,15 @@ const ServicePage = ({
 
   const getCartItemForService = (serviceId) => {
     if (!Array.isArray(cartItems)) return null;
-    return cartItems.find(item => (item.itemId?._id || item.originalId) === serviceId) || null;
+    return cartItems.find(item => (item.itemId?._id || item.originalId || item.id || item._id) === serviceId) || null;
   };
 
   const getServiceQuantity = (serviceId) => {
     const cartItem = getCartItemForService(serviceId);
-    return Number(cartItem?.quantity || 0);
+    return Number(cartItem?.quantity || 1);
   };
 
   const confirmAndRemoveService = (service) => {
-    const cartItem = getCartItemForService(service._id);
-    if (!cartItem || !removeFromCart) return;
     setConfirmDialog({ open: true, service });
   };
 
@@ -153,8 +138,10 @@ const ServicePage = ({
     setConfirmDialog({ open: false, service: null });
     if (!service) return;
     const cartItem = getCartItemForService(service._id);
-    if (!cartItem || !removeFromCart) return;
-    await removeFromCart(cartItem.id);
+    if (cartItem && removeFromCart) {
+      await removeFromCart(cartItem.id || cartItem._id || service._id);
+      if (showToast) showToast(`${service.serviceName} removed from cart`);
+    }
   };
 
   const handleCancelRemove = () => {
@@ -173,7 +160,7 @@ const ServicePage = ({
 
     const currentQuantity = Number(cartItem.quantity || 1);
     if (updateQuantity) {
-      await updateQuantity(cartItem.originalId || cartItem.itemId?._id, cartItem.itemType || 'service', currentQuantity + 1);
+      await updateQuantity(cartItem.originalId || cartItem.itemId?._id || service._id, cartItem.itemType || 'service', currentQuantity + 1);
       if (showToast) showToast(`${service.serviceName} quantity updated`);
     }
   };
@@ -184,12 +171,12 @@ const ServicePage = ({
 
     const currentQuantity = Number(cartItem.quantity || 1);
     if (currentQuantity <= 1) {
-      await confirmAndRemoveService(service);
+      confirmAndRemoveService(service);
       return;
     }
 
     if (updateQuantity) {
-      await updateQuantity(cartItem.originalId || cartItem.itemId?._id, cartItem.itemType || 'service', currentQuantity - 1);
+      await updateQuantity(cartItem.originalId || cartItem.itemId?._id || service._id, cartItem.itemType || 'service', currentQuantity - 1);
       if (showToast) showToast(`${service.serviceName} quantity updated`);
     }
   };
@@ -224,36 +211,9 @@ const ServicePage = ({
     return '#22ba73';
   };
 
-
-
-  const FilterPanel = () => (
-    <div className="filter-panel-modern">
-      <div className="filter-group-modern">
-        <h4 className="filter-group-label">Categories</h4>
-        <div className="filter-list">
-          <button
-            className={`filter-item ${!selectedCategory ? 'active' : ''}`}
-            onClick={() => handleCategoryClick(null)}
-          >
-            <LayoutGrid size={16} />
-            <span>All Services</span>
-            <ChevronRight size={14} />
-          </button>
-          {shuffledCategories.map(cat => (
-            <button
-              key={cat._id}
-              className={`filter-item ${selectedCategory?._id === cat._id ? 'active' : ''}`}
-              onClick={() => handleCategoryClick(cat)}
-            >
-              {getCategoryIcon(cat.category)}
-              <span>{cat.category}</span>
-              <ChevronRight size={14} />
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + 9);
+  };
 
   if (loading && isActive) {
     return (
@@ -413,19 +373,21 @@ const ServicePage = ({
                         <>
                           <div className="qty-control-modern">
                             <button
-                              className="qty-btn-modern"
+                              className="qty-btn-modern minus"
                               onClick={() => handleDecrementService(service)}
+                              aria-label="Decrease quantity"
                             >
-                              −
+                              <Minus size={14} />
                             </button>
                             <span className="qty-value-modern">
                               {getServiceQuantity(service._id)}
                             </span>
                             <button
-                              className="qty-btn-modern"
+                              className="qty-btn-modern plus"
                               onClick={() => handleIncrementService(service)}
+                              aria-label="Increase quantity"
                             >
-                              +
+                              <Plus size={14} />
                             </button>
                           </div>
                           <button
@@ -508,21 +470,21 @@ const ServicePage = ({
                       {isInCart && isInCart(service._id) ? (
                         <div className="compact-qty">
                           <button
-                            className="compact-qty-btn"
+                            className="compact-qty-btn minus"
                             onClick={() => handleDecrementService(service)}
                             aria-label="Decrease quantity"
                           >
-                            −
+                            <Minus size={14} />
                           </button>
                           <span className="compact-qty-value">
                             {getServiceQuantity(service._id)}
                           </span>
                           <button
-                            className="compact-qty-btn"
+                            className="compact-qty-btn plus"
                             onClick={() => handleIncrementService(service)}
                             aria-label="Increase quantity"
                           >
-                            +
+                            <Plus size={14} />
                           </button>
                         </div>
                       ) : (
@@ -542,12 +504,11 @@ const ServicePage = ({
               {/* Load More */}
               {visibleCount < filteredServices.length && (
                 <div className="load-more-wrapper">
-                  <button
+                  <button 
                     className="load-more-btn-modern"
-                    onClick={() => setVisibleCount(prev => prev + 9)}
+                    onClick={handleLoadMore}
                   >
-                    <span>Load More Services</span>
-                    <ChevronRight size={18} />
+                    Load More Services ({filteredServices.length - visibleCount} remaining)
                   </button>
                 </div>
               )}
@@ -555,14 +516,14 @@ const ServicePage = ({
           ) : (
             <div className="empty-state-modern">
               <div className="empty-icon-wrapper">
-                <Search size={48} />
+                <Wrench size={48} />
               </div>
               <h3 className="empty-heading">No services found</h3>
               <p className="empty-desc">
-                We couldn't find any services matching your criteria.
+                We couldn't find any services matching your search or filters.
               </p>
               <button className="empty-action" onClick={clearAllFilters}>
-                Reset Filters
+                Clear all filters
               </button>
             </div>
           )}
@@ -574,26 +535,76 @@ const ServicePage = ({
         <div className="drawer-overlay-modern" onClick={() => setShowMobileFilters(false)}>
           <div className="drawer-modern" onClick={(e) => e.stopPropagation()}>
             <div className="drawer-header-modern">
-              <h3 className="drawer-title-modern">Filters</h3>
-              <button className="drawer-close-modern" onClick={() => setShowMobileFilters(false)}>
-                <X size={24} />
-              </button>
-            </div>
-            <div className="drawer-body-modern">
-              <FilterPanel />
-            </div>
-            <div className="drawer-footer-modern">
-              <button
-                className="drawer-btn-secondary"
-                onClick={() => {
-                  clearAllFilters();
-                  setShowMobileFilters(false);
-                }}
+              <div className="drawer-title-row">
+                <Filter size={18} />
+                <h3>Filters</h3>
+              </div>
+              <button 
+                className="drawer-close"
+                onClick={() => setShowMobileFilters(false)}
               >
-                Reset All
+                <X size={18} />
               </button>
-              <button
-                className="drawer-btn-primary"
+            </div>
+
+            <div className="drawer-body-modern">
+              {/* Category Filter */}
+              <div className="filter-section-modern">
+                <h4 className="filter-title-modern">Categories</h4>
+                <div className="filter-tags-grid">
+                  <button
+                    className={`filter-tag ${!selectedCategory ? 'active' : ''}`}
+                    onClick={() => handleCategoryClick(null)}
+                  >
+                    <LayoutGrid size={14} /> All
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat._id}
+                      className={`filter-tag ${selectedCategory?._id === cat._id ? 'active' : ''}`}
+                      onClick={() => handleCategoryClick(cat)}
+                    >
+                      {getCategoryIcon(cat.category)}
+                      {cat.category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="filter-section-modern">
+                <h4 className="filter-title-modern">Price Range</h4>
+                <div className="price-options-modern">
+                  {[
+                    { label: 'All Prices', value: 'all' },
+                    { label: 'Under ₹500', value: 'under-500' },
+                    { label: '₹500 - ₹1000', value: '500-1000' },
+                    { label: 'Above ₹1000', value: 'above-1000' },
+                  ].map((opt) => (
+                    <label key={opt.value} className="price-option-radio">
+                      <input
+                        type="radio"
+                        name="mobilePrice"
+                        checked={filters.priceRange === opt.value}
+                        onChange={() => setFilters({ ...filters, priceRange: opt.value })}
+                      />
+                      <span className="radio-custom"></span>
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="drawer-footer-modern">
+              <button 
+                className="drawer-btn-clear"
+                onClick={clearAllFilters}
+              >
+                Clear
+              </button>
+              <button 
+                className="drawer-btn-apply"
                 onClick={() => setShowMobileFilters(false)}
               >
                 Apply
@@ -603,28 +614,20 @@ const ServicePage = ({
         </div>
       )}
 
-      {/* Confirm Dialog */}
-      {confirmDialog.open && (
-        <div className="dialog-overlay-modern" onClick={handleCancelRemove}>
-          <div className="dialog-modern" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-icon-modern">
-              <X size={28} />
-            </div>
-            <h3 className="dialog-title-modern">Remove from cart?</h3>
-            <p className="dialog-desc-modern">
-              <strong>{confirmDialog.service?.serviceName}</strong> will be removed from your cart.
-            </p>
-            <div className="dialog-actions-modern">
-              <button className="dialog-btn-cancel" onClick={handleCancelRemove}>
-                Keep
-              </button>
-              <button className="dialog-btn-confirm" onClick={handleConfirmRemove}>
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmDialog.open}
+        icon="🗑️"
+        iconBg="#fee2e2"
+        iconColor="#ef4444"
+        title="Remove from Cart?"
+        desc={confirmDialog.service ? `Are you sure you want to remove "${confirmDialog.service.serviceName}" from your cart?` : ''}
+        confirmLabel="Remove"
+        cancelLabel="Keep It"
+        confirmClass="cm-confirm-danger"
+        onConfirm={handleConfirmRemove}
+        onCancel={handleCancelRemove}
+      />
     </section>
   );
 };

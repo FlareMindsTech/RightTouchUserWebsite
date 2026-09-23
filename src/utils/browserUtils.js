@@ -99,3 +99,126 @@ export const safeStorage = {
     }
   }
 };
+
+/**
+ * Robust Auth Token & Session Helpers
+ */
+
+/**
+ * Checks whether a JWT token is expired based on its 'exp' claim.
+ * @param {string} token
+ * @returns {boolean} true if token is expired, false otherwise
+ */
+export const isTokenExpired = (token) => {
+  if (!token || typeof token !== 'string') return true;
+  try {
+    const cleanToken = token.trim();
+    const parts = cleanToken.split('.');
+    if (parts.length !== 3) {
+      // If not standard 3-part JWT, do not prematurely expire
+      return false;
+    }
+    const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(payloadBase64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const parsed = JSON.parse(jsonPayload);
+    if (parsed && typeof parsed.exp === 'number') {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      return parsed.exp < nowSeconds;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+};
+
+export const getAuthToken = () => {
+  try {
+    let token = safeStorage.getItem('token');
+    if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
+      const userStr = safeStorage.getItem('currentUser') || safeStorage.getItem('user');
+      if (userStr) {
+        const parsed = JSON.parse(userStr);
+        token = parsed?.token || parsed?.accessToken || parsed?.result?.token;
+      }
+    }
+
+    if (token && typeof token === 'string' && token !== 'null' && token !== 'undefined') {
+      const clean = token.trim();
+      if (clean !== '') {
+        if (isTokenExpired(clean)) {
+          console.warn('[getAuthToken] Token has expired. Clearing session.');
+          clearAuthSession();
+          return null;
+        }
+        return clean;
+      }
+    }
+  } catch (e) {
+    console.warn('[getAuthToken] Error reading token:', e);
+  }
+  return null;
+};
+
+export const setAuthSession = (token, user = {}) => {
+  try {
+    const cleanToken = (token && token !== 'null' && token !== 'undefined') ? String(token).trim() : '';
+    if (cleanToken) {
+      safeStorage.setItem('token', cleanToken);
+    }
+    safeStorage.removeItem('adminToken');
+    safeStorage.removeItem('user');
+
+    const existingUserStr = safeStorage.getItem('currentUser');
+    let existingUser = {};
+    if (existingUserStr) {
+      try {
+        existingUser = JSON.parse(existingUserStr) || {};
+      } catch (e) {}
+    }
+
+    const mergedUser = {
+      ...existingUser,
+      ...user,
+      token: cleanToken || user.token || existingUser.token || safeStorage.getItem('token') || ''
+    };
+
+    safeStorage.setItem('currentUser', JSON.stringify(mergedUser));
+    return mergedUser;
+  } catch (e) {
+    console.error('[setAuthSession] Error setting session:', e);
+    return user;
+  }
+};
+
+export const clearAuthSession = () => {
+  try {
+    safeStorage.removeItem('token');
+    safeStorage.removeItem('currentUser');
+    safeStorage.removeItem('user');
+    safeStorage.removeItem('adminToken');
+  } catch (e) {
+    console.warn('[clearAuthSession] Error clearing session:', e);
+  }
+};
+
+export const getSavedUser = () => {
+  try {
+    const userStr = safeStorage.getItem('currentUser') || safeStorage.getItem('user');
+    if (!userStr) return null;
+    const user = JSON.parse(userStr);
+    const token = user?.token || safeStorage.getItem('token');
+    if (token && isTokenExpired(token)) {
+      clearAuthSession();
+      return null;
+    }
+    return user;
+  } catch (e) {
+    return null;
+  }
+};
+

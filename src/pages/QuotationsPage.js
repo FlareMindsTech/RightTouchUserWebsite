@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MdOutlineChevronRight,
+  MdArrowBack,
   MdAssignment,
   MdCheckCircle,
   MdCancel,
@@ -24,7 +25,7 @@ import {
 } from '../services/quotationService';
 import { getAllProductBookings } from '../services/productBookingService';
 import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
-import { safeParseDate } from '../utils/browserUtils';
+import { safeParseDate, goBackSmart } from '../utils/browserUtils';
 import ConfirmModal from '../components/ConfirmModal';
 import './ServicePage.css';
 import './QuotationsPage.css';
@@ -139,6 +140,26 @@ const QuotationsPage = ({ isActive, showToast, currentUser, onNavigate }) => {
       fetchQuotationData();
     }
   }, [isActive, currentUser, fetchQuotationData]);
+
+  const handleBack = () => {
+    if (showDetailsModal) {
+      setShowDetailsModal(false);
+      return;
+    }
+    if (showRejectModal) {
+      setShowRejectModal(false);
+      return;
+    }
+    if (showCancelModal) {
+      setShowCancelModal(false);
+      return;
+    }
+    if (onNavigate) {
+      onNavigate('account');
+    } else {
+      goBackSmart(navigate, '/account');
+    }
+  };
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -671,16 +692,15 @@ const evaluateQuotationStatus = (q, req) => {
     <div className="quotations-page-container">
       {/* Header */}
       <div className="q-header">
-        <button className="q-back-btn" onClick={() => navigate('/bookings')}>
-          <MdOutlineChevronRight style={{ transform: 'rotate(180deg)', fontSize: '20px' }} />
-          <span>Back to Bookings</span>
-        </button>
-        <div className="q-header-title-row">
-          <div>
-            <h2>Product Quotations</h2>
-            <p>Manage custom price quotes and formal product estimations</p>
+        <div className="q-header-top">
+          <button className="q-back-btn" onClick={handleBack} aria-label="Go Back">
+            <MdArrowBack className="q-back-icon" size={20} />
+          </button>
+          <div className="q-header-title-wrap">
+            <h1 className="q-page-title">Product Quotations</h1>
+            <p className="q-page-subtitle">Manage custom price quotes and formal product estimations</p>
           </div>
-          <button className="q-refresh-btn" onClick={handleRefresh} disabled={refreshing} title="Refresh Data">
+          <button className="q-refresh-btn" onClick={handleRefresh} disabled={refreshing} title="Refresh Data" aria-label="Refresh Data">
             <MdRefresh className={refreshing ? 'spinning' : ''} size={20} />
           </button>
         </div>
