@@ -18,6 +18,7 @@ import { createAddress, getMyAddresses, searchAddress, updateAddress, reverseAdd
 import { checkout, getMyCart, getAvailableSlots, setSchedule } from '../services/cartService';
 import { useNavigate } from 'react-router-dom';
 import AddressModal from '../components/AddressModal';
+import OrderSuccessModal from '../components/OrderSuccessModal';
 import { formatPriceSmart } from '../utils/format';
 import './CartPage.css';
 
@@ -1020,22 +1021,6 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
               </div>
             )}
 
-            {/* Simple Booking Confirmed Toast - Auto Closes after 3 seconds */}
-            {showSuccessModal && (
-              <div className="success-toast-overlay">
-                <div className="success-toast">
-                  <div className="success-toast-icon">✅</div>
-                  <div className="success-toast-content">
-                    <h3 className="success-toast-title">Booking Confirmed!</h3>
-                    <p className="success-toast-subtitle">Your order has been placed successfully</p>
-                    {bookingSuccessData?.bookingId && (
-                      <span className="success-toast-ref">{bookingSuccessData.bookingId}</span>
-                    )}
-                  </div>
-                  <div className="success-toast-progress"></div>
-                </div>
-              </div>
-            )}
 
             {/* Payment Summary Section */}
             {cartItems.length > 0 && (
@@ -1193,133 +1178,16 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
           </div>
         </div>
       )}
-      {/* Unique Animated Booking Success Modal */}
-      {showSuccessModal && (
-        <div className="booking-success-modal-overlay" onClick={() => { setShowSuccessModal(false); setBookingSuccessData(null); }}>
-          <div className="booking-success-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="modal-close-btn-premium" 
-              onClick={() => { setShowSuccessModal(false); setBookingSuccessData(null); }}
-              aria-label="Close modal"
-            >
-              <MdClose />
-            </button>
-
-            {/* Confetti Particles */}
-            <div className="celebration-particles" aria-hidden="true">
-              <span className="particle p1">✨</span>
-              <span className="particle p2">🎉</span>
-              <span className="particle p3">⭐</span>
-              <span className="particle p4">🎊</span>
-              <span className="particle p5">✨</span>
-              <span className="particle p6">🌟</span>
-            </div>
-
-            {/* Hero Animated Success Icon with Multi-Ring Ripple & Drawing SVG */}
-            <div className="success-hero-animation-wrap">
-              <div className="success-pulse-ring ring-1"></div>
-              <div className="success-pulse-ring ring-2"></div>
-              <div className="success-pulse-ring ring-3"></div>
-              
-              <div className="success-svg-circle-wrap">
-                <svg className="success-checkmark-svg" viewBox="0 0 80 80">
-                  <circle className="success-circle-bg" cx="40" cy="40" r="36" />
-                  <circle className="success-circle-outline" cx="40" cy="40" r="36" />
-                  <path className="success-check-path" d="M24 41 L35 52 L56 29" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Content & Typography */}
-            <div className="success-modal-body">
-              <div className="success-badge-pill">
-                <span className="badge-sparkle">✨</span> Booking Confirmed
-              </div>
-              <h2 className="success-title">Order Placed Successfully!</h2>
-              <p className="success-desc">
-                Your service appointment has been scheduled. Our verified expert technician will arrive at your doorstep on time.
-              </p>
-
-              {/* Reference ID with 1-click copy */}
-              {bookingSuccessData?.bookingId && (
-                <div className="success-ref-card">
-                  <span className="ref-label">Booking Reference</span>
-                  <div className="ref-code-wrap">
-                    <span className="ref-code">{bookingSuccessData.bookingId}</span>
-                    <button
-                      className="ref-copy-btn"
-                      onClick={() => {
-                        navigator.clipboard.writeText(bookingSuccessData.bookingId.replace("#", ""));
-                        setCopiedRef(true);
-                        setTimeout(() => setCopiedRef(false), 2000);
-                      }}
-                      title="Copy Reference ID"
-                    >
-                      {copiedRef ? (
-                        <>
-                          <MdCheck style={{ color: "#10b981", fontSize: "16px" }} /> Copied!
-                        </>
-                      ) : (
-                        <>
-                          <MdContentCopy style={{ fontSize: "14px" }} /> Copy
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Feature Assurance Grid */}
-              <div className="success-assurance-grid">
-                <div className="assurance-item">
-                  <span className="assurance-icon">⚡</span>
-                  <div className="assurance-text">
-                    <strong>On-Time Arrival</strong>
-                    <span>Technician assigned</span>
-                  </div>
-                </div>
-                <div className="assurance-item">
-                  <span className="assurance-icon">🛡️</span>
-                  <div className="assurance-text">
-                    <strong>Service Guarantee</strong>
-                    <span>30-day warranty</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="success-modal-actions">
-                <button
-                  className="success-btn-primary"
-                  onClick={() => {
-                    setShowSuccessModal(false);
-                    setBookingSuccessData(null);
-                    navigate("/bookings");
-                  }}
-                >
-                  <MdCalendarToday style={{ fontSize: "18px" }} />
-                  <span>Track My Bookings</span>
-                </button>
-                <button
-                  className="success-btn-secondary"
-                  onClick={() => {
-                    setShowSuccessModal(false);
-                    setBookingSuccessData(null);
-                    navigate("/services");
-                  }}
-                >
-                  <span>Explore More Services</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Timer Progress Indicator */}
-            <div className="success-progress-bar-wrap">
-              <div className="success-progress-bar"></div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Ultra-Premium Animated Order Confirmed Modal */}
+      <OrderSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setBookingSuccessData(null);
+        }}
+        data={bookingSuccessData}
+        autoCloseDuration={8000}
+      />
     </div>
   );
 };

@@ -17,17 +17,46 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a, button, input, select, textarea, [role="button"] {
+a, button, input, select, textarea, [role="button"], [tabindex], svg, img {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+}
+
+a, a:hover, a:focus, a:active, a:visited {
+  text-decoration: none !important;
+  color: inherit;
+  outline: none !important;
   -webkit-tap-highlight-color: transparent !important;
 }
 
-*:focus:not(:focus-visible) {
-  outline: none;
+button, [role="button"], [tabindex] {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
-*:focus-visible {
-  outline: 2px solid #27AE60;
-  outline-offset: 2px;
+*:focus, *:focus-visible, *:active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Eliminate tap link / focus flashes on touch screens & responsive view */
+@media (hover: none) and (pointer: coarse), (max-width: 1024px) {
+  *, *::before, *::after {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+  }
+
+  a, a:active, a:focus, a:hover, a:visited,
+  button, button:active, button:focus,
+  [role="button"], [role="button"]:active, [role="button"]:focus,
+  [tabindex], [tabindex]:active, [tabindex]:focus,
+  .category-card, .service-card, .appliance-card, .bottom-tab, .nav-link {
+    outline: none !important;
+    text-decoration: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    color: inherit;
+  }
 }
 
 code {

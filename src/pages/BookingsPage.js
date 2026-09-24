@@ -26,6 +26,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import BookingDetailPage from "./BookingDetailPage";
 import AddressModal from "../components/AddressModal";
+import OrderSuccessModal from "../components/OrderSuccessModal";
 import { getMyAddresses } from "../services/addressService";
 import { getCustomerBookings, getCompletedServices, getBookings, bookAgain } from "../services/bookingService";
 import { getAllProductBookings } from "../services/productBookingService";
@@ -403,6 +404,8 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
   const [showRebookConfirm, setShowRebookConfirm] = useState(false);
   const [rebookLoading, setRebookLoading] = useState(false);
   const [bookingToRebook, setBookingToRebook] = useState(null);
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+  const [orderSuccessData, setOrderSuccessData] = useState(null);
 
   const isLoggedIn = Boolean(currentUser?._id || currentUser?.token || getAuthToken());
 
@@ -592,8 +595,16 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
         id: bookingId,
         ...customParams
       };
-      await bookAgain(payload);
-      showToast("Booking created successfully!", "success");
+      const res = await bookAgain(payload);
+      const newBooking = res?.result || res?.data || res || {};
+      setOrderSuccessData({
+        bookingId: newBooking?._id || newBooking?.id || newBooking?.bookingId || bookingId,
+        scheduledDate: customParams?.scheduledDate || '',
+        scheduledTime: customParams?.scheduledTime || '',
+        bookingType: customParams?.bookingType || 'instant',
+        addressLine: customParams?.addressLine || bookingToRebook?.addressLine || bookingToRebook?.address || ''
+      });
+      setShowOrderSuccess(true);
       setShowRebookConfirm(false);
       setBookingToRebook(null);
       setSelectedBooking(null);
@@ -1104,6 +1115,17 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
         }}
         currentUser={currentUser}
         showToast={showToast}
+      />
+
+      {/* Ultra-Premium Animated Order Confirmed Modal */}
+      <OrderSuccessModal
+        isOpen={showOrderSuccess}
+        onClose={() => {
+          setShowOrderSuccess(false);
+          setOrderSuccessData(null);
+        }}
+        data={orderSuccessData}
+        autoCloseDuration={8000}
       />
     </section>
   );

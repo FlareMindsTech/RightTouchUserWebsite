@@ -712,8 +712,13 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
           <div className="profile-edit-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="profile-edit-modal-header">
               <h2>Edit Profile</h2>
-              <button className="modal-close" onClick={() => setIsEditing(false)} aria-label="Close">
-                <MdClose />
+              <button
+                type="button"
+                className="profile-edit-modal-close-btn"
+                onClick={() => setIsEditing(false)}
+                aria-label="Close"
+              >
+                <MdClose size={18} />
               </button>
             </div>
 
@@ -759,9 +764,19 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                   <option value="Other">Other</option>
                 </select>
               </div>
-              <button type="submit" className="save-profile-btn" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
+              <div className="profile-edit-btn-row">
+                <button
+                  type="button"
+                  className="cancel-profile-btn"
+                  onClick={() => setIsEditing(false)}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="save-profile-btn" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
             </form>
           </div>
         </div>

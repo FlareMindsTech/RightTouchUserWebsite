@@ -71,21 +71,26 @@ body {
   -ms-overflow-style: none;
 }
 
-a {
-  text-decoration: none;
+a, a:hover, a:focus, a:active, a:visited {
+  text-decoration: none !important;
   color: inherit;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
-button {
+button, [role="button"], [tabindex] {
   cursor: pointer;
   border: none;
   background: none;
   font-family: var(--font);
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
-input {
+input, select, textarea {
   font-family: var(--font);
   border: none;
   outline: none;
   background: none;
+  -webkit-tap-highlight-color: transparent !important;
 }
