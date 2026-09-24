@@ -1,18 +1,8 @@
 /* ==========================================================
-   RIGHTTOUCH ULTRA-MODERN BOOKING CONFIRMED MODAL STYLES
+   RIGHTTOUCH ULTRA-MODERN PROFESSIONAL BOOKING CONFIRMED MODAL
    ========================================================== */
 
-:root {
-  --rt-primary-green: #10b981;
-  --rt-primary-green-dark: #059669;
-  --rt-primary-glow: rgba(16, 185, 129, 0.45);
-  --rt-navy-dark: #0f172a;
-  --rt-slate-muted: #64748b;
-  --rt-border-subtle: #e2e8f0;
-  --rt-bg-soft: #f8fafc;
-}
-
-/* Modal Overlay with Glassmorphism Backdrop */
+/* Modal Overlay with Blur */
 .rt-booking-modal-overlay {
   position: fixed !important;
   inset: 0 !important;
@@ -20,15 +10,15 @@
   height: 100vh !important;
   height: 100dvh !important;
   z-index: 9999999 !important;
-  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.78) 0%, rgba(2, 6, 23, 0.88) 100%) !important;
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.8) 0%, rgba(2, 6, 23, 0.94) 100%) !important;
   backdrop-filter: blur(16px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 18px !important;
+  padding: 16px !important;
   box-sizing: border-box !important;
-  animation: rtOverlayFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: rtOverlayFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 @keyframes rtOverlayFadeIn {
@@ -36,316 +26,168 @@
   to { opacity: 1; }
 }
 
-/* Modal Main Card with 3D Spring and Glow */
+/* Modal Main Card */
 .rt-booking-modal-card {
   position: relative !important;
   background: #ffffff !important;
-  max-width: 480px !important;
+  max-width: 410px !important;
   width: 100% !important;
-  max-height: min(92vh, 92dvh, 790px) !important;
+  max-height: min(92vh, 92dvh, 720px) !important;
   border-radius: 28px !important;
-  padding: 28px 24px 20px !important;
+  padding: 24px 22px 20px !important;
   box-shadow: 
-    0 35px 90px -20px rgba(0, 0, 0, 0.42),
-    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
-    0 0 60px rgba(16, 185, 129, 0.18) !important;
+    0 35px 90px -20px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+    0 0 50px rgba(16, 185, 129, 0.22) !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   text-align: center !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
-  animation: rtCardSpringEnter 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+  animation: rtCardSpringEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
   box-sizing: border-box !important;
 }
 
 .rt-booking-modal-card::-webkit-scrollbar {
-  width: 5px !important;
+  width: 4px !important;
 }
 .rt-booking-modal-card::-webkit-scrollbar-thumb {
-  background: #cbd5e1 !important;
+  background: #e2e8f0 !important;
   border-radius: 10px !important;
 }
 
 @keyframes rtCardSpringEnter {
   0% {
-    transform: scale(0.72) translateY(50px) rotate(-1.5deg);
+    transform: scale(0.8) translateY(40px);
     opacity: 0;
   }
-  65% {
-    transform: scale(1.025) translateY(-4px) rotate(0.4deg);
-    opacity: 1;
-  }
   100% {
-    transform: scale(1) translateY(0) rotate(0deg);
+    transform: scale(1) translateY(0);
     opacity: 1;
   }
 }
 
-/* Full Area Canvas for Physics Confetti */
-.rt-booking-canvas {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  pointer-events: none !important;
-  z-index: 15 !important;
-}
-
-/* Top Ambient Bar Controls */
-.rt-modal-top-bar {
+/* Minimal Top Bar with Clean Close Button */
+.rt-modal-top-bar-simple {
   width: 100% !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: flex-end !important;
   position: absolute !important;
   top: 14px !important;
-  left: 0 !important;
-  padding: 0 16px !important;
-  z-index: 20 !important;
-  box-sizing: border-box !important;
+  right: 14px !important;
+  z-index: 10 !important;
 }
 
-.rt-top-icon-btn {
-  background: rgba(241, 245, 249, 0.85) !important;
-  backdrop-filter: blur(6px) !important;
-  border: 1px solid #e2e8f0 !important;
-  color: #475569 !important;
+.rt-close-btn-clean {
+  width: 32px !important;
   height: 32px !important;
-  border-radius: 20px !important;
+  border-radius: 50% !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 18px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 5px !important;
-  padding: 0 10px !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
   cursor: pointer !important;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: all 0.2s ease !important;
 }
 
-.rt-top-icon-btn:hover {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-  transform: translateY(-1px) scale(1.04) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-}
-
-.rt-celebrate-btn {
-  background: linear-gradient(135deg, rgba(254, 240, 138, 0.3) 0%, rgba(253, 230, 138, 0.5) 100%) !important;
-  border-color: #fde047 !important;
-  color: #854d0e !important;
-  font-size: 11.5px !important;
-}
-
-.rt-celebrate-btn:hover {
-  background: #fef08a !important;
-  color: #713f12 !important;
-}
-
-.rt-sparkle-spin {
-  display: inline-block !important;
-  animation: rtSpinSlow 4s linear infinite !important;
-}
-
-@keyframes rtSpinSlow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.rt-close-btn {
-  width: 32px !important;
-  height: 32px !important;
-  padding: 0 !important;
-  border-radius: 50% !important;
-  font-size: 17px !important;
-}
-
-.rt-close-btn:hover {
+.rt-close-btn-clean:hover {
   background: #fee2e2 !important;
   color: #ef4444 !important;
   border-color: #fca5a5 !important;
-  transform: rotate(90deg) scale(1.08) !important;
+  transform: rotate(90deg) scale(1.06) !important;
 }
 
-/* Ambient Background Glow */
+/* Ambient Glow */
 .rt-ambient-glow {
   position: absolute !important;
   top: 0 !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  width: 240px !important;
-  height: 180px !important;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0) 70%) !important;
+  width: 260px !important;
+  height: 160px !important;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0) 70%) !important;
   pointer-events: none !important;
   z-index: 0 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   HERO 3D ANIMATED CHECKMARK & SONAR RIPPLES
+   HERO CHECKMARK BADGE
    ═══════════════════════════════════════════════════════════ */
-.rt-hero-animation-section {
+.rt-hero-section {
   position: relative !important;
-  width: 104px !important;
-  height: 104px !important;
-  margin: 12px 0 16px !important;
+  width: 86px !important;
+  height: 86px !important;
+  margin: 6px 0 14px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   z-index: 2 !important;
 }
 
-.rt-sonar-wave {
+.rt-sonar-ring {
   position: absolute !important;
   border-radius: 50% !important;
   pointer-events: none !important;
 }
 
-.rt-sonar-wave.wave-1 {
-  inset: -12px !important;
+.rt-sonar-ring.ring-1 {
+  inset: -8px !important;
   background: radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 70%) !important;
-  animation: rtSonarPulse 2.4s ease-out infinite !important;
+  animation: rtSonarLoop 2.4s ease-out infinite !important;
 }
 
-.rt-sonar-wave.wave-2 {
-  inset: -24px !important;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0) 70%) !important;
-  animation: rtSonarPulse 2.4s ease-out 0.65s infinite !important;
+.rt-sonar-ring.ring-2 {
+  inset: -18px !important;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0) 70%) !important;
+  animation: rtSonarLoop 2.4s ease-out 0.8s infinite !important;
 }
 
-.rt-sonar-wave.wave-3 {
-  inset: -38px !important;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 70%) !important;
-  animation: rtSonarPulse 2.4s ease-out 1.3s infinite !important;
-}
-
-@keyframes rtSonarPulse {
-  0% { transform: scale(0.65); opacity: 1; }
+@keyframes rtSonarLoop {
+  0% { transform: scale(0.7); opacity: 1; }
   100% { transform: scale(1.6); opacity: 0; }
 }
 
-.rt-badge-sphere {
-  position: relative !important;
-  width: 90px !important;
-  height: 90px !important;
+.rt-hero-circle {
+  width: 74px !important;
+  height: 74px !important;
   border-radius: 50% !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
   box-shadow: 
-    0 16px 36px -4px rgba(16, 185, 129, 0.55),
-    0 0 20px rgba(52, 211, 153, 0.4) !important;
+    0 14px 30px -4px rgba(16, 185, 129, 0.6),
+    0 0 20px rgba(52, 211, 153, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.6) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  animation: rtBadgeFloat 3.5s ease-in-out infinite !important;
+  animation: rtBadgeBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
 }
 
-@keyframes rtBadgeFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+.rt-hero-check {
+  font-size: 44px !important;
+  color: #ffffff !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
 }
 
-.rt-badge-shimmer {
-  position: absolute !important;
-  inset: 0 !important;
-  border-radius: 50% !important;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 60%) !important;
-  pointer-events: none !important;
-  z-index: 2 !important;
-}
-
-.rt-checkmark-svg {
-  width: 100% !important;
-  height: 100% !important;
-  display: block !important;
-  z-index: 1 !important;
-}
-
-.rt-circle-bg {
-  fill: url(#greenGradient, #10b981) !important;
-  fill: #10b981 !important;
-  transform-origin: center !important;
-  animation: rtCirclePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
-}
-
-@keyframes rtCirclePop {
-  0% { transform: scale(0); }
-  100% { transform: scale(1); }
-}
-
-.rt-circle-pulse-track {
-  fill: none !important;
-  stroke: rgba(255, 255, 255, 0.45) !important;
-  stroke-width: 3 !important;
-  stroke-dasharray: 8 6 !important;
-  animation: rtRotateTrack 8s linear infinite !important;
-  transform-origin: center !important;
-}
-
-@keyframes rtRotateTrack {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.rt-check-draw-path {
-  fill: none !important;
-  stroke: #ffffff !important;
-  stroke-width: 8 !important;
-  stroke-linecap: round !important;
-  stroke-linejoin: round !important;
-  stroke-dasharray: 70 !important;
-  stroke-dashoffset: 70 !important;
-  animation: rtCheckDraw 0.6s cubic-bezier(0.65, 0, 0.45, 1) 0.32s forwards !important;
-}
-
-@keyframes rtCheckDraw {
-  0% { stroke-dashoffset: 70; }
-  100% { stroke-dashoffset: 0; }
-}
-
-.rt-badge-sparkle-dot {
-  position: absolute !important;
-  border-radius: 50% !important;
-  background: #ffffff !important;
-  box-shadow: 0 0 8px #ffffff !important;
-  pointer-events: none !important;
-}
-
-.rt-badge-sparkle-dot.dot-1 {
-  width: 6px !important;
-  height: 6px !important;
-  top: 14% !important;
-  right: 18% !important;
-  animation: rtDotPulse 2s ease-in-out infinite !important;
-}
-.rt-badge-sparkle-dot.dot-2 {
-  width: 4px !important;
-  height: 4px !important;
-  bottom: 20% !important;
-  left: 15% !important;
-  animation: rtDotPulse 2s ease-in-out 0.7s infinite !important;
-}
-.rt-badge-sparkle-dot.dot-3 {
-  width: 5px !important;
-  height: 5px !important;
-  top: 48% !important;
-  right: 8% !important;
-  animation: rtDotPulse 2s ease-in-out 1.2s infinite !important;
-}
-
-@keyframes rtDotPulse {
-  0%, 100% { transform: scale(0.6); opacity: 0.3; }
-  50% { transform: scale(1.3); opacity: 1; }
+@keyframes rtBadgeBounce {
+  0% { transform: scale(0) rotate(-45deg); }
+  70% { transform: scale(1.15) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MODAL HEADER & TYPOGRAPHY
+   MODAL HEADER
    ═══════════════════════════════════════════════════════════ */
 .rt-modal-header {
   width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  margin-bottom: 14px !important;
+  margin-bottom: 16px !important;
   z-index: 2 !important;
 }
 
@@ -362,7 +204,7 @@
   text-transform: uppercase !important;
   padding: 4px 13px !important;
   border-radius: 30px !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 6px !important;
 }
 
 .rt-pill-icon {
@@ -374,321 +216,172 @@
   font-size: 22px !important;
   font-weight: 800 !important;
   color: #0f172a !important;
-  margin: 0 0 6px 0 !important;
+  margin: 0 !important;
   letter-spacing: -0.4px !important;
 }
 
-.rt-modal-subtext {
-  font-size: 13px !important;
-  line-height: 1.5 !important;
-  color: #64748b !important;
-  margin: 0 !important;
-  max-width: 390px !important;
-}
-
 /* ═══════════════════════════════════════════════════════════
-   LIVE STEPPER TRACKER
+   🌟 PROFESSIONAL ANIMATED SERVICE BOOKING CARD 🌟
    ═══════════════════════════════════════════════════════════ */
-.rt-stepper-tracker {
+.rt-pro-booking-anim-card {
   width: 100% !important;
-  background: #f8fafc !important;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
   border: 1px solid #e2e8f0 !important;
-  border-radius: 16px !important;
-  padding: 12px 14px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 14px !important;
-  box-sizing: border-box !important;
-}
-
-.rt-step-node {
+  border-radius: 22px !important;
+  padding: 22px 16px 18px !important;
+  margin-bottom: 20px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 4px !important;
-  flex-shrink: 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
-.rt-node-icon {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 50% !important;
+/* Orbit Radar System */
+.rt-orbit-container {
+  position: relative !important;
+  width: 160px !important;
+  height: 160px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 14px !important;
-  position: relative !important;
-}
-
-.rt-step-node.completed .rt-node-icon {
-  background: #10b981 !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
-}
-
-.rt-step-node.active .rt-node-icon {
-  background: #3b82f6 !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
-}
-
-.rt-radar-ping {
-  position: absolute !important;
-  inset: -4px !important;
-  border-radius: 50% !important;
-  border: 2px solid #3b82f6 !important;
-  animation: rtRadarPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite !important;
-}
-
-@keyframes rtRadarPing {
-  0% { transform: scale(0.9); opacity: 1; }
-  100% { transform: scale(1.8); opacity: 0; }
-}
-
-.rt-step-node.pending .rt-node-icon {
-  background: #e2e8f0 !important;
-  color: #94a3b8 !important;
-}
-
-.rt-node-text {
-  font-size: 10.5px !important;
-  font-weight: 700 !important;
-  color: #475569 !important;
-  white-space: nowrap !important;
-}
-
-.rt-step-line {
-  flex: 1 !important;
-  height: 3px !important;
-  background: #e2e8f0 !important;
-  margin: 0 8px 14px !important;
-  border-radius: 3px !important;
-  overflow: hidden !important;
-  position: relative !important;
-}
-
-.rt-step-line.active {
-  background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%) !important;
-}
-
-.rt-step-line-fill {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   BOARDING PASS LUXURY TICKET CARD
-   ═══════════════════════════════════════════════════════════ */
-.rt-ticket-card {
-  position: relative !important;
-  width: 100% !important;
-  background: #f8fafc !important;
-  border: 1.5px dashed #cbd5e1 !important;
-  border-radius: 16px !important;
-  padding: 12px 14px !important;
   margin-bottom: 12px !important;
-  box-sizing: border-box !important;
-  transition: all 0.25s ease !important;
 }
 
-.rt-ticket-card:hover {
-  border-color: #10b981 !important;
-  background: #f0fdf4 !important;
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.08) !important;
-}
-
-/* Concave Notches on Left & Right */
-.rt-ticket-notch {
-  position: absolute !important;
-  top: 44px !important;
-  width: 14px !important;
-  height: 14px !important;
-  background: #ffffff !important;
-  border: 1.5px dashed #cbd5e1 !important;
-  border-radius: 50% !important;
+/* Center Hub */
+.rt-hub-core {
+  position: relative !important;
+  width: 60px !important;
+  height: 60px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   z-index: 2 !important;
 }
 
-.rt-ticket-notch.notch-left {
-  left: -8px !important;
+.rt-hub-wave {
+  position: absolute !important;
+  inset: -8px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, rgba(16, 185, 129, 0) 70%) !important;
+  animation: rtHubPulse 2s ease-out infinite !important;
 }
 
-.rt-ticket-notch.notch-right {
-  right: -8px !important;
+@keyframes rtHubPulse {
+  0% { transform: scale(0.85); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
 }
 
-.rt-ticket-top {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  padding-bottom: 8px !important;
-}
-
-.rt-ticket-ref-group {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  text-align: left !important;
-}
-
-.rt-ticket-label {
-  font-size: 10px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.5px !important;
-  color: #94a3b8 !important;
-  text-transform: uppercase !important;
-}
-
-.rt-ticket-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-  font-size: 14px !important;
-  font-weight: 800 !important;
-  color: #0f172a !important;
-  letter-spacing: 0.6px !important;
-}
-
-.rt-ticket-copy-btn {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  color: #334155 !important;
-  border-radius: 10px !important;
-  padding: 5px 10px !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  transition: all 0.2s ease !important;
-}
-
-.rt-ticket-copy-btn:hover {
-  border-color: #10b981 !important;
-  color: #047857 !important;
-  transform: scale(1.03) !important;
-}
-
-.rt-ticket-copy-btn.copied {
-  background: #dcfce7 !important;
-  color: #15803d !important;
-  border-color: #86efac !important;
-}
-
-.rt-copy-icon {
-  font-size: 14px !important;
-}
-
-.rt-ticket-divider {
-  width: 100% !important;
-  height: 1px !important;
-  border-top: 1px dashed #e2e8f0 !important;
-  margin: 6px 0 10px !important;
-}
-
-.rt-ticket-details {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-  text-align: left !important;
-}
-
-.rt-detail-row {
-  display: flex !important;
-  align-items: flex-start !important;
-  gap: 10px !important;
-}
-
-.rt-detail-icon-wrap {
-  width: 24px !important;
-  height: 24px !important;
-  border-radius: 6px !important;
-  background: rgba(16, 185, 129, 0.12) !important;
-  color: #10b981 !important;
+.rt-hub-icon-wrap {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 14px !important;
-  flex-shrink: 0 !important;
-  margin-top: 1px !important;
+  font-size: 26px !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45) !important;
 }
 
-.rt-detail-info {
-  display: flex !important;
-  flex-direction: column !important;
-  min-width: 0 !important;
-  flex: 1 !important;
+.rt-hub-icon {
+  animation: rtWiggle 3s ease-in-out infinite !important;
 }
 
-.rt-info-title {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  color: #94a3b8 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.3px !important;
+@keyframes rtWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
 }
 
-.rt-info-val {
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  color: #1e293b !important;
+/* Orbit Track & Revolving Satellites */
+.rt-orbit-ring {
+  position: absolute !important;
+  width: 140px !important;
+  height: 140px !important;
+  border-radius: 50% !important;
+  border: 1.5px dashed rgba(16, 185, 129, 0.4) !important;
+  animation: rtSpinOrbit 14s linear infinite !important;
 }
 
-.rt-instant-tag {
-  color: #047857 !important;
-  font-weight: 800 !important;
+@keyframes rtSpinOrbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.text-truncate {
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   ASSURANCE PILLARS GRID
-   ═══════════════════════════════════════════════════════════ */
-.rt-guarantee-grid {
-  width: 100% !important;
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 8px !important;
-  margin-bottom: 14px !important;
-  box-sizing: border-box !important;
-}
-
-.rt-guarantee-card {
-  background: #f8fafc !important;
-  border: 1px solid #f1f5f9 !important;
-  border-radius: 12px !important;
-  padding: 8px 10px !important;
+.rt-satellite {
+  position: absolute !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  text-align: left !important;
-}
-
-.rt-guarantee-icon {
-  font-size: 18px !important;
-  flex-shrink: 0 !important;
-}
-
-.rt-guarantee-meta {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.rt-guarantee-meta h6 {
-  margin: 0 !important;
-  font-size: 11.5px !important;
-  font-weight: 800 !important;
+  justify-content: center !important;
+  font-size: 16px !important;
   color: #0f172a !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  /* Counter-rotate so icons stay upright */
+  animation: rtCounterSpin 14s linear infinite !important;
 }
 
-.rt-guarantee-meta p {
-  margin: 0 !important;
-  font-size: 10px !important;
-  color: #64748b !important;
+@keyframes rtCounterSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+.rt-satellite.sat-1 {
+  top: -16px !important;
+  left: 54px !important;
+  color: #3b82f6 !important;
+}
+
+.rt-satellite.sat-2 {
+  bottom: 8px !important;
+  right: -10px !important;
+  color: #f59e0b !important;
+}
+
+.rt-satellite.sat-3 {
+  bottom: 8px !important;
+  left: -10px !important;
+  color: #10b981 !important;
+}
+
+/* Dynamic Live Status Pill */
+.rt-status-pill-live {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  padding: 7px 14px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+.rt-live-glow-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #10b981 !important;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7) !important;
+  animation: rtDotGlowPulse 1.8s infinite !important;
+}
+
+@keyframes rtDotGlowPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.rt-live-pill-text {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -698,8 +391,8 @@
   width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
-  margin-bottom: 6px !important;
+  gap: 10px !important;
+  z-index: 3 !important;
 }
 
 .rt-btn-track {
@@ -709,123 +402,61 @@
   border: none !important;
   border-radius: 14px !important;
   padding: 13px 18px !important;
-  font-size: 14px !important;
+  font-size: 14.5px !important;
   font-weight: 800 !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
-  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.4) !important;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.42) !important;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .rt-btn-track:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 26px rgba(16, 185, 129, 0.5) !important;
+  box-shadow: 0 8px 26px rgba(16, 185, 129, 0.52) !important;
 }
 
 .rt-btn-track:hover .rt-btn-arrow {
   transform: translateX(4px) !important;
 }
 
-.rt-btn-arrow {
-  font-size: 16px !important;
-  transition: transform 0.22s ease !important;
-}
-
+.rt-btn-arrow,
 .rt-btn-icon {
-  font-size: 16px !important;
+  font-size: 17px !important;
 }
 
-.rt-action-subgroup {
+.rt-btn-explore {
   width: 100% !important;
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 8px !important;
-}
-
-.rt-btn-sub {
   background: #f1f5f9 !important;
   color: #334155 !important;
   border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  padding: 9px 12px !important;
-  font-size: 12px !important;
+  border-radius: 14px !important;
+  padding: 11px 18px !important;
+  font-size: 13.5px !important;
   font-weight: 700 !important;
   cursor: pointer !important;
-  display: inline-flex !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 6px !important;
   transition: all 0.2s ease !important;
 }
 
-.rt-btn-sub:hover {
-  background: #e2e8f0 !important;
+.rt-btn-explore:hover {
+  background: #ffffff !important;
   color: #0f172a !important;
+  border-color: #cbd5e1 !important;
   transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   AUTO-CLOSE COUNTDOWN PROGRESS BAR
-   ═══════════════════════════════════════════════════════════ */
-.rt-countdown-track {
-  width: 100% !important;
-  height: 4px !important;
-  background: #f1f5f9 !important;
-  border-radius: 4px !important;
-  overflow: hidden !important;
-  margin-top: 6px !important;
-  position: relative !important;
-}
-
-.rt-countdown-fill {
-  height: 100% !important;
-  background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%) !important;
-  border-radius: 4px !important;
-  animation: rtCountdownAnim linear forwards !important;
-}
-
-.rt-countdown-fill.paused {
-  animation-play-state: paused !important;
-}
-
-@keyframes rtCountdownAnim {
-  0% { width: 100%; }
-  100% { width: 0%; }
-}
-
-/* Responsive Optimizations */
 @media (max-width: 480px) {
-  .rt-booking-modal-overlay {
-    padding: 12px !important;
-  }
-
   .rt-booking-modal-card {
+    padding: 20px 16px 16px !important;
     border-radius: 24px !important;
-    padding: 24px 16px 16px !important;
-    max-height: 94dvh !important;
   }
-
   .rt-modal-heading {
-    font-size: 19px !important;
-  }
-
-  .rt-modal-subtext {
-    font-size: 12px !important;
-  }
-
-  .rt-stepper-tracker {
-    padding: 10px 8px !important;
-  }
-
-  .rt-node-text {
-    font-size: 9.5px !important;
-  }
-
-  .rt-guarantee-grid {
-    grid-template-columns: 1fr !important;
-    gap: 6px !important;
+    font-size: 20px !important;
   }
 }
