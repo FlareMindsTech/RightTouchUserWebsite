@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   MdArrowBack,
   MdOutlineChevronRight,
@@ -7,7 +7,6 @@ import {
   MdPayment,
   MdCalendarToday,
   MdHistory,
-  MdAssignment,
   MdApps,
   MdCheckCircle,
   MdCancel,
@@ -18,7 +17,6 @@ import {
   MdRefresh,
   MdHandyman,
   MdContentCopy,
-  MdStorefront,
   MdLocationOn,
   MdPhone,
   MdClose
@@ -28,11 +26,10 @@ import BookingDetailPage from "./BookingDetailPage";
 import AddressModal from "../components/AddressModal";
 import OrderSuccessModal from "../components/OrderSuccessModal";
 import { getMyAddresses } from "../services/addressService";
-import { getCustomerBookings, getCompletedServices, getBookings, bookAgain } from "../services/bookingService";
+import { getCustomerBookings, getCompletedServices, bookAgain } from "../services/bookingService";
 import { getAllProductBookings } from "../services/productBookingService";
 import { useRazorpayPayment } from "../hooks/useRazorpayPayment";
 import { safeParseDate, goBackSmart, getAuthToken } from "../utils/browserUtils";
-import { logger } from "../utils/logger";
 import "./BookingsPage.css";
 
 // ─── Rebook Summary Modal (Confirm Your Order) ────────────────────────────
@@ -541,23 +538,40 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
     }
   }, [isActive, currentUser?._id, fetchMyBookings]);
 
+  // Derived unpaid list (both active and completed orders that have not been paid)
+  const unpaidBookingsList = [...activeBookingsList, ...bookingsHistory].filter(booking => {
+    if (!booking) return false;
+    const status = (booking.status || booking.bookingStatus || booking.orderStatus || "PENDING").toUpperCase();
+    const paymentStatus = (booking?.paymentStatus || "").toUpperCase();
+    return paymentStatus !== "PAID" && !["CANCELLED", "EXPIRED", "REJECTED"].includes(status);
+  });
+
   // Derived filtered history
   const filteredHistory = bookingsHistory.filter(booking => {
-    const status = (booking.status || "PENDING").toUpperCase();
+    const status = (booking.status || booking.bookingStatus || booking.orderStatus || "PENDING").toUpperCase();
     const paymentStatus = (booking?.paymentStatus || "").toUpperCase();
 
     // Consolidated Filter Logic
     if (activeHistoryFilter !== "ALL") {
       if (activeHistoryFilter === "COMPLETED") {
-        if (status !== "COMPLETED") return false;
+        // Completed should strictly mean COMPLETED and PAID
+        const isCompletedStatus = ["COMPLETED", "SERVICE_COMPLETED", "FULFILLED", "DELIVERED", "CLOSED"].includes(status);
+        if (!isCompletedStatus || paymentStatus !== "PAID") return false;
+      } else if (activeHistoryFilter === "UNPAID") {
+        // Show ONLY unpaid services
+        if (paymentStatus === "PAID" || ["CANCELLED", "EXPIRED", "REJECTED"].includes(status)) return false;
       } else if (activeHistoryFilter === "HISTORY") {
         if (paymentStatus !== "PAID") return false;
+      } else if (activeHistoryFilter === "CANCELLED") {
+        if (!["CANCELLED", "REJECTED"].includes(status)) return false;
+      } else if (activeHistoryFilter === "EXPIRED") {
+        if (status !== "EXPIRED") return false;
       } else {
         if (status !== activeHistoryFilter) return false;
       }
     }
 
-    // 3. Search Query
+    // Search Query
     if (historySearchQuery.trim()) {
       const query = historySearchQuery.toLowerCase();
       const serviceName = (
@@ -932,11 +946,23 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
             )}
           </button>
           <button
+            className={`tab-btn-premium ${activeTab === "unpaid" ? "active" : ""}`}
+            onClick={() => setActiveTab("unpaid")}
+          >
+            <MdPayment className="tab-icon" />
+            <span>Unpaid</span>
+            {unpaidBookingsList.length > 0 && (
+              <span className="tab-count-badge unpaid-count-pill">
+                {unpaidBookingsList.length}
+              </span>
+            )}
+          </button>
+          <button
             className={`tab-btn-premium ${activeTab === "history" ? "active" : ""}`}
             onClick={() => { setActiveTab("history"); setVisibleHistoryCount(50); }}
           >
             <MdHistory className="tab-icon" />
-            <span>Past Bookings</span>
+            <span>Past Orders</span>
             {bookingsHistory.length > 0 && (
               <span className="tab-count-badge">{bookingsHistory.length}</span>
             )}
@@ -1002,11 +1028,58 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
                     {bookingsHistory.length > 0 && (
                       <button
                         className="book-now-btn secondary"
-                        onClick={() => { setActiveTab("history"); setVisibleHistoryCount(5); }}
+                        onClick={() => { setActiveTab("history"); setVisibleHistoryCount(50); }}
                       >
                         <MdHistory style={{ fontSize: "17px" }} /> View Past Orders ({bookingsHistory.length})
                       </button>
                     )}
+                  </div>
+                </div>
+              )
+            ) : activeTab === "unpaid" ? (
+              unpaidBookingsList.length > 0 ? (
+                <>
+                  <div className="unpaid-summary-banner" style={{
+                    background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+                    border: "1.5px solid #fde68a",
+                    borderRadius: "16px",
+                    padding: "14px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    marginBottom: "4px"
+                  }}>
+                    <MdPayment style={{ fontSize: "24px", color: "#d97706", flexShrink: 0 }} />
+                    <div style={{ textAlign: "left" }}>
+                      <strong style={{ fontSize: "13.5px", color: "#92400e", display: "block" }}>
+                        {unpaidBookingsList.length} Unpaid Service{unpaidBookingsList.length > 1 ? "s" : ""} Pending
+                      </strong>
+                      <span style={{ fontSize: "12px", color: "#b45309" }}>
+                        Click on any service card below to complete your payment securely.
+                      </span>
+                    </div>
+                  </div>
+                  {unpaidBookingsList.map(booking => renderBookingCard(booking))}
+                </>
+              ) : (
+                <div className="empty-state-premium">
+                  <div className="empty-icon-wrapper">
+                    <div className="empty-badge-circle" style={{ background: "#dcfce7", color: "#16a34a" }}>
+                      <MdCheckCircle />
+                    </div>
+                  </div>
+                  <h3>All Services Paid! 🎉</h3>
+                  <p>You have no pending unpaid service orders. Everything is fully settled.</p>
+                  <div className="empty-action-group">
+                    <button className="book-now-btn" onClick={() => navigate("/services")}>
+                      <MdHandyman style={{ fontSize: "17px" }} /> Book a New Service
+                    </button>
+                    <button
+                      className="book-now-btn secondary"
+                      onClick={() => setActiveTab("active")}
+                    >
+                      View Active Bookings
+                    </button>
                   </div>
                 </div>
               )
@@ -1019,13 +1092,13 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
                       type="text"
                       placeholder="Search by service or ID..."
                       value={historySearchQuery}
-                      onChange={(e) => { setHistorySearchQuery(e.target.value); setVisibleHistoryCount(5); }}
+                      onChange={(e) => { setHistorySearchQuery(e.target.value); setVisibleHistoryCount(50); }}
                       className="history-search-input"
                     />
                     {historySearchQuery && (
                       <button 
                         className="search-clear-btn"
-                        onClick={() => { setHistorySearchQuery(""); setVisibleHistoryCount(5); }}
+                        onClick={() => { setHistorySearchQuery(""); setVisibleHistoryCount(50); }}
                         aria-label="Clear search"
                       >
                         ✕
@@ -1035,10 +1108,11 @@ const BookingsPage = ({ isActive = true, showToast, onBack, cartItemCount = 0, c
                   <div className="status-filter-pills-container">
                     <div className="status-filter-pills">
                       {[
-                        { id: "ALL", label: "All Bookings", icon: MdApps, iconColor: "#0284c7" },
-                        { id: "COMPLETED", label: "Completed", icon: MdCheckCircle, iconColor: "#16a34a" },
+                        { id: "ALL", label: "All Past", icon: MdApps, iconColor: "#0284c7" },
+                        { id: "COMPLETED", label: "Completed (Paid)", icon: MdCheckCircle, iconColor: "#16a34a" },
+                        { id: "UNPAID", label: "Unpaid Only", icon: MdPayment, iconColor: "#d97706" },
                         { id: "CANCELLED", label: "Cancelled", icon: MdCancel, iconColor: "#dc2626" },
-                        { id: "EXPIRED", label: "Expired", icon: MdAccessTime, iconColor: "#d97706" },
+                        { id: "EXPIRED", label: "Expired", icon: MdAccessTime, iconColor: "#64748b" },
                         { id: "HISTORY", label: "History Archive", icon: MdArchive, iconColor: "#7c3aed" }
                       ].map(item => {
                         const IconComp = item.icon;

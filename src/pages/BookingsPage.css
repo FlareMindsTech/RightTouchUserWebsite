@@ -112,11 +112,12 @@ body.dark-mode .bookings-tabs-premium-fixed {
 }
 
 .tab-btn-premium {
-  flex: 1 1 50%;
-  padding: 10px 16px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 14px;
   background: transparent;
   border: none;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--text-secondary, #64748b);
   cursor: pointer;
@@ -126,7 +127,7 @@ body.dark-mode .bookings-tabs-premium-fixed {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
 }
 
 .tab-btn-premium:hover:not(.active) {
@@ -155,7 +156,7 @@ body.dark-mode .tab-btn-premium.active {
 .tab-count-badge {
   font-size: 11px;
   font-weight: 800;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 20px;
   background: var(--border, #e2e8f0);
   color: var(--text-secondary, #475569);
@@ -165,6 +166,12 @@ body.dark-mode .tab-btn-premium.active {
 .tab-count-badge.active {
   background: var(--green-light, #dcfce7);
   color: var(--green-dark, #15803d);
+}
+
+.tab-count-badge.unpaid-count-pill {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
 }
 
 /* -------------------- Content Container -------------------- */

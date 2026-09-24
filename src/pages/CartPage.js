@@ -517,7 +517,10 @@ const CartPage = ({ isActive, cartItems, removeFromCart, updateQuantity, showToa
       const displayRef = bookingId ? `#RT-${String(bookingId).slice(-6).toUpperCase()}` : '#RT-SUCCESS';
 
       setBookingSuccessData({
-        bookingId: displayRef
+        bookingId: displayRef,
+        addressLine: addressForm?.addressLine && addressForm.addressLine !== 'No address added yet.' ? addressForm.addressLine : '',
+        itemCount: cartItems?.length || 0,
+        totalAmount: getCartSubtotal(cartItems)
       });
 
       setShowConfirmOrderModal(false);
