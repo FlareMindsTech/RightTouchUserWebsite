@@ -181,6 +181,9 @@ const ShareModal = ({ isOpen, onClose, shareData, showToast }) => {
   return (
     <div className="share-modal-overlay" onClick={onClose}>
       <div className="share-modal-card" onClick={(e) => e.stopPropagation()}>
+        {/* Mobile drag handle */}
+        <div className="share-sheet-handle"></div>
+
         {/* Header */}
         <div className="share-modal-header">
           <div className="share-header-title-wrap">

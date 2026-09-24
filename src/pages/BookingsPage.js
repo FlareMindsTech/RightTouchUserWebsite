@@ -26,6 +26,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import BookingDetailPage from "./BookingDetailPage";
 import AddressModal from "../components/AddressModal";
+import { getMyAddresses } from "../services/addressService";
 import { getCustomerBookings, getCompletedServices, getBookings, bookAgain } from "../services/bookingService";
 import { getAllProductBookings } from "../services/productBookingService";
 import { useRazorpayPayment } from "../hooks/useRazorpayPayment";
@@ -44,14 +45,60 @@ const RebookSummaryModal = ({
   showToast
 }) => {
   const [bookingType, setBookingType] = useState(booking?.bookingType || "instant");
-  const [scheduledDate, setScheduledDate] = useState(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split("T")[0];
-  });
-  const [scheduledTime, setScheduledTime] = useState("10:00");
+  
+  const getTomorrowDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return {
+      value: `${year}-${month}-${day}`,
+      label: `Tomorrow (${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })})`
+    };
+  };
+
+  const getDayAfterTomorrowDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return {
+      value: `${year}-${month}-${day}`,
+      label: `Day after tomorrow (${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })})`
+    };
+  };
+
+  const tomorrowOption = getTomorrowDate();
+  const dayAfterTomorrowOption = getDayAfterTomorrowDate();
+
+  const [scheduledDate, setScheduledDate] = useState(() => tomorrowOption.value);
+  const [scheduledTime, setScheduledTime] = useState("09:00");
   const [faultProblem, setFaultProblem] = useState(booking?.faultProblem || "");
   const [showAddressModal, setShowAddressModal] = useState(false);
+
+  // Address mapper matching CartPage
+  const mapAddressToSelection = useCallback((addr) => {
+    let displayAddress = addr?.addressLine || addr?.address || '';
+    if (!displayAddress || displayAddress.toLowerCase().includes('pinned location')) {
+      const parts = [addr?.houseNo, addr?.landmark, addr?.city, addr?.state, addr?.pincode].filter(Boolean);
+      if (parts.length > 0) displayAddress = parts.join(', ');
+      else displayAddress = 'Pinned Location';
+    } else {
+      const extra = [addr?.landmark, addr?.city, addr?.state, addr?.pincode].filter(Boolean);
+      if (extra.length > 0 && !extra.some((part) => displayAddress.includes(part))) {
+        displayAddress = `${displayAddress}, ${extra.join(', ')}`;
+      }
+    }
+
+    return {
+      _id: addr?._id || addr?.id || addr?.addressId || null,
+      label: addr?.label || addr?.type || 'Home',
+      addressLine: displayAddress || 'Address not specified',
+      mobileNumber: addr?.mobileNumber || addr?.phone || currentUser?.mobileNumber || '9345417496'
+    };
+  }, [currentUser]);
 
   // Address state initialized from previous booking snapshot or address
   const snap = booking?.addressSnapShot || {};
@@ -59,28 +106,65 @@ const RebookSummaryModal = ({
     if (snap && (snap.addressLine || snap.city || snap.pincode)) {
       return {
         _id: booking?.addressId?._id || booking?.addressId || snap?._id,
-        label: snap.label || "Work",
+        label: snap.label || "Home",
         addressLine: [snap.houseNo, snap.landmark, snap.addressLine, snap.city, snap.state, snap.pincode].filter(Boolean).join(", "),
         mobileNumber: snap.mobileNumber || currentUser?.mobileNumber || "9345417496"
       };
     }
     return {
       _id: booking?.addressId?._id || booking?.addressId || null,
-      label: "Work",
+      label: "Home",
       addressLine: booking?.address || "Address not specified",
       mobileNumber: currentUser?.mobileNumber || "9345417496"
     };
   });
 
+  // Fetch and auto-select user's saved addresses
+  const fetchAddresses = useCallback(async () => {
+    try {
+      const response = await getMyAddresses();
+      const result = Array.isArray(response?.result)
+        ? response.result
+        : Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+        ? response
+        : [];
+
+      if (result.length > 0) {
+        const prevId = booking?.addressId?._id || booking?.addressId || snap?._id;
+        const matchedAddr = prevId ? result.find((a) => (a._id || a.id) === prevId) : null;
+        const defaultAddr = matchedAddr || result.find((a) => a.isDefault) || result[0];
+
+        setSelectedAddress((prev) => {
+          if (prev?._id && prev?.addressLine && prev?.addressLine !== "Address not specified") {
+            return prev;
+          }
+          return mapAddressToSelection(defaultAddr);
+        });
+      }
+    } catch (error) {
+      console.warn("Failed to fetch addresses in rebook modal:", error);
+    }
+  }, [booking, snap, mapAddressToSelection]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAddresses();
+    }
+  }, [isOpen, fetchAddresses]);
+
   if (!isOpen || !booking) return null;
 
   const handleAddressSelect = (addressLine, addressObj) => {
-    setSelectedAddress({
-      _id: addressObj?._id || addressObj?.id || null,
-      label: addressObj?.label || "Work",
-      addressLine: addressLine || addressObj?.addressLine || "",
-      mobileNumber: addressObj?.mobileNumber || currentUser?.mobileNumber || "9345417496"
-    });
+    if (addressObj) {
+      setSelectedAddress(mapAddressToSelection(addressObj));
+    } else if (addressLine) {
+      setSelectedAddress((prev) => ({
+        ...prev,
+        addressLine
+      }));
+    }
     setShowAddressModal(false);
   };
 
@@ -190,13 +274,14 @@ const RebookSummaryModal = ({
                 <div className="rb-scheduled-picker-row">
                   <div className="rb-picker-group">
                     <label>Date</label>
-                    <input
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
+                    <select
                       value={scheduledDate}
                       onChange={(e) => setScheduledDate(e.target.value)}
-                      className="rb-date-input"
-                    />
+                      className="rb-time-select rb-date-select"
+                    >
+                      <option value={tomorrowOption.value}>{tomorrowOption.label}</option>
+                      <option value={dayAfterTomorrowOption.value}>{dayAfterTomorrowOption.label}</option>
+                    </select>
                   </div>
                   <div className="rb-picker-group">
                     <label>Time Slot</label>

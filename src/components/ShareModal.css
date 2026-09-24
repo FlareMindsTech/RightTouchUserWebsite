@@ -7,6 +7,7 @@
   inset: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
+  height: 100dvh !important;
   z-index: 999999 !important;
   background: rgba(15, 23, 42, 0.65) !important;
   backdrop-filter: blur(8px) !important;
@@ -15,6 +16,7 @@
   align-items: center !important;
   justify-content: center !important;
   padding: 20px !important;
+  box-sizing: border-box !important;
   animation: shareFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
@@ -23,19 +25,35 @@
   to { opacity: 1; }
 }
 
+.share-sheet-handle {
+  display: none !important;
+}
+
 .share-modal-card {
   position: relative !important;
   background: #ffffff !important;
   max-width: 480px !important;
   width: 100% !important;
+  max-height: min(90vh, 90dvh, 640px) !important;
+  box-sizing: border-box !important;
   border-radius: 24px !important;
   padding: 24px !important;
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 18px !important;
-  overflow: hidden !important;
+  gap: 16px !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
   animation: sharePopSpring 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+.share-modal-card::-webkit-scrollbar {
+  width: 5px !important;
+}
+
+.share-modal-card::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 10px !important;
 }
 
 @keyframes sharePopSpring {
@@ -321,7 +339,7 @@
 }
 
 /* Mobile responsive (bottom-sheet style on small screens) */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .share-modal-overlay {
     align-items: flex-end !important;
     padding: 0 !important;
@@ -330,8 +348,22 @@
   .share-modal-card {
     border-radius: 24px 24px 0 0 !important;
     max-width: 100% !important;
-    padding: 22px 18px 28px !important;
-    animation: shareSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+    max-height: min(88vh, 88dvh) !important;
+    padding: 12px 18px calc(24px + env(safe-area-inset-bottom, 16px)) !important;
+    gap: 14px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    animation: shareSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  .share-sheet-handle {
+    display: block !important;
+    width: 38px !important;
+    height: 4px !important;
+    background: #cbd5e1 !important;
+    border-radius: 4px !important;
+    margin: 0 auto 4px !important;
+    flex-shrink: 0 !important;
   }
 
   @keyframes shareSlideUp {
@@ -340,9 +372,9 @@
   }
 
   .channel-icon-circle {
-    width: 46px !important;
-    height: 46px !important;
-    font-size: 20px !important;
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 21px !important;
   }
 
   .share-channel-btn {

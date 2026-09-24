@@ -995,7 +995,7 @@ body {
 
 .appliance-floating-nav {
   position: absolute;
-  top: 88px;
+  top: 50%;
   transform: translateY(-50%);
   z-index: 10;
   width: 44px;
@@ -1998,17 +1998,7 @@ body {
   }
 
   .appliance-floating-nav {
-    width: 36px;
-    height: 36px;
-    top: 70px;
-  }
-
-  .appliance-floating-nav.nav-left {
-    left: -12px;
-  }
-
-  .appliance-floating-nav.nav-right {
-    right: -12px;
+    display: none !important;
   }
 
   .appliance-book-btn {
@@ -2164,20 +2154,6 @@ body {
 
   .appliance-section-header {
     margin-bottom: 14px;
-  }
-
-  .appliance-floating-nav {
-    width: 34px;
-    height: 34px;
-    top: 62px;
-  }
-
-  .appliance-floating-nav.nav-left {
-    left: -10px;
-  }
-
-  .appliance-floating-nav.nav-right {
-    right: -10px;
   }
 
   .appliance-card {
