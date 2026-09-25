@@ -1,11 +1,7 @@
 import { logger } from "../utils/logger";
 import { safeStorage, getAuthToken, clearAuthSession, isTokenExpired } from "../utils/browserUtils";
 
-const BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  (typeof window !== "undefined" && window.location.hostname === "localhost"
-    ? "http://localhost:7372"
-    : "");
+const BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "";
 
 export const apiClient = async (endpoint, options = {}) => {
   let token = getAuthToken();
