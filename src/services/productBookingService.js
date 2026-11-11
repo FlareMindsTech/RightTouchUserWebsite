@@ -19,3 +19,10 @@ export const cancelProductBooking = (id, data) =>
     body: JSON.stringify(data)
   });
 
+export const getProductBookings = () =>
+  apiClient(ENDPOINTS.PRODUCT_BOOKING.LIST);
+
+export const getProductBookingById = (id) =>
+  apiClient(ENDPOINTS.PRODUCT_BOOKING.GET_BY_ID(id));
+
+

@@ -49,6 +49,12 @@ export const declareCashPayment = (bookingId, data) =>
     body: JSON.stringify(data)
   });
 
+export const retrySettlement = () =>
+  apiClient(ENDPOINTS.PAYMENT.RETRY_SETTLEMENT, {
+    method: "POST"
+  });
+
+
 export const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     if (window.Razorpay) {

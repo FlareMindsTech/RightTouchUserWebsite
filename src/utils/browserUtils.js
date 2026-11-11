@@ -118,7 +118,10 @@ export const isTokenExpired = (token) => {
       // If not standard 3-part JWT, do not prematurely expire
       return false;
     }
-    const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    let payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (payloadBase64.length % 4 !== 0) {
+      payloadBase64 += '=';
+    }
     const jsonPayload = decodeURIComponent(
       atob(payloadBase64)
         .split('')
@@ -151,7 +154,6 @@ export const getAuthToken = () => {
       const clean = token.trim();
       if (clean !== '') {
         if (isTokenExpired(clean)) {
-          console.warn('[getAuthToken] Token has expired. Clearing session.');
           clearAuthSession();
           return null;
         }
@@ -159,7 +161,7 @@ export const getAuthToken = () => {
       }
     }
   } catch (e) {
-    console.warn('[getAuthToken] Error reading token:', e);
+    // Suppress token parse errors
   }
   return null;
 };
@@ -190,7 +192,6 @@ export const setAuthSession = (token, user = {}) => {
     safeStorage.setItem('currentUser', JSON.stringify(mergedUser));
     return mergedUser;
   } catch (e) {
-    console.error('[setAuthSession] Error setting session:', e);
     return user;
   }
 };
@@ -202,7 +203,31 @@ export const clearAuthSession = () => {
     safeStorage.removeItem('user');
     safeStorage.removeItem('adminToken');
   } catch (e) {
-    console.warn('[clearAuthSession] Error clearing session:', e);
+    // Fail silently
+  }
+};
+
+let lastSessionExpiredDispatch = 0;
+
+/**
+ * Centrally invalidates the user session when an authentication failure (401) occurs
+ * and dispatches the 'userLoggedOut' event (debounced across concurrent failed requests).
+ */
+export const notifySessionExpired = () => {
+  clearAuthSession();
+  const now = Date.now();
+  if (now - lastSessionExpiredDispatch > 2500) {
+    lastSessionExpiredDispatch = now;
+    if (typeof window !== 'undefined') {
+      let event;
+      try {
+        event = new CustomEvent('userLoggedOut', { detail: { reason: 'session_expired' } });
+      } catch (e) {
+        event = document.createEvent('CustomEvent');
+        event.initCustomEvent('userLoggedOut', false, false, { reason: 'session_expired' });
+      }
+      window.dispatchEvent(event);
+    }
   }
 };
 
@@ -212,7 +237,7 @@ export const getSavedUser = () => {
     if (!userStr) return null;
     const user = JSON.parse(userStr);
     const token = user?.token || safeStorage.getItem('token');
-    if (token && isTokenExpired(token)) {
+    if (!token || isTokenExpired(token)) {
       clearAuthSession();
       return null;
     }

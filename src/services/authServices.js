@@ -54,3 +54,39 @@ export const acceptTerms = (data) =>
     method: "POST",
     body: JSON.stringify(data)
   });
+
+export const loginGeneral = (data) =>
+  apiClient(ENDPOINTS.AUTH.LOGIN_GENERAL, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+export const setPassword = (data) =>
+  apiClient(ENDPOINTS.AUTH.SET_PASSWORD, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+export const signupGeneral = (data) =>
+  apiClient(ENDPOINTS.AUTH.SIGNUP_GENERAL, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+export const verifyOtpGeneral = (data) =>
+  apiClient(ENDPOINTS.AUTH.VERIFY_OTP_GENERAL, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+export const resendOtpGeneral = (data) =>
+  apiClient(ENDPOINTS.AUTH.RESEND_OTP_GENERAL, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+export const loginOwner = (data) =>
+  apiClient(ENDPOINTS.AUTH.LOGIN_OWNER, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });

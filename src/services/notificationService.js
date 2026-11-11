@@ -30,3 +30,13 @@ export const markNotificationOpened = (id) =>
     method: "POST",
     body: JSON.stringify({})
   });
+
+export const getUnreadNotificationCounts = () =>
+  apiClient(ENDPOINTS.NOTIFICATION.UNREAD_COUNTS);
+
+export const markNotificationsBatch = (data) =>
+  apiClient(ENDPOINTS.NOTIFICATION.MARK_READ_BATCH, {
+    method: "PATCH",
+    body: JSON.stringify(data)
+  });
+

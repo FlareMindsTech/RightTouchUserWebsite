@@ -58,6 +58,13 @@ export const requestProductQuoteAlias = (data) =>
     body: JSON.stringify(data)
   });
 
+export const updateProductQuoteAlias = (id, data) =>
+  apiClient(ENDPOINTS.QUOTATION.UPDATE_QUOTE_REQUEST_ALIAS(id), {
+    method: "PATCH",
+    body: JSON.stringify(data)
+  });
+
+
 export const getProductBookings = () =>
   apiClient(ENDPOINTS.QUOTATION.LIST_PRODUCT_BOOKINGS);
 

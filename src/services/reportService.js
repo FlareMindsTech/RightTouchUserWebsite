@@ -17,7 +17,7 @@ export const getReportCategories = () =>
   apiClient(ENDPOINTS.REPORT.GET_CATEGORIES);
 
 export const withdrawReport = (id, data = {}) =>
-  apiClient(`/api/user/reports/${id}/withdraw`, {
+  apiClient(ENDPOINTS.REPORT.WITHDRAW(id), {
     method: "POST",
     body: JSON.stringify(data)
   });

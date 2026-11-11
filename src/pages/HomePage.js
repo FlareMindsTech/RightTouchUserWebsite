@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wind,
-  Search,
   MapPin,
   ChevronDown,
   Wrench,
@@ -10,7 +9,6 @@ import {
   ShieldCheck,
   Zap,
   CircleDollarSign,
-  RotateCcw,
   ArrowRight,
   Share2,
   ChevronLeft,
@@ -18,13 +16,12 @@ import {
   Star,
   Headphones,
   Sparkles,
-  Gift,
-  Tag,
 } from 'lucide-react';
 import { getMyAddresses } from '../services/addressService';
 import AddressModal from '../components/AddressModal';
 import { shareItem } from '../utils/share';
 import { formatPriceSmart } from '../utils/format';
+import { logger } from '../utils/logger';
 import '../styles/home.css';
 
 // --- Static Data ---
@@ -113,20 +110,26 @@ const WHY_CHOOSE_US = [
 // --- Category Icon Helper ---
 
 const CategoryIcon = ({ category }) => {
-  if (category.image) {
+  const [imgError, setImgError] = useState(false);
+
+  if (category?.image && !imgError) {
     return (
       <img
         src={category.image}
-        alt={category.category}
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        alt={category.category || 'Category'}
+        className="category-img"
         loading="lazy"
+        onError={() => setImgError(true)}
       />
     );
   }
+
+  const initial = category?.category ? category.category.trim().charAt(0).toUpperCase() : '?';
+
   return (
-    <span style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--green)' }}>
-      {category.category?.charAt(0) || '?'}
-    </span>
+    <div className="category-letter-avatar">
+      <span className="category-letter-text">{initial}</span>
+    </div>
   );
 };
 
@@ -236,8 +239,14 @@ const HomePage = ({
           setUserAddress('No address saved');
         }
       } catch (err) {
-        console.warn('[HomePage] Failed to load default address:', err);
-        if (!cancelled) setUserAddress('Address unavailable');
+        if (!cancelled) {
+          if (err?.status === 401) {
+            setUserAddress('Login to set your address');
+          } else {
+            logger.warn('[HomePage] Failed to load default address:', err?.message || err);
+            setUserAddress('Address unavailable');
+          }
+        }
       } finally {
         if (!cancelled) setLocationLoading(false);
       }
@@ -395,48 +404,50 @@ const HomePage = ({
       {/* ===== NORMAL VIEW ===== */}
       <>
         {/* --- Service Categories --- */}
-        <div className="section-wrap">
-          <div className="section-header">
-            <h2 className="section-title">Home <span className="accent">Services</span></h2>
-            <button className="section-view-all" onClick={() => navigate('/services')}>
-              View All <ArrowRight size={16} />
-            </button>
-          </div>
-          <div className="category-grid">
-            {loading ? (
-              Array(10).fill(0).map((_, i) => (
-                <div key={i} className="category-card skeleton" style={{ height: '195px' }} />
-              ))
-            ) : (
-              serviceCategories.map(cat => {
-                const isAvailable = cat.isAvailable !== false && cat.isActive !== false && cat.status !== 'inactive' && cat.status !== 'disabled';
-                return (
-                  <div
-                    key={cat._id}
-                    className={`category-card ${!isAvailable ? 'disabled-card' : ''}`}
-                    onClick={() => {
-                      if (isAvailable) handleCategoryClick(cat, 'service');
-                    }}
-                    role={isAvailable ? 'button' : 'region'}
-                    tabIndex={isAvailable ? 0 : -1}
-                    aria-disabled={!isAvailable}
-                    onKeyDown={(e) => {
-                      if (isAvailable && (e.key === 'Enter' || e.key === ' ')) {
-                        handleCategoryClick(cat, 'service');
-                      }
-                    }}
-                  >
-                    <div className="cat-icon-wrap">
-                      <CategoryIcon category={cat} />
-                      {!isAvailable && <span className="unavailable-badge">Unavailable</span>}
+        {(loading || serviceCategories.length > 0) && (
+          <div className="section-wrap">
+            <div className="section-header">
+              <h2 className="section-title">Home <span className="accent">Services</span></h2>
+              <button className="section-view-all" onClick={() => navigate('/services')}>
+                View All <ArrowRight size={16} />
+              </button>
+            </div>
+            <div className="category-grid">
+              {loading ? (
+                Array(6).fill(0).map((_, i) => (
+                  <div key={i} className="category-card skeleton" style={{ height: '195px' }} />
+                ))
+              ) : (
+                serviceCategories.map(cat => {
+                  const isAvailable = cat.isAvailable !== false && cat.isActive !== false && cat.status !== 'inactive' && cat.status !== 'disabled';
+                  return (
+                    <div
+                      key={cat._id}
+                      className={`category-card ${!isAvailable ? 'disabled-card' : ''}`}
+                      onClick={() => {
+                        if (isAvailable) handleCategoryClick(cat, 'service');
+                      }}
+                      role={isAvailable ? 'button' : 'region'}
+                      tabIndex={isAvailable ? 0 : -1}
+                      aria-disabled={!isAvailable}
+                      onKeyDown={(e) => {
+                        if (isAvailable && (e.key === 'Enter' || e.key === ' ')) {
+                          handleCategoryClick(cat, 'service');
+                        }
+                      }}
+                    >
+                      <div className="cat-icon-wrap">
+                        <CategoryIcon category={cat} />
+                        {!isAvailable && <span className="unavailable-badge">Unavailable</span>}
+                      </div>
+                      <span>{cat.category}</span>
                     </div>
-                    <span>{cat.category}</span>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* --- Product Categories --- */}
         {!loading && productCategories.length > 0 && (

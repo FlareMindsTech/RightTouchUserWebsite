@@ -56,3 +56,11 @@ export const deleteAllBookings = () =>
   apiClient(ENDPOINTS.SERVICE_BOOKING.DELETE_ALL, {
     method: "DELETE"
   });
+
+export const deleteBooking = (id) =>
+  apiClient(ENDPOINTS.SERVICE_BOOKING.DELETE_SINGLE(id), {
+    method: "DELETE"
+  });
+
+export const getCompletionStatus = (id) =>
+  apiClient(ENDPOINTS.SERVICE_BOOKING.COMPLETION_STATUS(id));

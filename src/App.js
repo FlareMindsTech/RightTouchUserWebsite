@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './styles/main.css';
-import { safeStorage, trackNavigation, setAuthSession, clearAuthSession, getAuthToken, getSavedUser, isTokenExpired } from './utils/browserUtils';
+import { safeStorage, trackNavigation, setAuthSession, clearAuthSession, getAuthToken, getSavedUser } from './utils/browserUtils';
+import { logger } from './utils/logger';
 // Import components
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
@@ -26,6 +27,7 @@ import SettingsPage from './pages/SettingsPage';
 import RatingsPage from './pages/RatingsPage';
 import ReportPage from './pages/ReportPage';
 import HelpSupportPage from './pages/HelpSupportPage';
+import RewardsPage from './pages/RewardsPage';
 import AboutPage from './pages/AboutPage';
 import LegalPage from './pages/LegalPage';
 import SearchDropdown from './components/SearchDropdown';
@@ -142,6 +144,11 @@ function App() {
   }, []);
 
   const fetchCart = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setCartItems([]);
+      return;
+    }
     try {
       const response = await getMyCart();
       if (response?.success && response.result) {
@@ -150,7 +157,11 @@ function App() {
         setCartItems(items.map(formatCartItem));
       }
     } catch (error) {
-      console.error('Failed to fetch cart:', error);
+      if (error?.status === 401) {
+        setCartItems([]);
+      } else {
+        logger.warn('Failed to fetch cart:', error?.message || error);
+      }
     }
   }, [formatCartItem]);
 
@@ -193,9 +204,10 @@ function App() {
             }
           })
           .catch((err) => {
-            if (err?.status === 401 && isTokenExpired(token)) {
+            if (err?.status === 401) {
               clearAuthSession();
               setCurrentUser(null);
+              setCartItems([]);
             }
           });
       }
@@ -211,9 +223,10 @@ function App() {
           }
         })
         .catch((err) => {
-          if (err?.status === 401 && isTokenExpired(token)) {
+          if (err?.status === 401) {
             clearAuthSession();
             setCurrentUser(null);
+            setCartItems([]);
           }
         });
     } else {
@@ -227,7 +240,13 @@ function App() {
       document.body.classList.add('dark-mode');
     }
     // Listen for custom events
-    const handleLogoutEvent = () => setCurrentUser(null);
+    const handleLogoutEvent = (e) => {
+      setCurrentUser(null);
+      setCartItems([]);
+      if (e?.detail?.reason === 'session_expired') {
+        showToast('Your session has expired. Please sign in again.', 'warning');
+      }
+    };
     const handleProfileUpdateEvent = () => {
       const savedUserStr = safeStorage.getItem('currentUser');
       if (savedUserStr) {
@@ -479,6 +498,7 @@ function App() {
   const confirmLogout = () => {
     clearAuthSession();
     setCurrentUser(null);
+    setCartItems([]);
     setShowLogoutConfirm(false);
     showToast('Logged out successfully');
   };
@@ -705,6 +725,7 @@ function App() {
           } />
           <Route path="/ratings" element={<RatingsPage showToast={showToast} />} />
           <Route path="/report" element={<ReportPage showToast={showToast} />} />
+          <Route path="/rewards" element={<RewardsPage currentUser={currentUser} onLoginClick={() => setShowLoginDialog(true)} showToast={showToast} />} />
           <Route path="/help" element={<HelpSupportPage showToast={showToast} />} />
           <Route path="/about" element={<AboutPage isActive={currentPage === 'about'} />} />
           <Route path="/privacy-policy" element={<LegalPage isActive={currentPage === 'privacy-policy'} defaultTab="privacy" />} />

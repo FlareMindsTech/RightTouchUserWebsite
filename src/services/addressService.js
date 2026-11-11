@@ -22,6 +22,28 @@ export const deleteAddress = (data) =>
     body: JSON.stringify(data)
   });
 
+export const getDefaultAddress = () =>
+  apiClient(ENDPOINTS.ADDRESS.GET_DEFAULT);
+
+export const setDefaultAddress = (data) =>
+  apiClient(ENDPOINTS.ADDRESS.SET_DEFAULT, {
+    method: "PUT",
+    body: JSON.stringify(data)
+  });
+
+export const searchAddressApi = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const endpoint = query ? `${ENDPOINTS.ADDRESS.SEARCH}?${query}` : ENDPOINTS.ADDRESS.SEARCH;
+  return apiClient(endpoint);
+};
+
+export const reverseAddressApi = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const endpoint = query ? `${ENDPOINTS.ADDRESS.REVERSE}?${query}` : ENDPOINTS.ADDRESS.REVERSE;
+  return apiClient(endpoint);
+};
+
+
 const NOMINATIM_BASE = "https://nominatim.openstreetmap.org";
 
 const fetchNominatim = async (path, params) => {

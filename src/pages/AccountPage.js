@@ -19,7 +19,7 @@ import {
   LuLogOut,
   LuFileText
 } from 'react-icons/lu';
-import { ShieldCheck, Zap, RotateCcw, ArrowRight, Wrench, Package, CheckCircle2, User } from 'lucide-react';
+import { ShieldCheck, Zap, RotateCcw, ArrowRight, Wrench, Package, CheckCircle2, User, Coins } from 'lucide-react';
 import './AccountPage.css';
 import './CartPage.css';
 import ConfirmModal from '../components/ConfirmModal';
@@ -39,6 +39,7 @@ import {
   getCurrentUserLocation
 } from '../services/addressService';
 import { getMyProfile, updateProfile, deleteMyAccount } from '../services/userService';
+import { getRewardsBalance } from '../services/rewardsService';
 import { safeStorage, setAuthSession, clearAuthSession } from '../utils/browserUtils';
 
 const mapAddressToSelection = (addr) => {
@@ -62,6 +63,7 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
   const location = useLocation();
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [rewardsBalance, setRewardsBalance] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(currentUser || {});
   const [loading, setLoading] = useState(false);
@@ -222,16 +224,31 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     }
   };
 
+  const fetchRewards = useCallback(async () => {
+    if (!currentUser?._id) return;
+    try {
+      const res = await getRewardsBalance();
+      if (res?.success && res?.result) {
+        setRewardsBalance(res.result);
+      }
+    } catch (err) {
+      console.error('Failed to load rewards balance:', err);
+    }
+  }, [currentUser?._id]);
+
   // Handle URL parameters for auto-editing
   useEffect(() => {
     if (isActive) {
       const searchParams = new URLSearchParams(location.search);
       const editType = searchParams.get('edit');
+      const tabType = searchParams.get('tab');
 
       if (editType === 'profile') {
         setIsEditing(true);
       } else if (editType === 'address') {
         setShowAddressModal(true);
+      } else if (editType === 'rewards' || tabType === 'rewards') {
+        navigate('/rewards');
       }
     }
   }, [location.search, isActive]);
@@ -240,12 +257,13 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
     if (currentUser?._id && isActive && !fetchedRef.current) {
       fetchProfile();
       fetchAddresses();
+      fetchRewards();
       fetchedRef.current = true;
     }
     if (!isActive) {
       fetchedRef.current = false;
     }
-  }, [currentUser?._id, isActive, fetchProfile, fetchAddresses]);
+  }, [currentUser?._id, isActive, fetchProfile, fetchAddresses, fetchRewards]);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -430,6 +448,9 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
       case 'Product Quotations':
         navigate('/quotations');
         break;
+      case 'Rewards & Wallet':
+        navigate('/rewards');
+        break;
       case 'Manage address':
         setShowAddressModal(true);
         break;
@@ -489,6 +510,18 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
                     <MdOutlineChevronRight className="arrow" />
                   </div>
 
+                  <div className="account-menu-group-title">Rewards &amp; Wallet</div>
+                  <div className="menu-item-simple rewards-sidebar-item" onClick={() => handleMenuItemClick('Rewards & Wallet')}>
+                    <div className="menu-left-simple">
+                      <Coins className="icon" size={20} color="#d97706" />
+                      <span>Rewards &amp; Wallet</span>
+                    </div>
+                    {rewardsBalance?.availableCoins > 0 && (
+                      <span className="rewards-sidebar-badge">{rewardsBalance.availableCoins.toLocaleString()} Coins</span>
+                    )}
+                    <MdOutlineChevronRight className="arrow" />
+                  </div>
+
                   <div className="account-menu-group-title">Saved Locations</div>
                   <div className="menu-item-simple" onClick={() => handleMenuItemClick('Manage address')}>
                     <div className="menu-left-simple">
@@ -534,6 +567,29 @@ const AccountPage = ({ isActive, showToast, onNavigate, currentUser, onLoginClic
 
               {/* Right Column: banners, services & trust */}
               <div className="account-content-col">
+                {/* Rewards Balance Banner Card */}
+                <div className="acc-rewards-banner-card">
+                  <div className="acc-rewards-info">
+                    <div className="acc-rewards-coin-badge">
+                      <Coins size={26} />
+                    </div>
+                    <div className="acc-rewards-text">
+                      <h4>RightTouch Rewards Wallet</h4>
+                      <p>
+                        {rewardsBalance?.availableCoins != null
+                          ? `${rewardsBalance.availableCoins.toLocaleString()} Coins Available (₹${(rewardsBalance.rupees ?? rewardsBalance.availableCoins / 100).toFixed(2)})`
+                          : 'Earn reward coins on every completed service booking'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    className="acc-rewards-open-btn"
+                    onClick={() => navigate('/rewards')}
+                  >
+                    <Coins size={16} /> View Rewards Page
+                  </button>
+                </div>
+
                 {/* Service Hero Banner */}
                 <div className="acc-hero-banner">
                 <div className="acc-hero-banner-text">

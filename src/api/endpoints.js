@@ -85,7 +85,8 @@ export const ENDPOINTS = {
     DELETE_SINGLE: (id) => `/api/user/booking/${id}`,
     DELETE_ADMIN: (id) => `/api/user/booking/admin/${id}`,
     GET_ALL_BOOKINGS: "/api/user/booking/getAllBookings",
-    GET_BY_ID: (id) => `/api/user/booking/getBookingById/${id}`
+    GET_BY_ID: (id) => `/api/user/booking/getBookingById/${id}`,
+    COMPLETION_STATUS: (id) => `/api/user/booking/${id}/completion-status`
   },
 
   PRODUCT: {
@@ -102,7 +103,9 @@ export const ENDPOINTS = {
   PRODUCT_BOOKING: {
     GET_ALL: "/api/user/getAllProductBooking",
     UPDATE: (id) => `/api/user/productBookingUpdate/${id}`,
-    CANCEL: (id) => `/api/user/productBookingCancel/${id}`
+    CANCEL: (id) => `/api/user/productBookingCancel/${id}`,
+    LIST: "/api/user/product-bookings",
+    GET_BY_ID: (id) => `/api/user/product-bookings/${id}`
   },
 
   CART: {
@@ -138,7 +141,8 @@ export const ENDPOINTS = {
     GET_ALL: "/api/user/getAllReports",
     GET_MY_REPORTS_LEGACY: "/api/user/get-my-reports",
     GET_BY_ID_LEGACY: (id) => `/api/user/getReportById/${id}`,
-    RESOLVE: (id) => `/api/user/report/resolve/${id}`
+    RESOLVE: (id) => `/api/user/report/resolve/${id}`,
+    WITHDRAW: (id) => `/api/user/reports/${id}/withdraw`
   },
 
   PAYMENT: {
@@ -154,6 +158,8 @@ export const ENDPOINTS = {
     RETRY: (bookingId) => `/api/user/payments/${bookingId}/retry`,
     CASH_DECLARE: (bookingId) => `/api/user/payments/${bookingId}/cash/declare`,
     RAZORPAY_WEBHOOK: "/api/user/payment/webhook/razorpay",
+    RAZORPAYX_WEBHOOK: "/api/payment/webhook/razorpayx",
+    RAZORPAYX_DIRECT_WEBHOOK: "/api/razorpayx/webhook",
     UPDATE_STATUS: (id) => `/api/user/payment/${id}/status`,
     RETRY_SETTLEMENT: "/api/user/payment/retry-settlement"
   },
@@ -173,10 +179,18 @@ export const ENDPOINTS = {
     FIND_TECHS: "/api/dev/find-techs"
   },
 
+  REWARDS: {
+    GET_BALANCE: "/api/user/rewards/balance",
+    GET_HISTORY: "/api/user/rewards/history",
+    RECONCILE: "/api/user/rewards/reconcile"
+  },
+
   NOTIFICATION: {
     LIST: "/api/user/notifications",
     UNREAD_COUNT: "/api/user/notifications/unread-count",
+    UNREAD_COUNTS: "/api/user/notifications/unread-counts",
     MARK_READ: (id) => `/api/user/notifications/${id}/read`,
+    MARK_READ_BATCH: "/api/user/notifications/mark-read",
     MARK_ALL_READ: "/api/user/notifications/read-all",
     MARK_RECEIVED: (id) => `/api/user/notifications/${id}/received`,
     MARK_OPENED: (id) => `/api/user/notifications/${id}/opened`
@@ -207,6 +221,7 @@ export const ENDPOINTS = {
     CREATE_QUOTE_REQUEST_ALIAS: "/api/user/product-quotes/request",
     LIST_QUOTE_REQUESTS_ALIAS: "/api/user/product-quotes",
     GET_QUOTE_REQUEST_ALIAS_BY_ID: (id) => `/api/user/product-quotes/${id}`,
+    UPDATE_QUOTE_REQUEST_ALIAS: (id) => `/api/user/product-quotes/${id}`,
     LIST_PRODUCT_BOOKINGS: "/api/user/product-bookings",
     GET_PRODUCT_BOOKING_BY_ID: (id) => `/api/user/product-bookings/${id}`
   }
